@@ -1,0 +1,1791 @@
+<script>
+let TEAM_NAME = 'My Team';
+const MAX_GAMES = 8;
+const MAX_PARTNERS = 2;
+const REQUESTED_TEAM_ID =
+  window.__REQUESTED_TEAM_ID__ ||
+  new URLSearchParams(window.location.search).get('teamId') ||
+  '';
+
+const REQUESTED_MATCH_ID =
+  window.__REQUESTED_MATCH_ID__ ||
+  new URLSearchParams(window.location.search).get('matchId') ||
+  '';
+const SELECTOR_DATA = window.__SELECTOR_DATA__ || { availableDivisions: [], matches: [] };
+const BOOTSTRAP_ERROR = window.__BOOTSTRAP_ERROR__ || '';
+
+let currentTeamId = REQUESTED_TEAM_ID || '';
+
+let portalData = null;
+let currentMatchId = '';
+let players = [];
+let schedule = [];
+let pickerTarget = null;
+let autosaveTimer = null;
+let loadMatchSeq = 0;
+let countdownInterval_ = null;
+let toastTimer = null;
+
+/* =========================
+   Core helpers
+========================= */
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function cancelPendingAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = null;
+}
+
+function getRoundNumbers_() {
+  return schedule.map((_, idx) => idx + 1);
+}
+
+function roundsCount_() {
+  return schedule.length;
+}
+
+function gamesPerRound_() {
+  return schedule.reduce((max, round) => Math.max(max, round.length), 0);
+}
+
+function totalGamesCount_() {
+  return schedule.reduce((sum, round) => sum + round.length, 0);
+}
+
+function scheduleGameNumber_(r, g) {
+  let num = 0;
+  for (let rr = 0; rr < schedule.length; rr++) {
+    for (let gg = 0; gg < (schedule[rr] || []).length; gg++) {
+      num++;
+      if (rr === r && gg === g) return num;
+    }
+  }
+  return num + 1;
+}
+
+function selectedMatch() {
+  return document.getElementById('match-select')?.value || '';
+}
+
+function selectedDivision() {
+  return document.getElementById('division-select')?.value || '';
+}
+
+function filteredPlayers() {
+  return players;
+}
+
+function byId(id) {
+  return players.find(p => p.id === id);
+}
+
+function actives() {
+  return filteredPlayers().filter(p => p.active);
+}
+
+function replacePortalGames_(games) {
+  if (!Array.isArray(games)) return;
+  portalData.games = games;
+}
+
+/* =========================
+   Game / schedule shaping
+========================= */
+
+function isPortalGame_(game) {
+  const roundNumber = Number(game?.round_number || 0);
+  const roundType = String(game?.round_type || '').trim().toLowerCase();
+  const gameType = String(game?.game_type || '').trim().toLowerCase();
+
+  if (roundNumber === 9) return false;
+
+  if (
+    roundType === 'super dreambreaker' ||
+    roundType === 'super_dreambreaker' ||
+    roundType === 'super-dreambreaker' ||
+    roundType === 'dreambreaker'
+  ) {
+    return false;
+  }
+
+  if (
+    gameType === 'super dreambreaker' ||
+    gameType === 'super_dreambreaker' ||
+    gameType === 'super-dreambreaker' ||
+    gameType === 'dreambreaker'
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function baseNormalizedGameType_(value) {
+  const type = String(value || '').trim().toLowerCase();
+
+  if (type === 'women' || type === 'womens' || type === "women's") return 'womens';
+  if (type === 'men' || type === 'mens' || type === "men's") return 'mens';
+  if (type === 'coed' || type === 'co-ed') return 'coed';
+  if (type === 'mixed') return 'mixed';
+
+  return type || 'mixed';
+}
+
+function isStandardTemplateMatch_() {
+  const match = portalData?.currentMatch || null;
+  const raw =
+    match?.division_number ??
+    match?.division_id ??
+    portalData?.divisionName ??
+    selectedDivision?.() ??
+    '';
+
+  const m = String(raw).match(/(\d+)/);
+  return !m || Number(m[1]) !== 1;
+}
+
+function standardTemplateOddRoundTypeOverride_(game) {
+  if (!isStandardTemplateMatch_() || !game) return '';
+
+  const roundNumber = Number(game.round_number || 0);
+  const gameNumberInRound = Number(game.game_number_in_round || 0);
+  if (!roundNumber || !gameNumberInRound) return '';
+  if (roundNumber % 2 === 0) return '';
+
+  if (gameNumberInRound === 1 || gameNumberInRound === 2) return 'womens';
+  if (gameNumberInRound === 3 || gameNumberInRound === 4) return 'mens';
+  return '';
+}
+
+function gameTypeByGame_(game) {
+  if (!game) return 'mixed';
+
+  const override = standardTemplateOddRoundTypeOverride_(game);
+  if (override) return override;
+
+  return baseNormalizedGameType_(game.game_type);
+}
+
+const TYPE_LABEL = {
+  womens: "Women's",
+  mens: "Men's",
+  coed: "Coed",
+  mixed: "Mixed"
+};
+
+function currentGameType_(r, g) {
+  return gameTypeByGame_(schedule?.[r]?.[g]);
+}
+
+function buildBlankSchedule(games) {
+  const portalGames = (games || []).filter(isPortalGame_);
+  if (!portalGames.length) return [];
+
+  const rounds = new Map();
+
+  portalGames.forEach(g => {
+    const roundNumber = Number(g.round_number || 0);
+    const gameNumberInRound = Number(g.game_number_in_round || 0);
+
+    if (!rounds.has(roundNumber)) rounds.set(roundNumber, []);
+    rounds.get(roundNumber).push({
+      game_id: g.game_id || '',
+      round_number: roundNumber,
+      game_number_in_round: gameNumberInRound,
+      game_type: g.game_type || '',
+      round_type: g.round_type || '',
+      team1: [null, null],
+      team2: [null, null]
+    });
+  });
+
+  return [...rounds.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, roundGames]) =>
+      roundGames.sort((a, b) => a.game_number_in_round - b.game_number_in_round)
+    );
+}
+
+function divisionValueForMatch_(match) {
+  return String(match?.division_id || '').trim();
+}
+
+/* =========================
+   Player / match loading
+========================= */
+
+function normalizeAvailability_(value) {
+  const s = String(value ?? '').trim().toLowerCase();
+
+  if (value === false) return false;
+  if (s === 'false' || s === '0' || s === 'no') return false;
+
+  return true;
+}
+
+function normalizeGenderCodeClient_(value) {
+  const s = String(value || '').trim().toLowerCase();
+
+  if (['w', 'f', 'woman', 'women', 'female'].includes(s)) return 'F';
+  if (['m', 'man', 'men', 'male'].includes(s)) return 'M';
+
+  return String(value || '').trim().toUpperCase();
+}
+
+function mapRosterToPlayers_(roster) {
+  return (roster || []).map(r => {
+    const isAvailable = normalizeAvailability_(r.available);
+
+    return {
+      id: String(r.player_id || '').trim(),
+      player_id: String(r.player_id || '').trim(),
+      name: String(r.full_name || r.name || '').trim(),
+      full_name: String(r.full_name || r.name || '').trim(),
+      gender: normalizeGenderCodeClient_(r.gender),
+      available: isAvailable,
+      active: false,
+      division: 1
+    };
+  });
+}
+
+function mapGamesToSchedule_(games) {
+  const portalGames = (games || []).filter(isPortalGame_);
+  const base = buildBlankSchedule(portalGames);
+
+  base.forEach(roundGames => {
+    roundGames.forEach(game => {
+      const source = portalGames.find(g => String(g.game_id || '').trim() === String(game.game_id || '').trim());
+      if (!source) return;
+
+      const p1 = portalData?.mySide === 'home' ? source.home_player_1_id : source.away_player_1_id;
+      const p2 = portalData?.mySide === 'home' ? source.home_player_2_id : source.away_player_2_id;
+
+      game.team1 = [p1 || null, p2 || null];
+      game.team2 = [null, null];
+    });
+  });
+
+  return base;
+}
+
+function applyActiveStateToPlayers_() {
+  const saved = portalData?.activeState || {};
+
+  players.forEach(p => {
+    if (Object.prototype.hasOwnProperty.call(saved, p.id)) {
+      p.active = !!saved[p.id];
+    } else {
+      p.active = !!p.available;
+    }
+  });
+}
+
+function populateDivisionDropdownFromPortal_(availableDivisions, selectedDivisionId) {
+  const select = document.getElementById('division-select');
+  if (!select) return;
+
+  const divisions = availableDivisions || [];
+  if (!divisions.length) {
+    select.innerHTML = `<option value="">No divisions loaded</option>`;
+    return;
+  }
+
+  const targetId = String(selectedDivisionId || '').trim();
+
+  select.innerHTML = divisions.map(d => {
+    const value = String(d.division_id || d.division_number || '').trim();
+    const label = d.division_name || `Division ${d.division_number || value}`;
+    const selected = value === targetId ? 'selected' : '';
+    return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(label)}</option>`;
+  }).join('');
+
+  select.value = targetId || String(divisions[0].division_id || '').trim();
+}
+
+function formatMatchDropdownLabel_(match) {
+  const matchId = String(match?.match_id || '').trim();
+  const weekMatch = matchId.match(/_W(\d+)_/i);
+  const weekLabel = weekMatch ? `Week ${weekMatch[1]}` : 'Match';
+
+  const rawDate = String(match?.match_date || '').trim();
+  const dateLabel = formatSheetDateLabel_(rawDate);
+
+  return `${weekLabel} — ${dateLabel}`;
+}
+
+function formatSheetDateLabel_(raw) {
+  if (!raw) return 'Date TBD';
+
+  const ymdMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch;
+    return `${Number(m)}/${Number(d)}/${String(y).slice(-2)}`;
+  }
+
+  const dt = new Date(raw);
+  if (isNaN(dt.getTime())) return 'Date TBD';
+
+  return dt.toLocaleDateString(undefined, {
+    month: 'numeric',
+    day: 'numeric',
+    year: '2-digit'
+  });
+}
+
+function parseMatchStartLocal_(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) {
+    const [, y, mo, d, hh = '0', mm = '0', ss = '0'] = m;
+    return new Date(
+      Number(y),
+      Number(mo) - 1,
+      Number(d),
+      Number(hh),
+      Number(mm),
+      Number(ss)
+    );
+  }
+
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function parseAppDateTime_(value) {
+  if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
+
+  const s = String(value).trim();
+  if (!s) return 0;
+
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m) {
+    const [, y, mo, d, h, mi, se] = m;
+    return new Date(
+      Number(y),
+      Number(mo) - 1,
+      Number(d),
+      Number(h),
+      Number(mi),
+      Number(se || 0)
+    ).getTime();
+  }
+
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m) {
+    const [, mo, d, y, h, mi, se] = m;
+    return new Date(
+      Number(y),
+      Number(mo) - 1,
+      Number(d),
+      Number(h),
+      Number(mi),
+      Number(se || 0)
+    ).getTime();
+  }
+
+  const t = new Date(s).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
+function populateMatchDropdownFromPortal_(matches, selectedMatchId, divisionId) {
+  const sel = document.getElementById('match-select');
+  if (!sel) return;
+
+  const currentDivisionId = String(divisionId || '').trim();
+  const filtered = (matches || []).filter(m => {
+    const d = divisionValueForMatch_(m);
+    return !currentDivisionId || d === currentDivisionId;
+  });
+
+  if (!filtered.length) {
+    sel.innerHTML = `<option value="">No matches loaded</option>`;
+    return;
+  }
+
+  sel.innerHTML = '';
+
+  filtered.forEach(m => {
+    const opt = document.createElement('option');
+    const matchId = String(m.match_id || '').trim();
+    opt.value = matchId;
+    opt.textContent = formatMatchDropdownLabel_(m);
+    if (matchId === String(selectedMatchId || '').trim()) {
+      opt.selected = true;
+    }
+    sel.appendChild(opt);
+  });
+}
+
+function updateHeaderMetaFromPortal_() {
+  const titleEl = document.getElementById('middle-brand-title');
+  const metaEl = document.getElementById('middle-brand-meta');
+  const statusEl = document.getElementById('middle-brand-status');
+
+  const m = portalData?.currentMatch || {};
+  const divisionName =
+    portalData?.divisionName ||
+    m.division_name ||
+    m.division_id ||
+    'Division';
+
+  const matchId = String(m.match_id || '').trim();
+  const matchNumber = extractMatchNumber_(matchId);
+  const matchLabel = matchNumber ? `Match ${matchNumber}` : 'Match';
+
+  const start = parseMatchStartLocal_(m.match_date);
+
+  const dateText = start && !isNaN(start.getTime())
+    ? start.toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    : 'Date TBD';
+
+  const timeText = start && !isNaN(start.getTime())
+    ? start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    : 'Time TBD';
+
+  const locationText =
+    m.location ||
+    m.match_location ||
+    m.venue ||
+    m.site ||
+    'Location TBD';
+
+  if (titleEl) titleEl.textContent = dateText;
+  if (metaEl) metaEl.textContent = `${timeText} at ${locationText}`;
+  if (statusEl) statusEl.textContent = `${divisionName} • ${matchLabel}`;
+
+  renderStatusAndCountdown_();
+}
+
+function applyBranding(branding) {
+  const leagueLogo = document.getElementById('league-logo');
+  const teamLogo = document.getElementById('middle-team-logo');
+  const leagueFallback = document.getElementById('league-logo-fallback');
+  const teamFallback = document.getElementById('middle-team-logo-fallback');
+
+  if (branding?.leagueLogoUrl && leagueLogo && leagueFallback) {
+    leagueLogo.src = branding.leagueLogoUrl;
+    leagueLogo.style.display = 'block';
+    leagueFallback.style.display = 'none';
+  } else if (leagueLogo && leagueFallback) {
+    leagueLogo.style.display = 'none';
+    leagueFallback.style.display = 'block';
+  }
+
+  if (branding?.teamLogoUrl && teamLogo && teamFallback) {
+    teamLogo.src = branding.teamLogoUrl;
+    teamLogo.style.display = 'block';
+    teamFallback.style.display = 'none';
+  } else if (teamLogo && teamFallback) {
+    teamLogo.style.display = 'none';
+    teamFallback.style.display = 'flex';
+    teamFallback.textContent = 'TEAM';
+  }
+}
+
+function loadMatch_(matchId, opts = {}) {
+  if (!matchId) return;
+
+  const seq = ++loadMatchSeq;
+
+  google.script.run
+    .withSuccessHandler((raw) => {
+      if (seq !== loadMatchSeq) return;
+
+      try {
+        let data;
+        try {
+          data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        } catch (e) {
+          showToast('Invalid match payload returned from server', 'error');
+          console.log('loadMatch_ JSON parse failed', e, raw);
+          if (opts.onFailure) opts.onFailure(e);
+          return;
+        }
+
+        if (!data || !data.currentMatch) {
+          showToast('No match data was returned for ' + matchId, 'error');
+          console.log('getCaptainPortalDataV3 returned invalid data for matchId=', matchId, data);
+          if (opts.onFailure) opts.onFailure(new Error('No currentMatch returned'));
+          return;
+        }
+
+        portalData = data;
+        currentMatchId = data.currentMatch ? String(data.currentMatch.match_id || '').trim() : '';
+        TEAM_NAME = data.teamName || 'My Team';
+        currentTeamId = data.myTeamId ? String(data.myTeamId || '').trim() : currentTeamId;
+
+        players = mapRosterToPlayers_(data.roster || []);
+        applyActiveStateToPlayers_();
+        schedule = mapGamesToSchedule_(data.games || []);
+
+        applyBranding(data.brand || {});
+        updateHeaderMetaFromPortal_();
+
+        const currentDivisionId = data.currentMatch ? divisionValueForMatch_(data.currentMatch) : '';
+        const divisionSelect = document.getElementById('division-select');
+        if (divisionSelect && currentDivisionId) {
+          divisionSelect.value = currentDivisionId;
+        }
+
+        populateMatchDropdownFromPortal_(data.matches || [], currentMatchId, currentDivisionId);
+        const matchSelect = document.getElementById('match-select');
+        if (matchSelect) matchSelect.value = currentMatchId;
+
+        render();
+        showToast('Loaded ' + currentMatchId, 'success');
+
+        if (opts.onSuccess) opts.onSuccess(data);
+      } catch (err) {
+        console.log('loadMatch_ success handler crashed=', err);
+        showToast('Load failed: ' + (err && err.message ? err.message : err), 'error');
+        if (opts.onFailure) opts.onFailure(err);
+      }
+    })
+    .withFailureHandler((err) => {
+      if (seq !== loadMatchSeq) return;
+      showToast('Could not load match: ' + (err && err.message ? err.message : err), 'error');
+      console.log('loadMatch_ failure=', err);
+      if (opts.onFailure) opts.onFailure(err);
+    })
+    .getCaptainPortalDataV3(matchId, currentTeamId);
+}
+
+function currentMatchIdFromUrl_() {
+  try {
+    return new URLSearchParams(window.location.search).get('matchId') || '';
+  } catch (err) {
+    return '';
+  }
+}
+
+
+
+function boot() {
+  if (window.__LINEUP_BOOTED__) return;
+  window.__LINEUP_BOOTED__ = true;
+
+  try {
+    portalData = window.__INITIAL_DATA__ || null;
+    currentTeamId =
+      (portalData && portalData.myTeamId)
+        ? String(portalData.myTeamId).trim()
+        : REQUESTED_TEAM_ID;
+
+    if (!portalData || !portalData.currentMatch) {
+      const divisions = SELECTOR_DATA.availableDivisions || [];
+      const matches = SELECTOR_DATA.matches || [];
+      populateDivisionDropdownFromPortal_(divisions, '');
+      const firstMatch = matches[0];
+      if (firstMatch) {
+        const firstMatchId = String(firstMatch.match_id || '').trim();
+        currentTeamId = String(firstMatch.home_team_id || '').trim();
+        populateMatchDropdownFromPortal_(matches, firstMatchId, divisionValueForMatch_(firstMatch));
+        loadMatch_(firstMatchId);
+      } else {
+        render();
+      }
+      return;
+    }
+
+    TEAM_NAME = portalData.teamName || 'My Team';
+    currentMatchId = portalData.currentMatch
+      ? String(portalData.currentMatch.match_id || '').trim()
+      : '';
+    currentTeamId = portalData.myTeamId ? String(portalData.myTeamId || '').trim() : currentTeamId;
+
+    players = mapRosterToPlayers_(portalData.roster || []);
+    applyActiveStateToPlayers_();
+    schedule = mapGamesToSchedule_(portalData.games || []);
+
+    const currentDivisionId = portalData.currentMatch
+      ? divisionValueForMatch_(portalData.currentMatch)
+      : '';
+
+    populateDivisionDropdownFromPortal_(portalData.availableDivisions || [], currentDivisionId);
+    populateMatchDropdownFromPortal_(portalData.matches || [], currentMatchId, currentDivisionId);
+
+    applyBranding(portalData.brand || {});
+    updateHeaderMetaFromPortal_();
+    render();
+    showToast('Loaded live data from Google Sheets', 'success');
+    if (BOOTSTRAP_ERROR) {
+      console.warn('Server bootstrap warning:', BOOTSTRAP_ERROR);
+      showToast('Loaded with warning: ' + BOOTSTRAP_ERROR, 'error');
+    }
+  } catch (err) {
+    players = [];
+    schedule = [];
+    render();
+    showToast('Load failed: ' + (err && err.message ? err.message : err), 'error');
+  }
+}
+
+function onDivisionChange() {
+  const divisionId = selectedDivision();
+  const matches = portalData.matches || [];
+  const filteredMatches = matches.filter(
+    m => String(m.division_id || '').trim() === String(divisionId || '').trim()
+  );
+
+  if (!filteredMatches.length) {
+    const ms = document.getElementById('match-select');
+    if (ms) ms.innerHTML = '<option value="">No matches for this division</option>';
+    return;
+  }
+
+  const firstMatchId = String(filteredMatches[0].match_id || '').trim();
+  populateMatchDropdownFromPortal_(matches, firstMatchId, divisionId);
+
+  if (!firstMatchId) return;
+  loadMatch_(firstMatchId);
+}
+
+function onMatchChange() {
+  const newMatchId = String(selectedMatch() || '').trim();
+  if (!newMatchId) return;
+  loadMatch_(newMatchId);
+}
+
+/* =========================
+   Due / status / countdown
+========================= */
+
+function formatDisplayDateTime_(value) {
+  const ts = parseAppDateTime_(value);
+  if (!ts) return '';
+
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  return `${mm}/${dd} ${hours}:${minutes} ${ampm}`;
+}
+
+function getMySubmissionDeadline_() {
+  const m = portalData?.currentMatch || null;
+  if (!m) return null;
+
+  const matchStart = parseMatchStartLocal_(m.match_date);
+  if (!matchStart || isNaN(matchStart.getTime())) return null;
+
+  const isHome = portalData?.mySide === 'home';
+
+  if (isHome) {
+    return new Date(matchStart.getTime() - 60 * 60 * 1000);
+  }
+
+  const awayDue = new Date(matchStart);
+  awayDue.setDate(awayDue.getDate() - 1);
+  awayDue.setHours(12, 0, 0, 0);
+  return awayDue;
+}
+
+function formatCountdown_(ms) {
+  if (ms <= 0) return '0d 00h 00m 00s';
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+}
+
+function renderStatusAndCountdown_() {
+  const heroStatusPill = document.getElementById('hero-status-pill');
+  const heroDueText = document.getElementById('hero-due-text');
+  const heroCountdown = document.getElementById('hero-countdown');
+  const heroLastEditedTop = document.getElementById('hero-last-edited-top');
+
+  const display = getMySubmissionDisplay_();
+  const deadline = getMySubmissionDeadline_();
+
+  if (countdownInterval_) {
+    clearInterval(countdownInterval_);
+    countdownInterval_ = null;
+  }
+
+  const syncBanner = () => {
+    const freshDisplay = getMySubmissionDisplay_();
+
+    if (heroStatusPill) {
+      heroStatusPill.textContent = freshDisplay.label === 'Submitted' ? 'Submitted' : 'Not Submitted';
+    }
+
+    if (heroDueText) {
+      if (freshDisplay.label === 'Submitted') {
+        heroDueText.textContent = freshDisplay.subline || '';
+      } else {
+        heroDueText.textContent = deadline ? `Due by ${formatDisplayDateTime_(deadline)}` : 'Due by TBD';
+      }
+    }
+
+    if (heroLastEditedTop) {
+      heroLastEditedTop.textContent = freshDisplay.editline || '';
+      heroLastEditedTop.style.display = freshDisplay.editline ? '' : 'none';
+    }
+
+    if (heroCountdown) {
+      if (deadline && !isNaN(deadline.getTime()) && freshDisplay.label === 'Draft') {
+        const remaining = deadline.getTime() - Date.now();
+        heroCountdown.textContent = remaining > 0 ? formatCountdown_(remaining) : '0d 00h 00m 00s';
+        heroCountdown.style.display = '';
+      } else {
+        heroCountdown.style.display = 'none';
+      }
+    }
+  };
+
+  syncBanner();
+
+  if (deadline && !isNaN(deadline.getTime()) && display.label === 'Draft') {
+    countdownInterval_ = setInterval(syncBanner, 1000);
+  }
+}
+
+/* =========================
+   Save / submit
+========================= */
+
+function buildAssignmentsForSave_() {
+  const assignments = [];
+
+  for (let r = 0; r < schedule.length; r++) {
+    for (let g = 0; g < schedule[r].length; g++) {
+      const game = schedule[r][g];
+      if (!game || !game.game_id) continue;
+
+      assignments.push({
+        game_id: game.game_id,
+        player_1_id: game.team1[0] || '',
+        player_2_id: game.team1[1] || ''
+      });
+    }
+  }
+
+  return assignments;
+}
+
+function queueAutosave() {
+  cancelPendingAutosave();
+
+  autosaveTimer = setTimeout(() => {
+    const assignments = buildAssignmentsForSave_();
+
+    google.script.run
+      .withSuccessHandler((resp) => {
+        if (resp && Array.isArray(resp.games)) {
+          replacePortalGames_(resp.games);
+        }
+        render();
+      })
+      .withFailureHandler((err) => {
+        showToast('Autosave failed: ' + (err && err.message ? err.message : err), 'error');
+      })
+      .saveCaptainLineupDraft(currentMatchId, currentTeamId, assignments);
+  }, 500);
+}
+
+function submitOfficialLineup() {
+  if (!isLineupCompliant_()) return;
+
+  const ok = confirm(
+    'Submit this lineup officially?\n\nThis will mark the current lineup as final and publish it for others to see.'
+  );
+  if (!ok) return;
+
+  cancelPendingAutosave();
+
+  const assignments = buildAssignmentsForSave_();
+
+  google.script.run
+    .withSuccessHandler((resp) => {
+      if (resp && Array.isArray(resp.games)) {
+        replacePortalGames_(resp.games);
+      }
+      render();
+      showToast('Official lineup submitted', 'success');
+      renderStatusAndCountdown_();
+    })
+    .withFailureHandler((err) => {
+      showToast('Submit failed: ' + (err && err.message ? err.message : err), 'error');
+    })
+    .submitCaptainLineup(currentMatchId, currentTeamId, assignments);
+}
+
+/* =========================
+   Stats
+========================= */
+
+function allSlots() {
+  const s = [];
+  for (let r = 0; r < schedule.length; r++) {
+    for (let g = 0; g < schedule[r].length; g++) {
+      const gd = schedule[r][g];
+      gd.team1.forEach(id => {
+        if (id) s.push({ r, g, id });
+      });
+    }
+  }
+  return s;
+}
+
+function gameCnt(pid) {
+  return allSlots().filter(s => s.id === pid).length;
+}
+
+function roundsOf(pid) {
+  const rs = new Set();
+  allSlots().filter(s => s.id === pid).forEach(s => rs.add(s.r));
+  return rs;
+}
+
+function partnerCounts(pid) {
+  const c = {};
+  for (let r = 0; r < schedule.length; r++) {
+    for (let g = 0; g < schedule[r].length; g++) {
+      const t = schedule[r][g].team1;
+      if (t.includes(pid)) {
+        t.filter(id => id && id !== pid).forEach(id => {
+          c[id] = (c[id] || 0) + 1;
+        });
+      }
+    }
+  }
+  return c;
+}
+
+function mixedGameCnt(pid) {
+  return allSlots().filter(s =>
+    s.id === pid &&
+    (currentGameType_(s.r, s.g) === 'mixed' || currentGameType_(s.r, s.g) === 'coed')
+  ).length;
+}
+
+function genderGameCnt(pid) {
+  return allSlots().filter(s =>
+    s.id === pid &&
+    currentGameType_(s.r, s.g) !== 'mixed' &&
+    currentGameType_(s.r, s.g) !== 'coed'
+  ).length;
+}
+
+/* =========================
+   Validation
+========================= */
+
+function reqGender(r, g, tk, si) {
+  const t = currentGameType_(r, g);
+  if (t === 'womens') return 'F';
+  if (t === 'mens') return 'M';
+  if (t === 'mixed') return si === 0 ? 'F' : 'M';
+  if (t === 'coed') return null;
+  return null;
+}
+
+function checkViolations(pid, r, g, tk, si) {
+  const v = [];
+  const p = byId(pid);
+
+  if (p && p.available !== true) v.push('Player is unavailable');
+
+  for (let gg = 0; gg < schedule[r].length; gg++) {
+    if (gg === g) continue;
+    if (schedule[r][gg].team1.includes(pid)) v.push(`Already in Round ${r + 1}, G${scheduleGameNumber_(r, gg)}`);
+  }
+
+  if (gameCnt(pid) >= MAX_GAMES) v.push(`At max ${MAX_GAMES} games`);
+
+  const pc = partnerCounts(pid);
+schedule[r][g][tk].forEach(id => {
+  if (!id || id === pid) return;
+
+  const maxAllowed = maxPairingsAllowed_(pid, id);
+  if ((pc[id] || 0) >= maxAllowed) {
+    v.push(`Partnered with ${byId(id)?.name} ${maxAllowed}x`);
+  }
+});
+
+  const req = reqGender(r, g, tk, si);
+  if (req && p?.gender && p.gender !== req) v.push(`Slot needs ${req === 'F' ? 'female' : 'male'} player`);
+  if (req && !p?.gender) v.push('Player has no gender set');
+
+  return v;
+}
+
+function isLineupCompliant_() {
+  const requiredGames = schedule.flat().length;
+  const completedGames = schedule.flat().filter(g => g.team1.every(Boolean)).length;
+  if (!requiredGames || completedGames !== requiredGames) return false;
+
+  for (let r = 0; r < schedule.length; r++) {
+    const seen = new Set();
+
+    for (let g = 0; g < schedule[r].length; g++) {
+      const ids = [...schedule[r][g].team1].filter(Boolean);
+
+      for (const pid of ids) {
+        if (seen.has(pid)) return false;
+        seen.add(pid);
+      }
+
+      if (ids.length === 2) {
+        const [a, b] = ids.map(byId);
+        const gt = currentGameType_(r, g);
+
+        if (!a || !b) return false;
+
+        if (gt === 'mixed') {
+          const genders = [a.gender, b.gender].sort().join('');
+          if (genders !== 'FM') return false;
+        }
+        if (gt === 'womens' && (a.gender !== 'F' || b.gender !== 'F')) return false;
+        if (gt === 'mens' && (a.gender !== 'M' || b.gender !== 'M')) return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/* =========================
+   Rendering
+========================= */
+
+function render() {
+  renderPlayerList();
+  renderGrid();
+  renderConstraints();
+  renderHeader();
+}
+
+function renderHeader() {
+  const womenActive = actives().filter(p => p.gender === 'F').length;
+  const menActive = actives().filter(p => p.gender === 'M').length;
+
+  const womenLabel = document.getElementById('women-active-label');
+  const menLabel = document.getElementById('men-active-label');
+
+  if (womenLabel) womenLabel.textContent = `${womenActive} active`;
+  if (menLabel) menLabel.textContent = `${menActive} active`;
+
+  updateHeaderMetaFromPortal_();
+
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = !isLineupCompliant_();
+  }
+}
+
+function renderRosterChip(p, selectable) {
+  const clickable = selectable ? 'clickable' : '';
+  const active = selectable && p.active ? 'active' : '';
+  const disabled = selectable ? '' : 'disabled';
+  const action = selectable ? `onclick="togglePlayer('${p.id}')"` : '';
+
+  return `<div class="chip ${clickable} ${active} ${disabled}" ${action}
+    draggable="true"
+    ondragstart="startDrag(event, '${p.id}')"
+    ondragend="endDrag(event)">
+    <div class="chip-info">
+      <div class="chip-name">${escapeHtml(p.name)}</div>
+    </div>
+  </div>`;
+}
+
+function renderPlayerList() {
+  const womenEl = document.getElementById('player-list-women');
+  const menEl = document.getElementById('player-list-men');
+  if (!womenEl || !menEl) return;
+
+  const visiblePlayers = filteredPlayers();
+  const women = visiblePlayers.filter(p => p.gender === 'F');
+  const men = visiblePlayers.filter(p => p.gender === 'M');
+
+  function sortRoster(list) {
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  function renderSection(list, genderLabel) {
+    if (!list.length) {
+      return `<div class="empty">No ${genderLabel.toLowerCase()} players found.</div>`;
+    }
+
+    const available = sortRoster(list.filter(p => p.available === true));
+    const unavailable = sortRoster(list.filter(p => p.available !== true));
+
+    return `
+      <div>
+        <div class="subsection-label">Available</div>
+        <div class="dropzone" ondragover="allowDrop(event)" ondragleave="clearDrop(event)" ondrop="dropAvailability(event, '${genderLabel}', true)">
+          ${available.length ? available.map(p => renderRosterChip(p, true)).join('') : `<div class="empty" style="padding:10px 6px">No available ${genderLabel.toLowerCase()} players.</div>`}
+        </div>
+
+        <div class="subsection-label" style="margin-top:10px">Unavailable</div>
+        <div class="dropzone" ondragover="allowDrop(event)" ondragleave="clearDrop(event)" ondrop="dropAvailability(event, '${genderLabel}', false)">
+          ${unavailable.length ? unavailable.map(p => renderRosterChip(p, false)).join('') : `<div class="empty" style="padding:10px 6px">No unavailable ${genderLabel.toLowerCase()} players.</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  womenEl.innerHTML = renderSection(women, 'Women');
+  menEl.innerHTML = renderSection(men, 'Men');
+}
+
+function renderGrid() {
+  const el = document.getElementById('main-grid');
+  if (!el) return;
+
+  let html = '';
+
+  for (let r = 0; r < schedule.length; r++) {
+    const roundGames = schedule[r] || [];
+    const roundTypes = [...new Set(roundGames.map(game => TYPE_LABEL[gameTypeByGame_(game)] || (game.game_type || 'Game')))].join(' · ');
+    const sub = roundTypes || 'Games';
+
+    html += `<div class="round-sec"><div class="round-hdr"><span class="round-num">${r + 1}</span><span class="round-title">Round ${r + 1}</span><span class="round-sub">${escapeHtml(sub)}</span></div><div class="ggrid">`;
+
+    for (let g = 0; g < roundGames.length; g++) {
+      const gd = schedule[r][g];
+      const gnum = scheduleGameNumber_(r, g);
+      const type = currentGameType_(r, g);
+      const ids = [...gd.team1].filter(Boolean);
+      const conflict = new Set(ids).size < ids.length;
+
+      html += `<div class="gcard ${conflict ? 'conflict' : ''}"><div class="ghdr"><span class="gnum">G${gnum}</span><span class="gtype ${type}">${TYPE_LABEL[type]}</span>${conflict ? '<span style="color:var(--danger);font-size:10px">⚠</span>' : ''}</div>`;
+      html += `<div class="tslot">`;
+
+      for (let s = 0; s < 2; s++) {
+        const pid = gd.team1[s];
+        const pl = pid ? byId(pid) : null;
+
+        if (pl) {
+          html += `<div class="pslot filled"><span class="sname">${escapeHtml(pl.name)}</span><button class="rbtn" onclick="removePl(${r},${g},'team1',${s})">×</button></div>`;
+        } else {
+          const req = reqGender(r, g, 'team1', s);
+          const rl = req === 'F' ? ' W' : req === 'M' ? ' M' : '';
+          html += `<div class="pslot" onclick="openPicker(${r},${g},'team1',${s})"><span>+${rl}</span></div>`;
+        }
+      }
+
+      html += `</div></div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function renderConstraints() {
+  const v = [];
+  const pairStats = new Map();
+
+  function use(pid, r, g) {
+    const p = byId(pid);
+    if (!p) return;
+    if (!p._games) p._games = [];
+    p._games.push({ r, g });
+  }
+
+  for (const p of players) p._games = [];
+
+  schedule.forEach((round, r) => {
+    const seen = new Set();
+
+    round.forEach((game, g) => {
+      const ids = [...game.team1].filter(Boolean);
+
+      ids.forEach(pid => {
+        use(pid, r, g);
+        if (seen.has(pid)) {
+          v.push({ type: 'error', txt: `${byId(pid).name} is scheduled twice in Round ${r + 1}.` });
+        }
+        seen.add(pid);
+      });
+
+      if (ids.length === 2) {
+        const key = ids.slice().sort().join('|');
+        if (!pairStats.has(key)) pairStats.set(key, []);
+        pairStats.get(key).push({ r, g, gt: currentGameType_(r, g) });
+      }
+
+      const gt = currentGameType_(r, g);
+      if (ids.length === 2) {
+        const [a, b] = ids.map(byId);
+        if (!a || !b) return;
+
+        if (gt === 'mixed') {
+          const genders = [a.gender, b.gender].sort().join('');
+          if (genders !== 'FM') {
+            v.push({ type: 'error', txt: `Round ${r + 1}, G${scheduleGameNumber_(r, g)} must be one woman and one man.` });
+          }
+        }
+
+        if (gt === 'womens' && (a.gender !== 'F' || b.gender !== 'F')) {
+          v.push({ type: 'error', txt: `Round ${r + 1}, G${scheduleGameNumber_(r, g)} must be two women.` });
+        }
+
+        if (gt === 'mens' && (a.gender !== 'M' || b.gender !== 'M')) {
+          v.push({ type: 'error', txt: `Round ${r + 1}, G${scheduleGameNumber_(r, g)} must be two men.` });
+        }
+      }
+    });
+  });
+
+  pairStats.forEach((arr, key) => {
+  const [idA, idB] = key.split('|');
+  const a = byId(idA);
+  const b = byId(idB);
+  if (!a || !b) return;
+
+  const nonMixed = arr.filter(x => x.gt !== 'mixed').length;
+  const maxAllowed = maxPairingsAllowed_(idA, idB);
+
+  if (nonMixed > maxAllowed) {
+    v.push({
+      type: 'warn',
+      txt: `${a.name} + ${b.name} are partnered ${nonMixed} gendered times (max ${maxAllowed}).`
+    });
+  }
+});
+
+  if (!v.length) v.push({ type: 'ok', txt: 'No issues detected.' });
+
+  function roundsOfFromGames(pid) {
+    const s = new Set();
+    (byId(pid)?._games || []).forEach(x => s.add(x.r));
+    return s;
+  }
+
+  function gameCntFromGames(pid) {
+    return (byId(pid)?._games || []).length;
+  }
+
+  function mixedGameCntFromGames(pid) {
+    return (byId(pid)?._games || []).filter(x => {
+      const gt = currentGameType_(x.r, x.g);
+      return gt === 'mixed' || gt === 'coed';
+    }).length;
+  }
+
+  function genderGameCntFromGames(pid) {
+    return gameCntFromGames(pid) - mixedGameCntFromGames(pid);
+  }
+
+  function renderSummarySection(title, list) {
+    const activeCount = list.length;
+    const sectionKey = title.toLowerCase();
+    const bodyId = `roster-section-body-${sectionKey}`;
+
+    const rows = list.map(p => {
+      const total = gameCntFromGames(p.id);
+      const mixed = mixedGameCntFromGames(p.id);
+      const genderOnly = genderGameCntFromGames(p.id);
+      const assignedRounds = roundsOfFromGames(p.id);
+
+      const roundDots = Array.from({ length: 8 }, (_, i) => {
+        const assigned = assignedRounds.has(i);
+        return `<span class="round-dot ${assigned ? 'on' : 'off'}" title="Round ${i + 1}: ${assigned ? 'assigned' : 'not assigned'}"></span>`;
+      }).join('');
+
+      return `<tr>
+        <td title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
+        <td>${total}</td>
+        <td>${genderOnly}</td>
+        <td>${mixed}</td>
+        <td><div class="round-dot-row">${roundDots}</div></td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="roster-section" id="roster-section-${sectionKey}">
+        <button class="roster-section-header" type="button" onclick="toggleRosterSection('${sectionKey}')">
+          <span class="roster-section-left">
+            <span class="roster-caret" id="roster-caret-${sectionKey}">▸</span>
+            <span class="roster-section-title">${title}</span>
+            <span class="roster-section-active">${activeCount} active for this match</span>
+          </span>
+        </button>
+
+        <div class="roster-section-body collapsed" id="${bodyId}">
+          <div class="roster-legend">(T)otal &nbsp; (G)ender &nbsp; (M)ixed</div>
+          <table class="dtable summary-table">
+            <thead><tr><th>Player</th><th>T</th><th>G</th><th>M</th><th>Rounds</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  const women = players.filter(p => p.gender === 'F' && p.active === true);
+  const men = players.filter(p => p.gender === 'M' && p.active === true);
+
+  const pairRows = [...pairStats.entries()].map(([key, arr]) => {
+    const [a, b] = key.split('|').map(byId);
+    if (!a || !b) return '';
+const maxAllowed = maxPairingsAllowed_(a.id, b.id);
+const pairCount = Math.min(maxAllowed, arr.length);
+    return `<tr>
+      <td title="${escapeHtml(a.name)}">${escapeHtml(a.name)}</td>
+      <td title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</td>
+<td>${pairCount}/${maxAllowed}</td>    </tr>`;
+  }).join('');
+
+  const pairingsSection = `
+    <div class="roster-section" id="roster-section-pairings">
+      <button class="roster-section-header" type="button" onclick="toggleRosterSection('pairings')">
+        <span class="roster-section-left">
+          <span class="roster-caret" id="roster-caret-pairings">▸</span>
+          <span class="roster-section-title">Pairings</span>
+        </span>
+      </button>
+
+      <div class="roster-section-body collapsed" id="roster-section-body-pairings">
+        <table class="dtable pairings-table">
+          <thead><tr><th>Player 1</th><th>Player 2</th><th>Pairings</th></tr></thead>
+          <tbody>${pairRows || `<tr><td colspan="3" class="empty">No pairings yet.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const vlist = document.getElementById('vlist');
+  if (vlist) {
+    vlist.innerHTML = v.map(x =>
+      `<div class="ci ${x.type}">
+        <span class="cdot ${x.type}"></span>
+        <div>${escapeHtml(x.txt)}</div>
+      </div>`
+    ).join('');
+  }
+
+  const stable = document.getElementById('stable');
+  if (stable) {
+    stable.innerHTML = `
+      ${renderSummarySection('Women', women)}
+      ${renderSummarySection('Men', men)}
+      ${pairingsSection}
+    `;
+  }
+
+  const allGames = schedule.flat().filter(g => g && Array.isArray(g.team1));
+  const filledGames = allGames.filter(g => g.team1.every(Boolean)).length;
+  const completedRounds = schedule.filter(
+    round => Array.isArray(round) &&
+      round.length > 0 &&
+      round.every(g => g && Array.isArray(g.team1) && g.team1.every(Boolean))
+  ).length;
+
+  const hdrR = document.getElementById('hdr-r');
+  const hdrG = document.getElementById('hdr-g');
+
+  if (hdrR) {
+    hdrR.textContent = `${completedRounds}/${roundsCount_()}`;
+  }
+
+  if (hdrG) {
+    hdrG.textContent = `${filledGames}/${allGames.length}`;
+  }
+}
+
+function toggleRosterSection(sectionKey) {
+  const body = document.getElementById(`roster-section-body-${sectionKey}`);
+  const caret = document.getElementById(`roster-caret-${sectionKey}`);
+  if (!body || !caret) return;
+
+  const isClosed = body.classList.toggle('collapsed');
+  caret.textContent = isClosed ? '▸' : '▾';
+}
+
+/* =========================
+   Player activation / availability
+========================= */
+
+function togglePlayer(pid) {
+  const p = byId(pid);
+  if (!p || p.available === false) return;
+
+  const previous = !!p.active;
+  p.active = !p.active;
+  render();
+
+  google.script.run
+    .withSuccessHandler(() => {
+      showToast(`${p.name} ${p.active ? 'selected' : 'unselected'}`, 'success');
+    })
+    .withFailureHandler((err) => {
+      p.active = previous;
+      render();
+      showToast('Could not update player selection: ' + (err && err.message ? err.message : err), 'error');
+    })
+    .saveMatchPlayerActiveState(currentMatchId, pid, p.active);
+}
+
+function activateAll(gender) {
+  const targetPlayers = players.filter(p => p.gender === gender && p.available === true);
+  if (!targetPlayers.length) return;
+
+  const previous = targetPlayers.map(p => ({ id: p.id, active: p.active }));
+
+  targetPlayers.forEach(p => { p.active = true; });
+  render();
+
+  const states = targetPlayers.map(p => ({
+    player_id: p.id,
+    is_active: true
+  }));
+
+  google.script.run
+    .withSuccessHandler(() => {
+      showToast(`Selected all ${gender === 'F' ? 'women' : 'men'}`, 'success');
+    })
+    .withFailureHandler((err) => {
+      previous.forEach(x => {
+        const p = byId(x.id);
+        if (p) p.active = x.active;
+      });
+      render();
+      showToast('Could not update selections: ' + (err && err.message ? err.message : err), 'error');
+    })
+    .saveMatchPlayerActiveStates(currentMatchId, states);
+}
+
+function deactivateAll(gender) {
+  const targetPlayers = players.filter(p => p.gender === gender);
+  if (!targetPlayers.length) return;
+
+  const previous = targetPlayers.map(p => ({ id: p.id, active: p.active }));
+
+  targetPlayers.forEach(p => { p.active = false; });
+  render();
+
+  const states = targetPlayers.map(p => ({
+    player_id: p.id,
+    is_active: false
+  }));
+
+  google.script.run
+    .withSuccessHandler(() => {
+      showToast(`Unselected all ${gender === 'F' ? 'women' : 'men'}`, 'success');
+    })
+    .withFailureHandler((err) => {
+      previous.forEach(x => {
+        const p = byId(x.id);
+        if (p) p.active = x.active;
+      });
+      render();
+      showToast('Could not update selections: ' + (err && err.message ? err.message : err), 'error');
+    })
+    .saveMatchPlayerActiveStates(currentMatchId, states);
+}
+
+function toggleAllGender(gender) {
+  const eligible = players.filter(p => p.gender === gender && p.available === true);
+  if (!eligible.length) return;
+
+  const allActive = eligible.every(p => p.active === true);
+
+  if (allActive) {
+    deactivateAll(gender);
+  } else {
+    activateAll(gender);
+  }
+}
+
+function startDrag(event, id) {
+  event.dataTransfer.setData('text/plain', id);
+  event.currentTarget.classList.add('dragging');
+}
+
+function endDrag(event) {
+  event.currentTarget.classList.remove('dragging');
+}
+
+function allowDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add('drag-over');
+}
+
+function clearDrop(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+
+function dropAvailability(event, groupTitle, availableValue) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+
+  const id = event.dataTransfer.getData('text/plain');
+  if (!id) return;
+
+  const p = byId(id);
+  if (!p) return;
+
+  const targetGender = groupTitle === 'Women' ? 'F' : 'M';
+  if (p.gender !== targetGender) return;
+
+  const previousAvailable = p.available;
+  const previousActive = p.active;
+
+  p.available = availableValue;
+  if (!availableValue) p.active = false;
+  render();
+
+  google.script.run
+    .withSuccessHandler(() => {
+      showToast(`${p.name} moved to ${availableValue ? 'available' : 'unavailable'}`, 'success');
+      if (!availableValue && previousActive !== p.active) {
+        google.script.run.saveMatchPlayerActiveState(currentMatchId, p.id, false);
+      }
+    })
+    .withFailureHandler((err) => {
+      p.available = previousAvailable;
+      p.active = previousActive;
+      render();
+      showToast('Could not update availability: ' + (err && err.message ? err.message : err), 'error');
+    })
+    .savePlayerAvailabilityForMatch(currentMatchId, p.id, availableValue);
+}
+
+/* =========================
+   Lineup editing
+========================= */
+
+function removePl(r, g, tk, s) {
+  schedule[r][g][tk][s] = null;
+  render();
+  queueAutosave();
+}
+
+function openPicker(r, g, tk, s) {
+  pickerTarget = { r, g, tk, s };
+  const req = reqGender(r, g, tk, s);
+
+  const pickerTitle = document.getElementById('picker-title');
+  if (pickerTitle) {
+    pickerTitle.textContent = `Round ${r + 1} · Game ${scheduleGameNumber_(r, g)} · Slot ${s + 1}`;
+  }
+
+  const banner = document.getElementById('picker-banner');
+  if (banner) {
+    banner.style.display = '';
+
+    if (req === 'F') {
+      banner.className = 'picker-banner F';
+      banner.textContent = 'Select a woman';
+    } else if (req === 'M') {
+      banner.className = 'picker-banner M';
+      banner.textContent = 'Select a man';
+    } else {
+      banner.className = 'picker-banner any';
+      banner.textContent = 'Select a player';
+    }
+  }
+
+  const search = document.getElementById('picker-search');
+  if (search) search.value = '';
+
+  document.getElementById('picker-overlay')?.classList.add('open');
+  renderPicker();
+  setTimeout(() => document.getElementById('picker-search')?.focus(), 60);
+}
+
+function closePicker() {
+  document.getElementById('picker-overlay')?.classList.remove('open');
+  pickerTarget = null;
+}
+
+function renderPicker() {
+  if (!pickerTarget) return;
+
+  const { r, g, tk, s } = pickerTarget;
+  const q = String(document.getElementById('picker-search')?.value || '').toLowerCase();
+  const inGame = schedule[r][g].team1.filter(Boolean);
+
+  const list = filteredPlayers()
+    .filter(p => p.active)
+    .filter(p => p.available === true)
+    .filter(p => p.name.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aok = !inGame.includes(a.id) && !checkViolations(a.id, r, g, tk, s).length;
+      const bok = !inGame.includes(b.id) && !checkViolations(b.id, r, g, tk, s).length;
+      if (bok - aok !== 0) return bok - aok;
+      return a.name.localeCompare(b.name);
+    });
+
+  const el = document.getElementById('picker-list');
+  if (!el) return;
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">No selectable players found.</div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(p => {
+    const ig = inGame.includes(p.id);
+    const vv = ig ? ['Already in this game'] : checkViolations(p.id, r, g, tk, s);
+    const dis = vv.length > 0;
+    const cnt = gameCnt(p.id);
+
+    return `<div class="pp ${dis ? 'dis' : ''}" onclick="${dis ? '' : `assignPl('${p.id}')`}">
+      <div style="flex:1;min-width:0">
+        <div class="pp-name">${escapeHtml(p.name)}</div>
+        <div class="pp-stats">${cnt}/${MAX_GAMES} games · available</div>
+        ${vv.length ? `<div class="pp-warn">⚠ ${escapeHtml(vv[0])}</div>` : ''}
+      </div>
+      <div class="pp-right">${dis ? '🚫' : '➕'}</div>
+    </div>`;
+  }).join('');
+}
+
+function assignPl(pid) {
+  if (!pickerTarget) return;
+  const { r, g, tk, s } = pickerTarget;
+
+  schedule[r][g][tk][s] = pid;
+  closePicker();
+  render();
+  queueAutosave();
+  showToast(`${byId(pid)?.name} added to Round ${r + 1}, G${scheduleGameNumber_(r, g)}`, 'success');
+}
+
+/* =========================
+   Tabs / export / clear / drawer
+========================= */
+
+function switchTab(name, el) {
+  const panel = document.getElementById('tab-' + name);
+  if (panel) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    panel.classList.add('active');
+    if (el) el.classList.add('active');
+  }
+}
+
+function exportCSV() {
+  let csv = 'Round,Game,Type,My Team P1,My Team P2\n';
+  for (let r = 0; r < schedule.length; r++) {
+    for (let g = 0; g < schedule[r].length; g++) {
+      const gd = schedule[r][g];
+      csv += [
+        r + 1,
+        scheduleGameNumber_(r, g),
+        currentGameType_(r, g),
+        gd.team1[0] ? byId(gd.team1[0])?.name : '',
+        gd.team1[1] ? byId(gd.team1[1])?.name : ''
+      ].map(v => `"${String(v).replaceAll('"', '""')}"`).join(',') + '\n';
+    }
+  }
+  dl('lineup_submission.csv', csv, 'text/csv');
+}
+
+function dl(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+}
+
+function clearAll() {
+  if (!confirm('Clear all lineup assignments?')) return;
+
+  for (let r = 0; r < schedule.length; r++) {
+    for (let g = 0; g < schedule[r].length; g++) {
+      schedule[r][g].team1 = [null, null];
+      schedule[r][g].team2 = [null, null];
+    }
+  }
+
+  render();
+  queueAutosave();
+  showToast('All lineup assignments cleared', 'success');
+}
+
+function openRosterDrawer() {
+  document.getElementById('roster-drawer')?.classList.add('open');
+}
+
+function closeRosterDrawer() {
+  document.getElementById('roster-drawer')?.classList.remove('open');
+}
+
+function extractMatchNumber_(matchId) {
+  const s = String(matchId || '').trim();
+
+  const explicit = s.match(/(?:_M|MATCH_?)(\d+)/i);
+  if (explicit) return Number(explicit[1]);
+
+  const tail = s.match(/(\d+)$/);
+  if (tail) return Number(tail[1]);
+
+  return '';
+}
+
+function getRelevantPortalGames_() {
+  return (portalData?.games || []).filter(isPortalGame_);
+}
+
+function getLineupAuditInfo_() {
+  const relevant = getRelevantPortalGames_();
+  const isHome = portalData?.mySide === 'home';
+
+  const stamps = relevant
+    .map(g => ({
+      updated_at: isHome ? (g.home_updated_at || g.updated_at || '') : (g.away_updated_at || g.updated_at || ''),
+      updated_by:
+        isHome
+          ? (
+              g.home_updated_by_name ||
+              g.home_updated_by ||
+              g.home_updated_by_email ||
+              g.updated_by_name ||
+              g.updated_by ||
+              g.updated_by_user_id ||
+              ''
+            )
+          : (
+              g.away_updated_by_name ||
+              g.away_updated_by ||
+              g.away_updated_by_email ||
+              g.updated_by_name ||
+              g.updated_by ||
+              g.updated_by_user_id ||
+              ''
+            ),
+      submitted_at: isHome ? (g.home_submitted_at || '') : (g.away_submitted_at || ''),
+      submitted_by:
+        isHome
+          ? (
+              g.home_submitted_by_name ||
+              g.home_submitted_by ||
+              g.home_submitted_by_email ||
+              ''
+            )
+          : (
+              g.away_submitted_by_name ||
+              g.away_submitted_by ||
+              g.away_submitted_by_email ||
+              ''
+            )
+    }))
+    .filter(x => x.updated_at || x.submitted_at);
+
+  if (!stamps.length) {
+    return { lastEdited: null, submitted: null };
+  }
+
+  const sortedByEdit = [...stamps]
+    .filter(x => x.updated_at)
+    .sort((a, b) => parseAppDateTime_(b.updated_at) - parseAppDateTime_(a.updated_at));
+
+  const sortedBySubmit = stamps
+    .filter(x => x.submitted_at)
+    .sort((a, b) => parseAppDateTime_(b.submitted_at) - parseAppDateTime_(a.submitted_at));
+
+  return {
+    lastEdited: sortedByEdit[0] || null,
+    submitted: sortedBySubmit[0] || null
+  };
+}
+
+function getMySubmissionDisplay_() {
+  const relevant = getRelevantPortalGames_();
+  const isHome = portalData?.mySide === 'home';
+
+  const submittedFlag = relevant.length > 0 && relevant.every(g => {
+    return isHome
+      ? String(g.lineup_submitted_home).toLowerCase() === 'true'
+      : String(g.lineup_submitted_away).toLowerCase() === 'true';
+  });
+
+  const deadline = getMySubmissionDeadline_();
+  const audit = getLineupAuditInfo_();
+
+  if (submittedFlag) {
+    const submittedAt = audit.submitted?.submitted_at || audit.lastEdited?.updated_at || '';
+    const submittedBy = audit.submitted?.submitted_by || audit.lastEdited?.updated_by || 'Unknown';
+
+    return {
+      label: 'Submitted',
+      subline: submittedAt ? `Submitted on ${formatDisplayDateTime_(submittedAt)} by ${submittedBy}` : `Submitted by ${submittedBy}`,
+      editline: ''
+    };
+  }
+
+  const editStamp = audit.lastEdited?.updated_at || '';
+  const editBy = audit.lastEdited?.updated_by || 'Unknown';
+
+  return {
+    label: 'Draft',
+    subline: deadline ? `Due by ${formatDisplayDateTime_(deadline)}` : 'Due by TBD',
+    editline: editStamp ? `Last edited ${formatDisplayDateTime_(editStamp)} by ${editBy}` : ''
+  };
+}
+
+function currentDivisionNumber_() {
+  const raw =
+    portalData?.currentMatch?.division_number ??
+    portalData?.currentMatch?.division_id ??
+    portalData?.divisionName ??
+    '';
+
+  const m = String(raw).match(/(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+
+function maxPairingsAllowed_(playerAId, playerBId) {
+  const a = byId(playerAId);
+  const b = byId(playerBId);
+  if (!a || !b) return 2;
+
+  const isWomenPair = a.gender === 'F' && b.gender === 'F';
+  const isDivision1 = currentDivisionNumber_() === 1;
+
+  return (isDivision1 && isWomenPair) ? 4 : 2;
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+window.addEventListener('load', boot);
+</script>

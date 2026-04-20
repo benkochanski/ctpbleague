@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecticut Pickleball League Lineup Submission</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --league-navy:#081f43;
+      --league-blue:#123a7c;
+      --league-green:#0b7e39;
+      --league-gold:#ffd22e;
+
+      --panel:#ffffff;
+      --border:#c7d3e6;
+      --accent:#ffd22e;
+      --accent-hover:#f3c400;
+      --accent2:#123a7c;
+
+      --female:#ef4f8b;
+      --male:#1f7cff;
+      --mixed:#6c4bff;
+
+      --danger:#d92d20;
+      --warn:#d97706;
+      --ok:#15803d;
+
+      --text:#10233f;
+      --text-strong:#0a2347;
+      --text-inv:#f8fbff;
+      --muted:#5d6f8a;
+
+      --shadow:0 14px 34px rgba(8,30,67,.10);
+      --radius-2xl:26px;
+      --left-rail-width:380px;
+      --right-rail-width:220px;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+
+    html,body{height:100%; overflow:hidden;}
+
+    body{
+      background:linear-gradient(180deg,#edf2f8 0%,#e4ebf4 100%);
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:14px;
+      min-height:100vh;
+      height:100vh;
+      overflow:hidden;
+    }
+
+    .top-shell{
+      position:sticky;
+      top:0;
+      z-index:30;
+      box-shadow:0 10px 28px rgba(10,35,71,.14);
+    }
+
+    .league-header{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:18px;
+      align-items:center;
+      padding:22px 26px;
+      border-bottom:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg,var(--league-navy) 0%,var(--league-blue) 58%,var(--league-green) 100%);
+      color:var(--text-inv);
+    }
+
+    .league-brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      min-width:0;
+    }
+
+    .league-logo-wrap{
+      width:108px;
+      height:108px;
+      border-radius:24px;
+      background:rgba(255,255,255,.98);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 16px 34px rgba(0,0,0,.26), 0 0 0 1px rgba(255,255,255,.22);
+      flex-shrink:0;
+      overflow:hidden;
+      transform:translateY(1px);
+    }
+
+    .league-logo-img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transform:scale(1.03);
+    }
+
+    .league-logo-fallback{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:32px;
+      color:var(--league-navy);
+    }
+
+    .league-text{min-width:0}
+
+    .league-header h1{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:42px;
+      letter-spacing:1.8px;
+      color:#fff;
+      line-height:1;
+    }
+
+    .league-header p{
+      color:#d8e5fb;
+      font-size:12px;
+      margin-top:6px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .header-right{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:flex-end;
+    }
+
+    .league-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .selector{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .selector select,
+    .picker-search input{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:8px 9px;
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:11px;
+      outline:none;
+      transition:border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .selector select:focus,
+    .picker-search input:focus{
+      border-color:var(--accent2);
+      box-shadow:0 0 0 3px rgba(31,124,255,.10);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:var(--left-rail-width) minmax(0,1fr) var(--right-rail-width);
+      height:calc(100vh - 138px);
+      min-height:calc(100vh - 138px);
+      overflow:hidden;
+      padding:18px;
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .main-shell{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:0;
+      min-width:0;
+      overflow:hidden;
+    }
+
+    .left-rail,
+    .right-rail{
+      min-height:0;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .left-rail{overflow:hidden}
+    .panel,.main{min-height:0}
+
+    .panel{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius-2xl);
+      box-shadow:var(--shadow);
+    }
+
+    .pb,.main,.tab-panel{overflow-y:auto}
+
+    .pb{
+      padding:10px;
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+
+    .ph{
+      padding:14px 16px;
+      border-bottom:1px solid #e5edf7;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      flex-shrink:0;
+      gap:10px;
+    }
+
+    .ph h2{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:18px;
+      letter-spacing:1.4px;
+      color:#0a2958;
+    }
+
+    .left-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      width:100%;
+    }
+
+    .middle-brand{
+  display:grid;
+  grid-template-columns:170px minmax(0,1.2fr) 155px;
+  align-items:center;
+  gap:16px;
+  padding:10px 18px 12px 18px;
+  border:2px solid #c7d5e8;
+  border-bottom:1px solid #d4dfed;
+  border-radius:34px 34px 0 0;
+  background:linear-gradient(180deg,#f7fbff 0%,#f2f6fc 100%);
+  box-shadow:none;
+  flex-shrink:0;
+}
+
+    .middle-brand-logo{
+  width:145px;
+  height:118px;
+  border-radius:24px;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  flex-shrink:0;
+  box-shadow:0 10px 20px rgba(0,0,0,.08);
+}
+
+.middle-brand-logo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  border-radius:24px;
+}
+
+.middle-brand-fallback{
+  width:145px;
+  height:118px;
+  border-radius:24px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:44px;
+  font-style:italic;
+  color:#ff9800;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#000;
+}
+
+    .middle-brand-info{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .middle-brand-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;
+  letter-spacing:.015em;
+  color:#12346b;
+  line-height:.96;
+  text-transform:uppercase;
+}
+
+.middle-brand-meta{
+  margin-top:8px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.65rem;
+  letter-spacing:.015em;
+  color:#697fa4;
+  line-height:.98;
+  text-transform:uppercase;
+}
+
+.middle-brand-status{
+  margin-top:14px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.18rem;
+  letter-spacing:.10em;
+  color:#7a8fb1;
+  line-height:1;
+  text-transform:uppercase;
+}
+
+    .middle-brand-substatus,
+    .middle-brand-editstatus{
+      display:none;
+    }
+
+    .middle-brand-side{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:8px;
+  min-width:0;
+}
+
+.away-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#edf4ff;
+  border:2px solid #c7d9f4;
+  color:#345b98;
+  font-family:'DM Sans',sans-serif;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+.hero-last-edited-top{
+  color:#7a8fb1;
+  font-size:12px;
+  font-weight:700;
+  text-align:right;
+  line-height:1.15;
+  max-width:155px;
+}
+
+    .middle-status-bar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:16px;
+  padding:14px 20px;
+  border:2px solid #ecd793;
+  border-top:none;
+  border-radius:0 0 34px 34px;
+  background:#f4ebc6;
+  box-shadow:none;
+  margin-top:0;
+  flex-shrink:0;
+}
+
+    .middle-status-left{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+      min-width:0;
+    }
+
+    .status-pill-hero{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 18px;
+      border-radius:999px;
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:.02em;
+      border:2px solid #debe61;
+      background:#f8f2dc;
+      color:#bc5a00;
+      white-space:nowrap;
+    }
+
+    .due-line-hero{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+      color:#8d6602;
+      font-size:18px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .countdown-pill-hero{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:44px;
+      padding:0 16px;
+      border-radius:999px;
+      font-size:14px;
+      font-weight:800;
+      border:2px solid #debe61;
+      background:#f8f2dc;
+      color:#8d6602;
+      font-family:'DM Mono',monospace;
+      white-space:nowrap;
+    }
+
+    .main{
+      background:transparent;
+      flex:1 1 auto;
+      min-height:0;
+      height:0;
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+
+    .manager-section{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .manager-subheader{
+      font-size:11px;
+      font-weight:800;
+      color:#5d6f8a;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    .manager-selects{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+
+    .manager-actions{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .manager-actions .btn{
+      width:100%;
+      min-height:34px;
+      padding:0 10px;
+      font-size:11px;
+    }
+
+    .manager-divider{
+      height:1px;
+      background:#e3ecf7;
+      width:100%;
+    }
+
+    .manager-stats{
+      margin-top:2px;
+      margin-bottom:0;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      padding:10px 12px;
+      border-radius:16px;
+      border:none;
+      cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+      transition:transform .12s, box-shadow .12s, background .12s, border-color .12s, color .12s, opacity .12s;
+    }
+
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{
+      opacity:.38;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .btn-g{
+      background:#fff;
+      color:#294769;
+      border:1px solid var(--border);
+    }
+
+    .btn-g:hover{
+      border-color:#a9bfdd;
+      box-shadow:0 6px 16px rgba(8,30,67,.08);
+    }
+
+    .btn-d{
+      background:#fff;
+      color:var(--danger);
+      border:1px solid #f3c6c2;
+    }
+
+    .btn-d:hover{
+      background:#fff5f5;
+      box-shadow:0 6px 16px rgba(217,45,32,.10);
+    }
+
+    .btn-primary{
+      background:var(--league-gold);
+      color:var(--league-navy);
+      border:1px solid #f2c100;
+      box-shadow:0 8px 18px rgba(255,210,46,.22);
+    }
+
+    .btn-primary:hover{background:var(--accent-hover)}
+
+    .round-sec{padding:0 0 6px 0}
+.round-sec + .round-sec{margin-top:6px}
+
+    .round-hdr{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+      padding:0 2px;
+    }
+
+    .round-num{
+      background:linear-gradient(135deg,var(--accent) 0%,#ffe87e 100%);
+      color:#10233f;
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-family:'Bebas Neue',sans-serif;
+      font-size:17px;
+      flex-shrink:0;
+      box-shadow:0 4px 10px rgba(255,210,46,.24);
+    }
+
+    .round-title{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:22px;
+      letter-spacing:2px;
+      color:#0b2348;
+    }
+
+    .round-sub{
+      font-size:10px;
+      color:var(--muted);
+      margin-left:2px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .ggrid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .gcard{
+      background:#fff;
+      border:1px solid #dce5f1;
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      min-width:0;
+    }
+
+    .gcard.conflict{border-color:var(--danger)}
+
+    .ghdr{
+      padding:6px 8px;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      border-bottom:1px solid #e7eef8;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+    }
+
+    .gnum{
+      font-family:'DM Mono',monospace;
+      font-size:9px;
+      color:#516988;
+    }
+
+    .gtype{
+      font-size:8px;
+      font-weight:800;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+      padding:2px 6px;
+      border-radius:999px;
+    }
+
+    .gtype.womens{background:#ef4f8b18;color:var(--female);border:1px solid #ef4f8b44}
+    .gtype.mens{background:#1f7cff18;color:var(--male);border:1px solid #1f7cff44}
+    .gtype.mixed{background:#6c4bff18;color:var(--mixed);border:1px solid #6c4bff44}
+    .gtype.coed{background:#0b7e3918;color:var(--league-green);border:1px solid #0b7e3944}
+
+    .tslot{
+      padding:8px;
+      min-height:96px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .pslot{
+      background:#f8fbff;
+      border:1px dashed #c7d3e6;
+      border-radius:12px;
+      padding:8px 8px;
+      font-size:12px;
+      color:#67809f;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      cursor:pointer;
+      min-height:36px;
+      gap:6px;
+      transition:border-color .12s, background .12s, box-shadow .12s;
+      min-width:0;
+    }
+
+    .pslot:hover{
+      border-color:#9fb7d8;
+      background:#f3f8ff;
+    }
+
+    .pslot.filled{
+      border-style:solid;
+      border-color:#d9e4f2;
+      color:var(--text);
+      background:#fff;
+      cursor:default;
+      box-shadow:0 3px 8px rgba(17,59,132,.05);
+    }
+
+    .pslot .sname{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      flex:1;
+      color:#12315f;
+      font-size:13px;
+      font-weight:800;
+      min-width:0;
+    }
+
+    .rbtn{
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:transparent;
+      border:none;
+      color:var(--muted);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      flex-shrink:0;
+    }
+
+    .rbtn:hover{
+      background:var(--danger);
+      color:#fff;
+    }
+
+    .checks-stats{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px;
+      margin-bottom:8px;
+    }
+
+    .checks-stat-card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:8px 9px;
+      border:1px solid #dce5f1;
+      border-radius:12px;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      color:#16345e;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+    }
+
+    .checks-stat-card span{
+      color:var(--league-blue);
+      font-family:'DM Mono',monospace;
+      font-size:11px;
+    }
+
+    .ci{
+      display:flex;
+      align-items:flex-start;
+      gap:6px;
+      padding:8px 8px;
+      border-radius:12px;
+      margin-bottom:5px;
+      font-size:10px;
+      background:#f8fbff;
+      border:1px solid #dde7f4;
+      line-height:1.35;
+      color:#16345e;
+    }
+
+    .ci.error{border-color:#f5c5c5;background:#fff5f5}
+    .ci.warn{border-color:#f5ddb4;background:#fff9f0}
+    .ci.ok{border-color:#bfe1c9;background:#f2fbf4}
+
+    .cdot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      flex-shrink:0;
+      margin-top:4px;
+    }
+
+    .cdot.error{background:var(--danger)}
+    .cdot.warn{background:var(--warn)}
+    .cdot.ok{background:var(--ok)}
+
+    .dtable{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      table-layout:fixed;
+    }
+
+    .dtable th{
+      text-align:left;
+      padding:5px 4px;
+      color:#7387a2;
+      font-weight:800;
+      border-bottom:1px solid #e3ecf7;
+      white-space:nowrap;
+    }
+
+    .dtable td{
+      padding:5px 4px;
+      border-bottom:1px solid #edf2f9;
+      color:#17355f;
+      vertical-align:middle;
+    }
+
+    .pairings-table{
+      table-layout:fixed;
+    }
+
+    .pairings-table th:first-child,
+    .pairings-table td:first-child,
+    .pairings-table th:nth-child(2),
+    .pairings-table td:nth-child(2){
+      width:128px;
+      max-width:128px;
+    }
+
+    .pairings-table th,
+    .pairings-table td{
+      padding:4px 4px;
+      font-size:11px;
+    }
+
+    .pairings-table td:first-child,
+    .pairings-table td:nth-child(2){
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .summary-table th:nth-child(1),
+    .summary-table td:nth-child(1){
+      width:40%;
+      max-width:40%;
+    }
+
+    .summary-table th:nth-child(2),
+    .summary-table td:nth-child(2),
+    .summary-table th:nth-child(3),
+    .summary-table td:nth-child(3),
+    .summary-table th:nth-child(4),
+    .summary-table td:nth-child(4){
+      width:8%;
+      max-width:8%;
+      text-align:center;
+    }
+
+    .summary-table th:nth-child(5),
+    .summary-table td:nth-child(5){
+      width:28%;
+      max-width:28%;
+    }
+
+    .summary-table td:first-child{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .roster-pb{
+      padding:6px 8px 6px 10px;
+    }
+
+    .roster-pb .dtable th,
+    .roster-pb .dtable td{
+      padding:5px 4px;
+    }
+
+    .roster-pb .summary-table th:nth-child(1),
+    .roster-pb .summary-table td:nth-child(1){
+      width:42%;
+      max-width:42%;
+    }
+
+    .roster-pb .summary-table th:nth-child(2),
+    .roster-pb .summary-table td:nth-child(2),
+    .roster-pb .summary-table th:nth-child(3),
+    .roster-pb .summary-table td:nth-child(3),
+    .roster-pb .summary-table th:nth-child(4),
+    .roster-pb .summary-table td:nth-child(4){
+      width:7%;
+      max-width:7%;
+      text-align:center;
+    }
+
+    .roster-pb .summary-table th:nth-child(5),
+    .roster-pb .summary-table td:nth-child(5){
+      width:23%;
+      max-width:23%;
+      padding-right:0;
+    }
+
+    .roster-section{
+      border-bottom:1px solid #e3ecf7;
+    }
+
+    .roster-section-header{
+      width:100%;
+      background:transparent;
+      border:none;
+      padding:8px 0 6px 0;
+      cursor:pointer;
+      text-align:left;
+    }
+
+    .roster-section-left{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .roster-caret{
+      font-size:12px;
+      color:#5d6f8a;
+      width:10px;
+      flex:0 0 auto;
+    }
+
+    .roster-section-title{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:16px;
+      letter-spacing:1px;
+      color:#0a2958;
+      line-height:1;
+    }
+
+    .roster-section-active{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1;
+    }
+
+    .roster-section-body{
+      overflow:hidden;
+    }
+
+    .roster-section-body.collapsed{
+      display:none;
+    }
+
+    .roster-legend{
+      padding:2px 0 6px 18px;
+      color:#5d6f8a;
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .round-dot-row{
+      display:flex;
+      align-items:center;
+      gap:2px;
+      flex-wrap:nowrap;
+      white-space:nowrap;
+      min-height:10px;
+      justify-content:flex-start;
+    }
+
+    .round-dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      display:inline-block;
+      flex:0 0 auto;
+      background:#fff;
+    }
+
+    .round-dot.on{
+      background:#1db954;
+      border:1px solid #169245;
+    }
+
+    .round-dot.off{
+      background:#ffffff;
+      border:1px solid #d7a3a3;
+    }
+
+    .drawer-shell{
+      position:fixed;
+      inset:0;
+      z-index:60;
+      display:none;
+    }
+
+    .drawer-shell.open{display:block}
+
+    .drawer-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(8,22,48,.40);
+      backdrop-filter:blur(2px);
+    }
+
+    .drawer-panel{
+      position:absolute;
+      right:18px;
+      top:156px;
+      height:calc(100vh - 174px);
+      width:min(980px, calc(100vw - 36px));
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:26px;
+      box-shadow:-22px 0 48px rgba(8,30,67,.18);
+      display:flex;
+      flex-direction:column;
+      transform:translateX(110%);
+      transition:transform .22s ease;
+      overflow:hidden;
+    }
+
+    .drawer-shell.open .drawer-panel{
+      transform:translateX(0);
+    }
+
+    .drawer-top{
+      padding:12px 14px;
+      border-bottom:1px solid #e7eef8;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-shrink:0;
+    }
+
+    .drawer-top h2{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:22px;
+      letter-spacing:1.2px;
+      color:#0a2958;
+    }
+
+    .drawer-body{
+      flex:1;
+      min-height:0;
+      overflow:hidden;
+      padding:14px;
+    }
+
+    .drawer-roster-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:14px;
+      height:100%;
+    }
+
+    .roster-panel{
+      min-height:0;
+      height:100%;
+    }
+
+    .roster-panel .ph{
+      padding:10px 14px;
+    }
+
+    .roster-panel .ph h2{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      width:100%;
+    }
+
+    .act-row{
+      padding:8px 10px;
+      border-top:1px solid #e7eef8;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      flex-shrink:0;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .section-count{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    .chip{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:14px;
+      border:1px solid #dce5f1;
+      margin-bottom:5px;
+      background:#fff;
+      transition:border-color .12s, background .12s, box-shadow .12s;
+      width:100%;
+      min-height:36px;
+    }
+
+    .chip.clickable{cursor:pointer}
+
+    .chip.clickable:hover{
+      border-color:#92b3df;
+      box-shadow:0 6px 16px rgba(17,59,132,.06);
+    }
+
+    .chip.active{
+      border-color:#0b7e39;
+      background:linear-gradient(180deg,#f2fbf4 0%,#e7f8ec 100%);
+      box-shadow:0 4px 12px rgba(11,126,57,.10);
+    }
+
+    .chip.disabled{
+      opacity:.8;
+      background:#f7f9fc;
+    }
+
+    .chip-info{
+      flex:1 1 auto;
+      min-width:0;
+    }
+
+    .chip-name{
+      display:block;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:#0f2c58;
+      font-size:12px;
+      font-weight:700;
+      line-height:1.2;
+    }
+
+    .chip.active .chip-name{
+      color:#0b5e2c;
+    }
+
+    .dropzone{
+      border:1px dashed #cfd9e8;
+      border-radius:16px;
+      padding:8px;
+      min-height:96px;
+      background:#fafcff;
+      width:100%;
+    }
+
+    .dropzone.drag-over{
+      border-color:var(--accent2);
+      background:#eef5ff;
+    }
+
+    .picker-overlay{
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      padding-top:72px;
+    }
+
+    .picker-overlay.open{display:flex}
+
+    .picker-bd{
+      position:absolute;
+      inset:0;
+      background:rgba(8,22,48,.55);
+      backdrop-filter:blur(2px);
+    }
+
+    .picker-modal{
+      position:relative;
+      z-index:1;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:22px;
+      width:350px;
+      max-height:520px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      box-shadow:0 28px 60px rgba(8,30,67,.28);
+    }
+
+    .picker-titlebar{
+      padding:12px 14px;
+      border-bottom:1px solid #e7eef8;
+      display:flex;
+      align-items:center;
+      gap:7px;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+    }
+
+    .picker-title{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:16px;
+      letter-spacing:1px;
+      color:#0b2348;
+      flex:1;
+    }
+
+    .picker-banner{
+      padding:7px 12px;
+      font-size:11px;
+      font-weight:800;
+      text-align:center;
+      border-bottom:1px solid #e7eef8;
+      letter-spacing:.4px;
+    }
+
+    .picker-banner.F{background:#fff3f8;color:var(--female)}
+    .picker-banner.M{background:#eef5ff;color:var(--male)}
+    .picker-banner.any{background:#f3f0ff;color:var(--mixed)}
+
+    .picker-search{
+      padding:8px 10px;
+      border-bottom:1px solid #e7eef8;
+      flex-shrink:0;
+    }
+
+    .picker-list{
+      overflow-y:auto;
+      flex:1;
+      padding:6px;
+    }
+
+    .pp{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      padding:9px 10px;
+      border-radius:14px;
+      cursor:pointer;
+      margin-bottom:3px;
+    }
+
+    .pp:hover:not(.dis){background:#f5f9ff}
+    .pp.dis{opacity:.40;cursor:not-allowed}
+
+    .pp-name{
+      font-weight:800;
+      font-size:13px;
+      color:#12315f;
+    }
+
+    .pp-stats{
+      font-family:'DM Mono',monospace;
+      font-size:10px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .pp-warn{
+      color:var(--warn);
+      font-size:10px;
+      margin-top:3px;
+    }
+
+    .pp-right{
+      margin-left:auto;
+      font-size:15px;
+      flex-shrink:0;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:18px;
+      right:18px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:10px 14px;
+      font-size:12px;
+      max-width:300px;
+      z-index:200;
+      transform:translateY(60px);
+      opacity:0;
+      transition:all .22s;
+      box-shadow:0 18px 40px rgba(8,30,67,.16);
+      color:#17355f;
+    }
+
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.error{border-color:#f5c5c5}
+    .toast.success{border-color:#bfe1c9}
+
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      padding:22px 12px;
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    @media (max-width: 1500px){
+      .app{grid-template-columns:330px minmax(0,1fr) 220px}
+    }
+
+    @media (max-width: 1380px){
+      .middle-brand{
+        grid-template-columns:170px minmax(0,1.1fr) 150px;
+        padding:12px 20px 14px 20px;
+        gap:18px;
+      }
+
+      .middle-brand-logo,
+      .middle-brand-fallback{
+        width:150px;
+        height:122px;
+        border-radius:24px;
+      }
+
+      .middle-brand-title{font-size:2rem}
+      .middle-brand-meta{font-size:1.7rem;margin-top:10px}
+      .middle-brand-status{font-size:1.2rem;margin-top:16px}
+
+      .away-chip{
+        min-height:34px;
+        padding:0 12px;
+        font-size:12px;
+      }
+
+      .hero-last-edited-top{
+        font-size:12px;
+        max-width:150px;
+      }
+
+      .middle-status-bar{padding:16px 22px}
+      .status-pill-hero{min-height:42px;font-size:14px;padding:0 14px}
+      .due-line-hero{font-size:16px;gap:12px}
+      .countdown-pill-hero{min-height:40px;font-size:13px;padding:0 14px}
+    }
+
+    @media (max-width: 1280px){
+      .ggrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media (max-width: 1180px){
+      .app{
+        grid-template-columns:1fr;
+        height:calc(100vh - 138px);
+        min-height:calc(100vh - 138px);
+      }
+      .header-right{align-items:flex-start}
+      .left-rail,.right-rail{order:2}
+      .main-shell{order:1}
+    }
+
+    @media (max-width: 900px){
+      .ggrid{grid-template-columns:1fr}
+      .league-header{grid-template-columns:1fr}
+      .header-right{align-items:flex-start}
+      .drawer-roster-grid{grid-template-columns:1fr}
+
+      .middle-brand{
+        grid-template-columns:1fr;
+        gap:14px;
+        border-radius:28px 28px 0 0;
+      }
+
+      .middle-brand-logo{
+        justify-self:start;
+      }
+
+      .middle-brand-title{font-size:1.6rem}
+      .middle-brand-meta{font-size:1.35rem}
+      .middle-brand-status{font-size:1rem}
+
+      .middle-brand-side{
+        align-items:flex-start;
+      }
+
+      .hero-last-edited-top{
+        text-align:left;
+        max-width:none;
+      }
+
+      .middle-status-bar{
+        padding:14px 18px;
+        border-radius:0 0 28px 28px;
+      }
+
+      .middle-status-left{
+        gap:12px;
+      }
+
+      .status-pill-hero{
+        min-height:40px;
+        padding:0 14px;
+        font-size:13px;
+      }
+
+      .due-line-hero{
+        font-size:15px;
+        gap:10px;
+        white-space:normal;
+      }
+
+      .countdown-pill-hero{
+        min-height:38px;
+        font-size:12px;
+        padding:0 12px;
+      }
+    }
+
+    @media (max-width: 800px){
+      .league-logo-wrap{
+        width:72px;
+        height:72px;
+        border-radius:18px;
+      }
+
+      .league-header h1{
+        font-size:28px;
+        letter-spacing:1px;
+      }
+
+      .league-header p{
+        font-size:10px;
+        margin-top:4px;
+      }
+
+      .app{padding:12px}
+
+      .drawer-panel{
+        right:12px;
+        top:132px;
+        height:calc(100vh - 144px);
+        width:calc(100vw - 24px);
+      }
+    }
+
+
+  </style>
+</head>
+<body>
+<div class="top-shell">
+  <div class="league-header">
+    <div class="league-brand">
+      <div class="league-logo-wrap">
+        <img id="league-logo" class="league-logo-img" alt="League Logo" style="display:none;">
+        <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+      </div>
+      <div class="league-text">
+        <h1>Connecticut Pickleball League</h1>
+        <p>Official Match Lineup Portal</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="league-right"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="left-rail">
+    <div class="panel" style="min-height:0; flex:1;">
+      <div class="ph">
+        <div class="left-header">
+          <h2>Match Roster</h2>
+          <button class="btn btn-primary" onclick="openRosterDrawer()">Manage</button>
+        </div>
+      </div>
+      <div class="pb roster-pb" style="flex:1; overflow:auto;">
+        <div id="stable"><div class="empty">Submission summary here.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-shell">
+    <div class="middle-brand">
+      <div class="middle-brand-logo">
+        <img id="middle-team-logo" alt="Team Logo" style="display:none;">
+        <div id="middle-team-logo-fallback" class="middle-brand-fallback">DILL</div>
+      </div>
+
+      <div class="middle-brand-info">
+        <div class="middle-brand-title" id="middle-brand-title">Saturday, April 11, 2026</div>
+        <div class="middle-brand-meta" id="middle-brand-meta">12:00 PM at Camp Pickleball</div>
+        <div class="middle-brand-status" id="middle-brand-status">Division 1 • Match 1</div>
+      </div>
+
+      <div class="middle-brand-side">
+        <div class="away-chip" id="hero-away-chip">Away Match</div>
+        <div class="hero-last-edited-top" id="hero-last-edited-top">Last edited 04/15 9:08 PM by Ben Kochanski</div>
+      </div>
+    </div>
+
+    <div class="middle-status-bar">
+      <div class="middle-status-left">
+        <div class="status-pill-hero" id="hero-status-pill">Not Submitted</div>
+        <div class="due-line-hero">
+          <span id="hero-due-text">Due by 04/10 12:00 PM</span>
+          <span class="countdown-pill-hero" id="hero-countdown">0d 00h 00m 00s</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" id="main-grid"></div>
+  </div>
+
+  <div class="right-rail">
+    <div class="panel right" style="min-height:0; flex:1;">
+      <div class="ph"><h2>Lineup Manager</h2></div>
+
+      <div class="pb" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="manager-section">
+          <div class="manager-subheader">Select Match</div>
+
+          <div class="manager-selects">
+            <div class="selector selector-compact">
+              <select id="division-select" onchange="onDivisionChange()"></select>
+            </div>
+
+            <div class="selector selector-match">
+              <select id="match-select" onchange="onMatchChange()"></select>
+            </div>
+          </div>
+
+          <div class="manager-divider"></div>
+
+          <div class="manager-actions">
+            <button class="btn btn-g" id="submit-btn" onclick="submitOfficialLineup()" disabled>✅ Submit</button>
+            <button class="btn btn-d" onclick="clearAll()">🗑 Clear</button>
+            <button class="btn btn-g" onclick="exportCSV()">⬇ CSV</button>
+          </div>
+
+          <div class="manager-divider"></div>
+
+          <div class="checks-stats manager-stats">
+            <div class="checks-stat-card">Rounds <span id="hdr-r">0/8</span></div>
+            <div class="checks-stat-card">Games <span id="hdr-g">0/32</span></div>
+          </div>
+
+          <div id="vlist"><div class="empty">No issues yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-shell" id="roster-drawer">
+    <div class="drawer-backdrop" onclick="closeRosterDrawer()"></div>
+    <div class="drawer-panel">
+      <div class="drawer-top">
+        <h2>Select Players Who Will Play In This Match</h2>
+        <button class="btn btn-g" onclick="closeRosterDrawer()">Close</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="drawer-roster-grid">
+          <div class="panel roster-panel">
+            <div class="ph">
+              <h2>
+                <span>Women</span>
+                <span class="section-count" id="women-active-label">0 active</span>
+              </h2>
+            </div>
+            <div class="pb"><div id="player-list-women"></div></div>
+            <div class="act-row">
+              <button class="btn btn-g" onclick="toggleAllGender('F')">Select / Unselect All</button>
+            </div>
+          </div>
+
+          <div class="panel roster-panel">
+            <div class="ph">
+              <h2>
+                <span>Men</span>
+                <span class="section-count" id="men-active-label">0 active</span>
+              </h2>
+            </div>
+            <div class="pb"><div id="player-list-men"></div></div>
+            <div class="act-row">
+              <button class="btn btn-g" onclick="toggleAllGender('M')">Select / Unselect All</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="picker-overlay" id="picker-overlay">
+    <div class="picker-bd" onclick="closePicker()"></div>
+    <div class="picker-modal">
+      <div class="picker-titlebar">
+        <div class="picker-title" id="picker-title">Select Player</div>
+        <button class="btn btn-g" style="padding:4px 8px;font-size:11px" onclick="closePicker()">✕</button>
+      </div>
+      <div id="picker-banner" class="picker-banner" style="display:none"></div>
+      <div class="picker-search">
+        <input type="text" id="picker-search" placeholder="Search players…" oninput="renderPicker()">
+      </div>
+      <div class="picker-list" id="picker-list"></div>
+    </div>
+  </div>
+
+  
+  <div class="toast" id="toast"></div>
+
+  <script>
+window.__INITIAL_DATA__ = <?!= initialData ?>;
+window.__SELECTOR_DATA__ = <?!= selectorData ?>;
+window.__REQUESTED_MATCH_ID__ = <?!= JSON.stringify(requestedMatchId) ?>;
+window.__REQUESTED_TEAM_ID__ = <?!= JSON.stringify(requestedTeamId) ?>;
+window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
+</script>
+
+<?!= include('LineupClientJS') ?>
+</body>
+</html>

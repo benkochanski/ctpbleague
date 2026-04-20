@@ -1,0 +1,69 @@
+function getSpreadsheet_() {
+  return getBackendSpreadsheet_();
+}
+
+function getSheet_(sheetName) {
+  const sh = getSpreadsheet_().getSheetByName(sheetName);
+  if (!sh) throw new Error(`Sheet not found: ${sheetName}`);
+  return sh;
+}
+
+function getData_(sheetName) {
+  const sh = getSheet_(sheetName);
+  const values = sh.getDataRange().getValues();
+  if (!values.length) return { headers: [], rows: [] };
+
+  const headers = values[0].map(String);
+  const rows = values.slice(1).filter(r => r.some(v => String(v).trim() !== ''));
+  return { headers, rows };
+}
+
+function rowsToObjects_(headers, rows) {
+  return rows.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+}
+
+function getObjects_(sheetName) {
+  const { headers, rows } = getData_(sheetName);
+  return rowsToObjects_(headers, rows);
+}
+
+function appendObjects_(sheetName, objects) {
+  if (!objects.length) return;
+  const sh = getSheet_(sheetName);
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+
+  const values = objects.map(obj => headers.map(h => obj[h] ?? ''));
+  sh.getRange(sh.getLastRow() + 1, 1, values.length, headers.length).setValues(values);
+}
+
+function overwriteObjects_(sheetName, objects) {
+  const sh = getSheet_(sheetName);
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 0), headers.length).clearContent();
+  if (!objects.length) return;
+
+  const values = objects.map(obj => headers.map(h => obj[h] ?? ''));
+  sh.getRange(2, 1, values.length, headers.length).setValues(values);
+}
+
+function makeId_(prefix) {
+  return `${prefix}_${Utilities.getUuid().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
+}
+
+function nowStamp_() {
+  return Utilities.formatDate(
+    new Date(),
+    Session.getScriptTimeZone(),
+    'yyyy-MM-dd HH:mm:ss'
+  );
+}
+
+function normalizeBool_(value) {
+  if (value === true || value === false) return value;
+  const s = String(value).trim().toLowerCase();
+  return ['true', 'yes', 'y', '1'].includes(s);
+}

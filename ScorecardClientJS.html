@@ -1,0 +1,226 @@
+<script>
+  alert('Scorecard client loaded');
+  let currentMatchId = '';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadMatches();
+  });
+
+  function loadMatches() {
+    setContent('<div class="loading">Loading matches...</div>');
+
+    google.script.run
+      .withSuccessHandler(matches => {
+        const select = document.getElementById('matchSelect');
+        select.innerHTML = '';
+
+        if (!matches || !matches.length) {
+          setContent('<div class="empty">No matches available for score entry.</div>');
+          return;
+        }
+
+        matches.forEach((m, idx) => {
+          const option = document.createElement('option');
+          option.value = m.match_id;
+          option.textContent =
+            `${m.home_team_name} vs ${m.away_team_name}` +
+            (m.match_date ? ` • ${formatDate(m.match_date)}` : '') +
+            (m.status ? ` • ${m.status}` : '');
+          if (idx === 0) currentMatchId = m.match_id;
+          select.appendChild(option);
+        });
+
+        select.value = currentMatchId;
+        loadSelectedMatch();
+      })
+      .withFailureHandler(showError)
+      .getOpenMatchesForScoreEntry();
+  }
+
+  function loadSelectedMatch() {
+    const matchId = document.getElementById('matchSelect').value;
+    currentMatchId = matchId;
+    loadMatch(matchId);
+  }
+
+  function refreshCurrentMatch() {
+    if (!currentMatchId) return;
+    loadMatch(currentMatchId);
+  }
+
+  function loadMatch(matchId) {
+    setContent('<div class="loading">Loading scorecard...</div>');
+
+    google.script.run
+      .withSuccessHandler(renderScorecard)
+      .withFailureHandler(showError)
+      .getScorecardData(matchId);
+  }
+
+  function renderScorecard(data) {
+    if (!data || !data.match) {
+      setContent('<div class="empty">No scorecard data found.</div>');
+      return;
+    }
+
+    const match = data.match;
+    const rounds = data.rounds || [];
+
+    const divisionNumber = extractDivisionNumber_(match);
+const matchNumber = extractMatchNumber_(match) || extractWeekNumber_(match);
+const longDate = formatLongDateLabel_(match.match_date);
+const timeLabel = formatTimeLabel_(match.start_time);
+const venueLabel = String(match.venue || '').trim();
+
+const summaryHtml = `
+  <div class="match-summary">
+    <div class="match-summary-left">
+      <div class="club-mark">${buildClubMark(match.home_team_name)}</div>
+      <div class="match-title-wrap">
+        <div class="match-title">${escapeHtml(match.home_team_name)} vs ${escapeHtml(match.away_team_name)}</div>
+        <div class="match-subtitle">
+          ${longDate ? escapeHtml(longDate) : ''}
+          ${timeLabel ? ` • ${escapeHtml(timeLabel)}` : ''}
+          ${venueLabel ? ` at ${escapeHtml(venueLabel)}` : ''}
+          ${(divisionNumber || matchNumber) ? ' • ' : ''}
+          ${divisionNumber ? `Division ${escapeHtml(String(divisionNumber))}` : ''}
+          ${divisionNumber && matchNumber ? ' • ' : ''}
+          ${matchNumber ? `Match ${escapeHtml(String(matchNumber))}` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="match-summary-right">
+      <div class="stat-chip">
+        <span class="k">Home Rounds</span>
+        <span class="v">${escapeHtml(String(match.home_rounds_won || 0))}</span>
+      </div>
+      <div class="stat-chip">
+        <span class="k">Away Rounds</span>
+        <span class="v">${escapeHtml(String(match.away_rounds_won || 0))}</span>
+      </div>
+      <div class="stat-chip">
+        <span class="k">Status</span>
+        <span class="v">${escapeHtml(match.status || 'scheduled')}</span>
+      </div>
+    </div>
+  </div>
+`;
+
+    const roundsHtml = rounds.map(round => `
+      <div class="round-card">
+        <div class="round-header">
+          <div class="round-title">Round ${escapeHtml(String(round.round_number || ''))}</div>
+          <div class="round-status">${escapeHtml(round.status || 'pending')}</div>
+        </div>
+
+        <div class="games-grid">
+          ${(round.games || []).map(game => renderGameCard(game, match)).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    setContent(matchSummaryHtml + (roundsHtml || '<div class="empty">No rounds found for this match.</div>'));
+  }
+
+  function renderGameCard(game, match) {
+    return `
+      <div class="game-card" id="game-card-${escapeHtml(game.game_id)}">
+        <div class="game-title">Game ${escapeHtml(String(game.game_number_in_round || ''))}</div>
+
+        <div class="side">
+          <div class="side-label">${escapeHtml(match.home_team_name)}</div>
+          <div class="players">
+            ${escapeHtml(game.home_player_1_name || '')}
+            ${game.home_player_2_name ? ' / ' + escapeHtml(game.home_player_2_name) : ''}
+          </div>
+        </div>
+
+        <div class="side">
+          <div class="side-label">${escapeHtml(match.away_team_name)}</div>
+          <div class="players">
+            ${escapeHtml(game.away_player_1_name || '')}
+            ${game.away_player_2_name ? ' / ' + escapeHtml(game.away_player_2_name) : ''}
+          </div>
+        </div>
+
+        <div class="score-row">
+          <input type="number" min="0" id="home-${escapeHtml(game.game_id)}" value="${safeNumberValue(game.home_score)}" placeholder="Home">
+          <span>-</span>
+          <input type="number" min="0" id="away-${escapeHtml(game.game_id)}" value="${safeNumberValue(game.away_score)}" placeholder="Away">
+          <button onclick="saveScore('${escapeJs(game.game_id)}')">Save</button>
+        </div>
+
+        <div class="save-status" id="status-${escapeHtml(game.game_id)}">
+          ${game.status ? 'Status: ' + escapeHtml(game.status) : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function saveScore(gameId) {
+    const homeInput = document.getElementById(`home-${gameId}`);
+    const awayInput = document.getElementById(`away-${gameId}`);
+    const statusEl = document.getElementById(`status-${gameId}`);
+
+    const homeScore = homeInput.value;
+    const awayScore = awayInput.value;
+
+    statusEl.textContent = 'Saving...';
+
+    google.script.run
+      .withSuccessHandler(result => {
+        statusEl.textContent = 'Saved';
+        refreshCurrentMatch();
+      })
+      .withFailureHandler(err => {
+        statusEl.textContent = 'Error: ' + (err.message || err);
+      })
+      .saveGameScoreFromUi({
+        gameId,
+        homeScore: Number(homeScore),
+        awayScore: Number(awayScore),
+        userId: '',
+        reason: 'Entered from scorecard UI'
+      });
+  }
+
+  function setContent(html) {
+    document.getElementById('content').innerHTML = html;
+  }
+
+  function showError(err) {
+    const message =
+      (err && err.message) ? err.message :
+      (typeof err === 'string' ? err : JSON.stringify(err));
+    setContent(`<div class="empty">Error: ${escapeHtml(message)}</div>`);
+    console.error(err);
+  }
+
+  function formatDate(value) {
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return d.toLocaleDateString();
+    } catch (e) {
+      return value;
+    }
+  }
+
+  function safeNumberValue(value) {
+    return value === null || value === undefined || value === '' ? '' : Number(value);
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeJs(str) {
+    return String(str ?? '').replace(/'/g, "\\'");
+  }
+</script>

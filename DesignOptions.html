@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Season Stats — Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:#081f43; --blue:#123a7c; --green:#0b7e39; --gold:#ffd22e;
+      --bg:#e8eef7; --panel:#fff; --soft:#f2f6fc; --border:#ccd6e8; --border-s:#dde5f3;
+      --text:#0d1f3c; --muted:#5a6e8a; --ok:#0b7e39;
+      --r:12px; --r-lg:18px; --sh:0 6px 24px rgba(8,30,67,.09);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); padding: 20px; }
+
+    /* ── Header ── */
+    .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); border-radius: 14px 14px 0 0; }
+    .league-header { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .league-brand { display: flex; align-items: center; gap: 12px; }
+    .logo-wrap { width: 52px; height: 52px; border-radius: 13px; background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 18px; color: var(--navy); box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .league-text h1 { font-family: 'Bebas Neue'; font-size: 26px; letter-spacing: 1.5px; color: #fff; line-height: 1; }
+    .league-text p  { color: #d8e5fb; font-size: 11px; margin-top: 3px; letter-spacing: .12em; text-transform: uppercase; }
+    .pill { padding: 5px 12px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18); font-size: 11px; font-weight: 700; color: rgba(255,255,255,.88); }
+    .div-bar { background: var(--panel); padding: 9px 20px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-s); }
+    .div-bar-label { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); }
+
+    /* ── Layout ── */
+    .page { display: flex; flex-direction: column; gap: 12px; padding: 14px 0; }
+    .card { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
+
+    /* ── Section head ── */
+    .sec-head { padding: 10px 18px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; }
+    .sec-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 18px; color: var(--navy); flex-shrink: 0; }
+    .sec-label { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 2px; color: #fff; flex: 1; }
+    .ps-expand-btn { margin-left: auto; height: 28px; padding: 0 12px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .ps-expand-btn:hover { background: rgba(255,255,255,.22); }
+    .ps-expand-btn.active { background: rgba(255,213,46,.22); border-color: rgba(255,213,46,.55); color: var(--gold); }
+
+    /* ════════ SERIES HERO ════════ */
+    .series-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+    .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .sh-logo-big { width: 96px; height: 96px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 13px; line-height: 1.3; text-align: center; }
+    .sh-logo-big.cp { color: var(--navy); } .sh-logo-big.dill { color: var(--green); }
+    .sh-team-name { font-family: 'Bebas Neue'; font-size: 18px; letter-spacing: 2px; color: #fff; text-align: center; }
+    .sh-center { display: flex; flex-direction: column; align-items: center; }
+    .sh-series-lbl { font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 4px; }
+    .sh-score { font-family: 'Bebas Neue'; font-size: 68px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
+    .sh-score em { color: var(--gold); font-style: normal; }
+    .sh-leader { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); text-align: center; margin-top: 6px; }
+
+    /* ════════ TILES ════════ */
+    .gt-tiles { display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--border-s); }
+    .gt-tile { padding: 18px 16px; border-right: 1px solid var(--border-s); display: flex; flex-direction: column; gap: 12px; }
+    .gt-tile:last-child { border-right: none; }
+    .gt-tile-head { display: flex; align-items: center; justify-content: space-between; }
+    .gt-type-lbl { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; }
+    .gt-type-lbl.all { color: var(--navy); } .gt-type-lbl.womens { color: #123a7c; } .gt-type-lbl.mens { color: var(--green); } .gt-type-lbl.mixed { color: #7a5c00; }
+    .gt-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .gt-dot.all { background: var(--navy); } .gt-dot.womens { background: #123a7c; } .gt-dot.mens { background: var(--green); } .gt-dot.mixed { background: #ffd22e; }
+    .gt-scores { display: flex; flex-direction: column; gap: 7px; }
+    .gt-score-row { display: flex; align-items: center; gap: 10px; }
+    .gt-mini-logo { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-s); background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 8px; flex-shrink: 0; }
+    .gt-mini-logo.cp { color: var(--navy); } .gt-mini-logo.dill { color: var(--green); }
+    .gt-score-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+    .gt-wins { font-family: 'DM Mono'; font-size: 28px; font-weight: 900; line-height: 1; }
+    .gt-wins.winner { color: var(--ok); } .gt-wins.loser { color: var(--muted); opacity: .5; font-size: 22px; }
+    .gt-diff { font-family: 'DM Mono'; font-size: 11px; font-weight: 800; color: var(--ok); background: #e8f9ef; border-radius: 5px; padding: 2px 7px; }
+    .gt-bar-track { height: 5px; border-radius: 3px; background: var(--soft); border: 1px solid var(--border-s); overflow: hidden; }
+    .gt-bar-fill { height: 100%; border-radius: 3px; }
+    .gt-bar-fill.all { background: var(--green); } .gt-bar-fill.womens { background: #123a7c; } .gt-bar-fill.mens { background: var(--green); } .gt-bar-fill.mixed { background: #c9a000; }
+
+    /* ════════ PLAYER STATS ════════ */
+    .ps-two-col { display: flex; }
+    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); }
+    .ps-col:last-child { border-right: none; }
+    .ps-col-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .ps-col-dot.womens { background: #123a7c; } .ps-col-dot.mens { background: var(--green); }
+
+    /* ── Summary table ── */
+    .pst { width: 100%; border-collapse: collapse; }
+    .pst th { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
+    .pst .sr td { padding: 13px 12px; border-bottom: 1px solid var(--border-s); text-align: center; vertical-align: middle; }
+    .pst .sr { cursor: pointer; }
+    .pst .sr:hover td { background: #f5f8ff; }
+    .pst .sr:hover + .dr td { background: #f5f8ff; }
+    .pst .sr.open td { background: #eef2ff; }
+    .pst .sr.open:hover td { background: #e8eeff; }
+
+    /* ── Detail row ── */
+    .dr { display: none; }
+    .dr.open { display: table-row; }
+    .dr td { padding: 7px 12px 9px; border-bottom: 1px solid var(--border-s); border-top: 1px dashed var(--border-s); background: #f8faff; text-align: center; vertical-align: top; }
+    .dr-spacer { padding: 0 !important; }
+    .dr-item { display: flex; flex-direction: column; gap: 1px; align-items: center; }
+    .dr-types { display: flex; gap: 16px; justify-content: center; align-items: flex-start; }
+    .dr-lbl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+    .dr-val { font-family: 'DM Mono'; font-size: 14px; font-weight: 700; color: var(--text); }
+    /* rec + diff inline */
+    .dr-rec-row { display: flex; align-items: baseline; gap: 7px; }
+    .dr-diff { font-family: 'DM Mono'; font-size: 12px; font-weight: 800; }
+    .dr-diff.ok { color: var(--ok); } .dr-diff.dim { color: var(--muted); opacity: .7; }
+    .dr-type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; width: fit-content; }
+    .dr-type-badge.womens { background: #123a7c22; color: #123a7c; border: 1px solid #123a7c44; }
+    .dr-type-badge.mens   { background: #0b7e3922; color: #0b7e39; border: 1px solid #0b7e3944; }
+    .dr-type-badge.mixed  { background: #ffd22e44; color: #7a5c00; border: 1px solid #ffd22eaa; }
+
+    /* ── Summary cells ── */
+    .td-rank { text-align: center !important; font-family: 'DM Mono'; font-size: 14px; font-weight: 800; color: var(--muted); width: 32px; padding: 13px 4px !important; }
+    .td-rank.q  { color: var(--ok); }
+    .td-rank.nq { color: var(--muted); opacity: .4; }
+    .td-logo { width: 38px; padding: 8px 4px !important; text-align: center !important; }
+    .logo-sq { width: 30px; height: 30px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 9px; color: #fff; vertical-align: middle; }
+    .td-name   { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .td-gms    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; color: var(--muted); }
+    .td-rating { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; }
+    .td-rec    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .td-diff   { font-family: 'DM Mono'; font-size: 16px; font-weight: 800; }
+    .td-diff.pos { color: var(--ok); } .td-diff.neg { color: var(--muted); opacity: .6; }
+    .td-dpg    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    .td-dpg.pos { color: var(--ok); opacity: .8; } .td-dpg.neg { color: var(--muted); opacity: .5; }
+    .td-q { width: 36px; padding-right: 10px !important; text-align: center !important; }
+    .q-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; font-size: 10px; font-weight: 800; }
+    .q-chip.q  { background: #e3f7ec; color: var(--ok); border: 1px solid #a8e6c0; }
+    .q-chip.nq { background: var(--soft); color: var(--muted); border: 1px solid var(--border-s); }
+
+    /* ── #4 th-group-lbl ── */
+    .th-group-lbl { font-size: 13px !important; font-weight: 800 !important; letter-spacing: .04em !important; text-transform: none !important; color: var(--text) !important; vertical-align: middle; }
+
+    /* ── #5 header controls ── */
+    .ps-filter-input { height: 28px; padding: 0 10px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 12px; color: rgba(255,255,255,.90); outline: none; width: 140px; }
+    .ps-filter-input::placeholder { color: rgba(255,255,255,.45); }
+    .ps-hdr-btn { height: 28px; padding: 0 10px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .ps-hdr-btn:hover { background: rgba(255,255,255,.22); }
+
+    /* ── #7 sortable columns ── */
+    .th-sortable { cursor: pointer; user-select: none; }
+    .th-sortable:hover { color: var(--text) !important; }
+    .th-sort-asc::after  { content: ' ▲'; font-size: 9px; }
+    .th-sort-desc::after { content: ' ▼'; font-size: 9px; }
+
+    /* ── #9 print ── */
+    @media print {
+      body > *:not(.page) { display: none; }
+      .sec-head { display: none; }
+      .ps-hdr-btn, .ps-filter-input, .ps-expand-btn { display: none; }
+      .dr { display: table-row !important; }
+      .page { padding: 0; }
+    }
+
+    /* ── #10 legend ── */
+    .legend-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 999; }
+    .legend-overlay.open { display: block; }
+    .legend-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 1000; background: #fff; border-radius: 14px; padding: 22px 26px; width: 380px; max-width: 92vw; box-shadow: 0 8px 40px rgba(0,0,0,.18); }
+    .legend-popup.open { display: block; }
+    .legend-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .legend-title { font-weight: 800; font-size: 15px; color: var(--text); }
+    .legend-close { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--muted); padding: 2px 6px; border-radius: 5px; }
+    .legend-close:hover { background: var(--soft); }
+    .legend-list { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+    .legend-list dt { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .legend-list dd { margin: 0; color: var(--muted); line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+<!-- Static header mock -->
+<div style="border-radius:14px 14px 0 0; overflow:hidden; box-shadow:0 4px 20px rgba(8,30,67,.15);">
+  <div class="app-header">
+    <div class="league-header">
+      <div class="league-brand">
+        <div class="logo-wrap">CPL</div>
+        <div class="league-text"><h1>Connecticut Pickleball League</h1><p>Season Stats</p></div>
+      </div>
+      <div class="pill">Season 2025</div>
+    </div>
+  </div>
+  <div class="div-bar">
+    <span class="div-bar-label">Division</span>
+    <span style="font-size:14px;font-weight:700;">Division 3 — Camp vs Dill</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ── Hero + Tiles ── -->
+  <div class="card">
+    <div class="series-hero">
+      <div class="sh-team"><div class="sh-logo-big cp">CAMP<br>PB</div><span class="sh-team-name">Camp Pickleball</span></div>
+      <div class="sh-center">
+        <span class="sh-series-lbl">Season Series</span>
+        <span class="sh-score"><em>5</em> – 1</span>
+        <span class="sh-leader">Camp Pickleball Leads</span>
+      </div>
+      <div class="sh-team"><div class="sh-logo-big dill">TEAM<br>DILL</div><span class="sh-team-name">Team Dill</span></div>
+    </div>
+    <div class="gt-tiles">
+      <div class="gt-tile">
+        <div class="gt-tile-head"><span class="gt-type-lbl all">All Games</span><span class="gt-dot all"></span></div>
+        <div class="gt-scores">
+          <div class="gt-score-row"><div class="gt-mini-logo cp">CP</div><div class="gt-score-right"><span class="gt-wins winner">124</span><span class="gt-diff">+96</span></div></div>
+          <div class="gt-score-row"><div class="gt-mini-logo dill">DL</div><div class="gt-score-right"><span class="gt-wins loser">106</span></div></div>
+        </div>
+        <div class="gt-bar-track"><div class="gt-bar-fill all" style="width:54%"></div></div>
+      </div>
+      <div class="gt-tile">
+        <div class="gt-tile-head"><span class="gt-type-lbl womens">Women's</span><span class="gt-dot womens"></span></div>
+        <div class="gt-scores">
+          <div class="gt-score-row"><div class="gt-mini-logo cp">CP</div><div class="gt-score-right"><span class="gt-wins winner">30</span><span class="gt-diff">+10</span></div></div>
+          <div class="gt-score-row"><div class="gt-mini-logo dill">DL</div><div class="gt-score-right"><span class="gt-wins loser">28</span></div></div>
+        </div>
+        <div class="gt-bar-track"><div class="gt-bar-fill womens" style="width:52%"></div></div>
+      </div>
+      <div class="gt-tile">
+        <div class="gt-tile-head"><span class="gt-type-lbl mens">Men's</span><span class="gt-dot mens"></span></div>
+        <div class="gt-scores">
+          <div class="gt-score-row"><div class="gt-mini-logo cp">CP</div><div class="gt-score-right"><span class="gt-wins winner">30</span><span class="gt-diff">+32</span></div></div>
+          <div class="gt-score-row"><div class="gt-mini-logo dill">DL</div><div class="gt-score-right"><span class="gt-wins loser">28</span></div></div>
+        </div>
+        <div class="gt-bar-track"><div class="gt-bar-fill mens" style="width:52%"></div></div>
+      </div>
+      <div class="gt-tile">
+        <div class="gt-tile-head"><span class="gt-type-lbl mixed">Mixed</span><span class="gt-dot mixed"></span></div>
+        <div class="gt-scores">
+          <div class="gt-score-row"><div class="gt-mini-logo cp">CP</div><div class="gt-score-right"><span class="gt-wins winner">64</span><span class="gt-diff">+74</span></div></div>
+          <div class="gt-score-row"><div class="gt-mini-logo dill">DL</div><div class="gt-score-right"><span class="gt-wins loser">50</span></div></div>
+        </div>
+        <div class="gt-bar-track"><div class="gt-bar-fill mixed" style="width:56%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Player Stats ── -->
+  <div class="card">
+    <div class="sec-head">
+      <div class="sec-badge">P</div>
+      <span class="sec-label">Player Standings</span>
+      <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players…">
+      <button class="ps-hdr-btn" onclick="downloadCSV()">&#8595; CSV</button>
+      <button class="ps-hdr-btn" onclick="downloadPDF()">&#8595; PDF</button>
+      <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
+      <button class="ps-expand-btn" id="expandBtn" onclick="toggleExpand()">Detail &#9658;</button>
+    </div>
+
+    <div class="ps-container" id="ps-container">
+      <div class="ps-two-col">
+
+        <!-- WOMEN -->
+        <div class="ps-col">
+          <table class="pst">
+            <thead><tr>
+              <th colspan="3" class="th-l th-group-lbl"><span class="ps-col-dot womens"></span> Women</th>
+              <th style="width:76px" data-sort="gms" data-sort-type="num" class="th-sortable">Gms</th>
+              <th style="width:76px" data-sort="rating" data-sort-type="num" class="th-sortable">Rating</th>
+              <th style="width:76px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
+              <th style="width:76px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
+              <th style="width:76px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
+              <th style="width:36px;padding:7px 10px 7px 4px"></th>
+            </tr></thead>
+            <tbody>
+
+              <tr class="sr">
+                <td class="td-rank q">1</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Tien Tang</td><td class="td-gms">32</td><td class="td-rating">84.6</td>
+                <td class="td-rec">29–3</td>
+                <td class="td-diff pos">+185</td><td class="td-dpg pos">+5.8</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">67.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">90.6%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">58.1%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">29–3</span><span class="dr-diff ok">+185</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">20–1</span><span class="dr-diff ok">+123</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">2</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Steph Scoville</td><td class="td-gms">33</td><td class="td-rating">67.0</td>
+                <td class="td-rec">23–10</td>
+                <td class="td-diff pos">+74</td><td class="td-dpg pos">+2.2</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">69.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">69.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">53.1%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">23–10</span><span class="dr-diff ok">+74</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">5–1</span><span class="dr-diff ok">+42</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">3</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Shari Casolo</td><td class="td-gms">26</td><td class="td-rating">65.2</td>
+                <td class="td-rec">18–8</td>
+                <td class="td-diff pos">+76</td><td class="td-dpg pos">+2.9</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">54.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">69.2%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">50.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">18–8</span><span class="dr-diff ok">+76</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">4–2</span><span class="dr-diff ok">+15</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">4</td><td class="td-logo"><div class="logo-sq" style="background:#0b7e39">DL</div></td>
+                <td class="td-name">Cecily Meehan</td><td class="td-gms">21</td><td class="td-rating">61.4</td>
+                <td class="td-rec">13–8</td>
+                <td class="td-diff pos">+10</td><td class="td-dpg pos">+0.5</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">44.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">61.9%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">50.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">13–8</span><span class="dr-diff ok">+10</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">7–4</span><span class="dr-diff ok">+18</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">5</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Erica Maglieri</td><td class="td-gms">22</td><td class="td-rating">57.2</td>
+                <td class="td-rec">14–8</td>
+                <td class="td-diff pos">+76</td><td class="td-dpg pos">+3.5</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">46.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">63.6%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">54.9%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">14–8</span><span class="dr-diff ok">+76</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">8–4</span><span class="dr-diff ok">+38</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">6</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Melanie Meehan</td><td class="td-gms">42</td><td class="td-rating">53.9</td>
+                <td class="td-rec">25–17</td>
+                <td class="td-diff pos">+92</td><td class="td-dpg pos">+2.2</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">88.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">59.5%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">53.1%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">25–17</span><span class="dr-diff ok">+92</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">10–9</span><span class="dr-diff ok">+41</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank nq">7</td><td class="td-logo"><div class="logo-sq" style="background:#0b7e39">DL</div></td>
+                <td class="td-name">Sue Dalponte</td><td class="td-gms">25</td><td class="td-rating">52.2</td>
+                <td class="td-rec">13–12</td>
+                <td class="td-diff neg">–2</td><td class="td-dpg neg">–0.1</td>
+                <td class="td-q"><span class="q-chip nq">NQ</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">52.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">52.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">49.9%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">13–12</span><span class="dr-diff dim">–2</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">8–4</span><span class="dr-diff ok">+25</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank nq">8</td><td class="td-logo"><div class="logo-sq" style="background:#0b7e39">DL</div></td>
+                <td class="td-name">Jen Murnane</td><td class="td-gms">30</td><td class="td-rating">43.4</td>
+                <td class="td-rec">14–16</td>
+                <td class="td-diff neg">–44</td><td class="td-dpg neg">–1.5</td>
+                <td class="td-q"><span class="q-chip nq">NQ</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">63.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">46.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">51.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Women's</span><div class="dr-rec-row"><span class="dr-val">14–16</span><span class="dr-diff dim">–44</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">8–9</span><span class="dr-diff ok">+23</span></div></div></td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div><!-- women -->
+
+        <!-- MEN -->
+        <div class="ps-col">
+          <table class="pst">
+            <thead><tr>
+              <th colspan="3" class="th-l th-group-lbl"><span class="ps-col-dot mens"></span> Men</th>
+              <th style="width:76px" data-sort="gms" data-sort-type="num" class="th-sortable">Gms</th>
+              <th style="width:76px" data-sort="rating" data-sort-type="num" class="th-sortable">Rating</th>
+              <th style="width:76px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
+              <th style="width:76px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
+              <th style="width:76px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
+              <th style="width:36px;padding:7px 10px 7px 4px"></th>
+            </tr></thead>
+            <tbody>
+
+              <tr class="sr">
+                <td class="td-rank q">1</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Bob Herr</td><td class="td-gms">33</td><td class="td-rating">68.2</td>
+                <td class="td-rec">23–10</td>
+                <td class="td-diff pos">+85</td><td class="td-dpg pos">+2.6</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">69.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">69.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">53.5%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">15–6</span><span class="dr-diff ok">+63</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">8–4</span><span class="dr-diff ok">+22</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">2</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Peter Bielenda</td><td class="td-gms">35</td><td class="td-rating">66.3</td>
+                <td class="td-rec">22–13</td>
+                <td class="td-diff pos">+42</td><td class="td-dpg pos">+1.2</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">73.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">62.9%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">51.6%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">8–6</span><span class="dr-diff ok">+11</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">14–7</span><span class="dr-diff ok">+31</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">3</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">A. Batchelder</td><td class="td-gms">23</td><td class="td-rating">62.1</td>
+                <td class="td-rec">15–8</td>
+                <td class="td-diff pos">+43</td><td class="td-dpg pos">+1.9</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">48.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">65.2%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">52.4%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">9–3</span><span class="dr-diff ok">+37</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">6–5</span><span class="dr-diff ok">+5</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank q">4</td><td class="td-logo"><div class="logo-sq" style="background:#0b7e39">DL</div></td>
+                <td class="td-name">Daniel Raspardo</td><td class="td-gms">24</td><td class="td-rating">61.0</td>
+                <td class="td-rec">15–9</td>
+                <td class="td-diff pos">+63</td><td class="td-dpg pos">+2.6</td>
+                <td class="td-q"><span class="q-chip q">Q</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">50.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">62.5%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val ok">53.7%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">6–3</span><span class="dr-diff ok">+20</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">9–6</span><span class="dr-diff ok">+43</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank nq">5</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Gary Berman</td><td class="td-gms">40</td><td class="td-rating">57.0</td>
+                <td class="td-rec">23–17</td>
+                <td class="td-diff pos">+34</td><td class="td-dpg pos">+0.9</td>
+                <td class="td-q"><span class="q-chip nq">NQ</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">83.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">57.5%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">51.2%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">14–7</span><span class="dr-diff ok">+31</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">9–10</span><span class="dr-diff ok">+3</span></div></div></td>
+              </tr>
+
+              <tr class="sr">
+                <td class="td-rank nq">6</td><td class="td-logo"><div class="logo-sq" style="background:#123a7c">CP</div></td>
+                <td class="td-name">Andrew Coy</td><td class="td-gms">47</td><td class="td-rating">55.3</td>
+                <td class="td-rec">26–21</td>
+                <td class="td-diff pos">+37</td><td class="td-dpg pos">+0.8</td>
+                <td class="td-q"><span class="q-chip nq">NQ</span></td>
+              </tr>
+              <tr class="dr">
+                <td colspan="3" class="dr-spacer"></td>
+                <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">98.0%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">55.3%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">51.1%</span></div></td>
+                <td><div class="dr-item"><span class="dr-lbl">Men's</span><div class="dr-rec-row"><span class="dr-val">13–10</span><span class="dr-diff dim">–3</span></div></div></td>
+                <td colspan="2"><div class="dr-item"><span class="dr-lbl">Mixed</span><div class="dr-rec-row"><span class="dr-val">13–11</span><span class="dr-diff ok">+40</span></div></div></td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div><!-- men -->
+
+      </div><!-- ps-two-col -->
+    </div><!-- ps-container -->
+  </div><!-- player stats card -->
+
+</div><!-- page -->
+
+<!-- #10 Legend -->
+<div class="legend-overlay" id="legendOverlay" onclick="toggleLegend()"></div>
+<div class="legend-popup" id="legendPopup">
+  <div class="legend-hdr">
+    <span class="legend-title">Legend</span>
+    <button class="legend-close" onclick="toggleLegend()">&#x2715;</button>
+  </div>
+  <dl class="legend-list">
+    <dt>Gms</dt><dd>Total games played for the season</dd>
+    <dt>Rating</dt><dd>Measure of performance used to determine MVP rankings — blended Win% and Pts%</dd>
+    <dt>W–L</dt><dd>Record in all games played</dd>
+    <dt>+/–</dt><dd>Total points scored minus total points allowed in all games</dd>
+    <dt>Per Gm</dt><dd>Average point differential per game</dd>
+    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in 50% of rounds to qualify (24 total games by end of season)</dd>
+    <dt>Play%</dt><dd>Games played divided by total rounds</dd>
+    <dt>Win%</dt><dd>Wins divided by games played</dd>
+    <dt>Pts%</dt><dd>Total points scored ÷ (winning game score of 21 × games played)</dd>
+    <dt>Game type</dt><dd>Women's / Men's / Mixed subset of total record and +/–</dd>
+  </dl>
+</div>
+
+<script>
+  // Row click — use event delegation so clicks anywhere inside the <tr> work
+  document.addEventListener('click', function(e) {
+    const sr = e.target.closest('tr.sr');
+    if (!sr) return;
+    const tbody = sr.parentElement;
+    const rows  = Array.from(tbody.rows);
+    const idx   = rows.indexOf(sr);
+    const dr    = rows[idx + 1];
+    if (!dr || !dr.classList.contains('dr')) return;
+    const open = dr.classList.toggle('open');
+    sr.classList.toggle('open', open);
+    syncExpandBtn();
+  });
+
+  function toggleExpand() {
+    const btn = document.getElementById('expandBtn');
+    const drs = document.querySelectorAll('tr.dr');
+    const srs = document.querySelectorAll('tr.sr');
+    const anyOpen = [...drs].some(d => d.classList.contains('open'));
+    drs.forEach(d => d.classList.toggle('open', !anyOpen));
+    srs.forEach(s => s.classList.toggle('open', !anyOpen));
+    btn.textContent = anyOpen ? 'Detail \u25b8' : 'Summary \u25c2';
+    btn.classList.toggle('active', !anyOpen);
+  }
+
+  function syncExpandBtn() {
+    const btn = document.getElementById('expandBtn');
+    if (!btn) return;
+    const drs     = document.querySelectorAll('tr.dr');
+    const allOpen = [...drs].every(d => d.classList.contains('open'));
+    btn.textContent = allOpen ? 'Summary \u25c2' : 'Detail \u25b8';
+    btn.classList.toggle('active', allOpen);
+  }
+
+  // #6 Filter
+  document.getElementById('psFilter').addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('tr.sr').forEach(sr => {
+      const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
+      const match = !q || name.includes(q);
+      sr.style.display = match ? '' : 'none';
+      const tbody = sr.parentElement;
+      const rows = Array.from(tbody.rows);
+      const idx = rows.indexOf(sr);
+      const dr = rows[idx + 1];
+      if (dr?.classList.contains('dr')) {
+        if (!match) dr.style.display = 'none';
+        else dr.style.display = dr.classList.contains('open') ? 'table-row' : 'none';
+      }
+    });
+  });
+
+  // #7 Sortable columns
+  function initSortableHeaders() {
+    document.querySelectorAll('th.th-sortable').forEach(th => {
+      th.addEventListener('click', function() {
+        const table = this.closest('table');
+        const tbody = table.querySelector('tbody');
+        const ths   = Array.from(table.querySelectorAll('th'));
+        const colIdx = ths.indexOf(this);
+        const curDir = this.dataset.sortDir;
+        const newDir = curDir === 'asc' ? 'desc' : 'asc';
+        ths.forEach(h => { delete h.dataset.sortDir; h.classList.remove('th-sort-asc','th-sort-desc'); });
+        this.dataset.sortDir = newDir;
+        this.classList.add(newDir === 'asc' ? 'th-sort-asc' : 'th-sort-desc');
+        const allRows = Array.from(tbody.rows);
+        const pairs = [];
+        for (let i = 0; i < allRows.length; i++) {
+          if (allRows[i].classList.contains('sr')) {
+            const dr = allRows[i+1]?.classList.contains('dr') ? allRows[i+1] : null;
+            pairs.push({ sr: allRows[i], dr, val: getCellNum(allRows[i], colIdx) });
+            if (dr) i++;
+          }
+        }
+        pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
+        pairs.forEach(({ sr, dr }) => { tbody.appendChild(sr); if (dr) tbody.appendChild(dr); });
+        pairs.forEach(({ sr }, i) => {
+          const rk = sr.querySelector('.td-rank');
+          if (rk) rk.textContent = i + 1;
+        });
+      });
+    });
+  }
+
+  function getCellNum(row, colIdx) {
+    const td = row.cells[colIdx];
+    if (!td) return 0;
+    const txt = td.textContent.replace(/[^0-9.\-+]/g, '');
+    return parseFloat(txt) || 0;
+  }
+
+  // #8 CSV Download
+  function downloadCSV() {
+    const tables = document.querySelectorAll('table.pst');
+    let csv = '';
+    tables.forEach(table => {
+      const groupLabel = table.closest('.ps-col')?.querySelector('.th-group-lbl')?.textContent.trim() || '';
+      csv += groupLabel + '\n';
+      csv += '#,Player,Gms,Rating,W,L,+/-,Per Gm,Qualified\n';
+      table.querySelectorAll('tr.sr').forEach((sr, i) => {
+        if (sr.style.display === 'none') return;
+        const name  = sr.querySelector('.td-name')?.textContent.trim() || '';
+        const gms   = sr.querySelector('.td-gms')?.textContent.trim() || '';
+        const rat   = sr.querySelector('.td-rating')?.textContent.trim() || '';
+        const rec   = sr.querySelector('.td-rec')?.textContent.trim() || '';
+        const [w,l] = rec.split('\u2013').map(s=>s.trim());
+        const diff  = sr.querySelector('.td-diff')?.textContent.trim() || '';
+        const dpg   = sr.querySelector('.td-dpg')?.textContent.trim() || '';
+        const qual  = sr.querySelector('.q-chip')?.textContent.trim() || '';
+        csv += [i+1, `"${name}"`, gms, rat, w||'', l||'', diff, dpg, qual].join(',') + '\n';
+      });
+      csv += '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'cpbl_standings.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // #9 PDF Download
+  function downloadPDF() {
+    window.print();
+  }
+
+  // #10 Legend
+  function toggleLegend() {
+    document.getElementById('legendPopup').classList.toggle('open');
+    document.getElementById('legendOverlay').classList.toggle('open');
+  }
+
+  initSortableHeaders();
+</script>
+</body>
+</html>

@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecticut Pickleball League Players</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --league-navy:#081f43;
+      --league-blue:#123a7c;
+      --league-green:#0b7e39;
+      --league-gold:#ffd22e;
+
+      --panel:#ffffff;
+      --border:#c7d3e6;
+      --accent2:#123a7c;
+
+      --text:#10233f;
+      --text-inv:#f8fbff;
+      --muted:#5d6f8a;
+
+      --shadow:0 14px 34px rgba(8,30,67,.10);
+      --radius-2xl:26px;
+
+      --group-panel-height:430px;
+      --row-height:44px;
+      --header-row-height:40px;
+      --combined-panel-height:760px;
+      --top-controls-min-height:112px;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+
+    body{
+      background:linear-gradient(180deg,#edf2f8 0%,#e4ebf4 100%);
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:14px;
+      min-height:100vh;
+    }
+
+    .top-shell{
+      position:sticky;
+      top:0;
+      z-index:50;
+      box-shadow:0 10px 28px rgba(10,35,71,.14);
+    }
+
+    .league-header{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:18px;
+      align-items:center;
+      padding:22px 26px;
+      border-bottom:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg,var(--league-navy) 0%,var(--league-blue) 58%,var(--league-green) 100%);
+      color:var(--text-inv);
+    }
+
+    .league-brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      min-width:0;
+    }
+
+    .league-logo-wrap{
+      width:108px;
+      height:108px;
+      border-radius:24px;
+      background:rgba(255,255,255,.98);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 16px 34px rgba(0,0,0,.26), 0 0 0 1px rgba(255,255,255,.22);
+      flex-shrink:0;
+      padding:0;
+      overflow:hidden;
+      transform:translateY(1px);
+    }
+
+    .league-logo-img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transform:scale(1.03);
+    }
+
+    .league-logo-fallback{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:32px;
+      color:var(--league-navy);
+    }
+
+    .league-text{min-width:0}
+
+    .league-header h1{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:42px;
+      letter-spacing:1.8px;
+      color:#fff;
+      line-height:1;
+    }
+
+    .league-header p{
+      color:#d8e5fb;
+      font-size:12px;
+      margin-top:6px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .pill-stat{
+      min-width:140px;
+      text-align:center;
+      padding:13px 16px;
+      border-radius:16px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.20);
+      font-size:13px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#f3f7ff;
+      box-shadow:0 8px 18px rgba(0,0,0,.10);
+    }
+
+    .page{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .panel{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius-2xl);
+      box-shadow:var(--shadow);
+    }
+
+    .ph{
+      padding:12px 14px;
+      border-bottom:1px solid #e5edf7;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      background:linear-gradient(180deg,#fdfefe 0%,#f3f7fc 100%);
+      flex:0 0 auto;
+      position:relative;
+      z-index:3;
+    }
+
+    .ph h2{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:34px;
+      letter-spacing:1.6px;
+      color:#0a2958;
+      line-height:1;
+      white-space:nowrap;
+      flex:0 1 auto;
+    }
+
+    .subhead{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-top:4px;
+    }
+
+    .subnote{
+      font-size:11px;
+      color:#6d7f98;
+      margin-top:2px;
+      line-height:1.2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .top-controls{
+      display:grid;
+      grid-template-columns:auto minmax(420px, 420px) minmax(0, 1fr);
+      gap:14px;
+      padding:14px 22px;
+      align-items:center;
+      min-height:78px;
+      height:78px;
+    }
+
+    .field{
+      display:block;
+      width:100%;
+      max-width:420px;
+      min-width:0;
+    }
+
+    .field input{
+      display:block;
+      width:100%;
+      max-width:100%;
+      height:46px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:0 14px;
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:13px;
+      outline:none;
+    }
+
+    .field input:focus{
+      border-color:var(--accent2);
+      box-shadow:0 0 0 3px rgba(31,124,255,.10);
+    }
+
+    .search-results-wrap{
+      height:46px;
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      width:100%;
+      overflow:hidden;
+      min-width:0;
+    }
+
+    .search-empty{
+      display:none;
+    }
+
+    .search-profile{
+      width:auto;
+      max-width:100%;
+      height:46px;
+      min-height:46px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      padding:0 10px 0 12px;
+      overflow:hidden;
+      flex:0 1 auto;
+    }
+
+    .search-profile-main{
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex:0 1 auto;
+      overflow:hidden;
+    }
+
+    .search-profile-text{
+      min-width:0;
+      max-width:320px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size:15px;
+      color:#17355f;
+      font-weight:800;
+      line-height:1;
+      flex:0 1 auto;
+    }
+
+    .search-profile-meta{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:nowrap;
+      min-width:0;
+      overflow:hidden;
+      flex:0 1 auto;
+    }
+
+    .search-profile-muted{
+      font-size:11px;
+      color:#5d6f8a;
+      font-weight:800;
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:30px;
+      gap:4px;
+      padding:0 11px;
+      border-radius:999px;
+      background:#eef4fb;
+      line-height:30px;
+      flex:0 0 auto;
+    }
+
+    .search-profile-badges{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      justify-content:flex-start;
+      flex-wrap:nowrap;
+      flex:0 0 auto;
+      margin-left:0;
+    }
+
+    .search-profile .dupr-badge,
+    .search-profile .division-pill{
+      height:30px;
+      line-height:30px;
+      min-width:64px;
+      padding:0 12px;
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .top-button-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
+
+    .action-btn{
+      border:1px solid var(--border);
+      background:#fff;
+      color:#294769;
+      border-radius:14px;
+      height:46px;
+      padding:0 18px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s ease;
+      white-space:nowrap;
+      margin-top:0;
+    }
+
+    .action-btn.primary{
+      background:var(--league-gold);
+      border-color:#f2c100;
+      color:var(--league-navy);
+      box-shadow:0 8px 18px rgba(255,210,46,.22);
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .group-panel{
+      height:var(--group-panel-height);
+    }
+
+    .combined-panel{
+      display:none;
+      height:calc(100vh - 240px);
+      min-height:560px;
+    }
+
+    .combined-panel.active{
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .grouped-panel{
+      display:block;
+    }
+
+    .grouped-panel.hidden{
+      display:none;
+    }
+
+    .group-head{
+      display:flex;
+      align-items:stretch;
+      gap:18px;
+      min-width:0;
+      flex:1 1 auto;
+      width:100%;
+      justify-content:space-between;
+      min-height:92px;
+    }
+
+    .group-logo-wrap{
+      width:132px;
+      height:92px;
+      border-radius:22px;
+      background:transparent;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+
+    .group-logo-img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      border-radius:22px;
+    }
+
+    .group-logo-fallback{
+      width:132px;
+      height:92px;
+      border-radius:22px;
+      font-family:'Bebas Neue',sans-serif;
+      font-size:30px;
+      color:var(--league-navy);
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#eef3f9;
+    }
+
+    .group-title-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:nowrap;
+      min-width:0;
+      white-space:nowrap;
+      flex:0 1 auto;
+    }
+
+    .group-top-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      min-width:0;
+    }
+
+    .group-bottom-line{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      min-width:0;
+      margin-top:8px;
+    }
+
+    .group-text-block{
+      min-width:0;
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      height:92px;
+      overflow:hidden;
+    }
+
+    .group-description{
+      min-width:0;
+      flex:1 1 auto;
+    }
+
+    .count-inline{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:34px;
+      height:24px;
+      padding:0 10px;
+      border-radius:999px;
+      background:#eef3f9;
+      color:#5d6f8a;
+      font-family:'DM Sans',sans-serif;
+      font-size:11px;
+      font-weight:700;
+      line-height:24px;
+      flex:0 0 auto;
+    }
+
+    .header-filter-row{
+      width:100%;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .group-eligibility-inline{
+      display:flex;
+      align-items:center;
+      align-content:center;
+      justify-content:flex-end;
+      gap:6px;
+      flex-wrap:wrap;
+      flex:0 0 auto;
+      max-width:320px;
+      margin-left:12px;
+    }
+
+    
+    .combined-filters-wrap{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+      min-width:0;
+      width:max-content;
+      max-width:100%;
+      margin-top:0;
+      margin-left:auto;
+      flex:0 0 auto;
+    }
+
+    .combined-clear-btn{
+      padding:0;
+      margin-left:0;
+      align-self:stretch;
+      width:100%;
+      display:flex;
+      justify-content:flex-end;
+      text-align:right;
+      margin-right:0;
+    }
+
+    .combined-filters{
+      display:flex;
+      gap:10px 18px;
+      align-items:flex-start;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      min-width:0;
+    }
+
+    .combined-panel .table-wrap{
+      flex:1 1 auto;
+      min-height:0;
+      overflow-x:auto;
+      overflow-y:auto;
+    }
+
+    .header-filter-box{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:0;
+    }
+
+    .filter-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      min-width:0;
+    }
+
+    .clear-filter-btn{
+      border:none;
+      background:transparent;
+      color:#5f7391;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      cursor:pointer;
+      padding:0;
+      white-space:nowrap;
+      line-height:1;
+      flex:0 0 auto;
+      align-self:flex-start;
+    }
+
+    .clear-filter-btn:hover{
+      color:#123a7c;
+    }
+
+    .header-filter-box .label{
+      font-size:10px;
+      font-weight:800;
+      color:var(--muted);
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      padding-left:2px;
+    }
+
+    .multi-check{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      min-height:28px;
+      align-items:center;
+    }
+
+    .check-pill{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:42px;
+      height:24px;
+      padding:0 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      color:#294769;
+      cursor:pointer;
+      line-height:24px;
+      white-space:nowrap;
+      user-select:none;
+      transition:.15s ease;
+    }
+
+    .check-pill input{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .check-pill.checked{
+      color:#fff;
+      box-shadow:0 6px 14px rgba(8,30,67,.16);
+    }
+
+    .check-pill.checked[data-value="1"]{
+      background:#0038b8;
+      border-color:#0038b8;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="2"]{
+      background:#0b7e39;
+      border-color:#0b7e39;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="3"]{
+      background:#ffd22e;
+      border-color:#e4bb20;
+      color:#3b3000;
+      box-shadow:0 6px 14px rgba(255,210,46,.22);
+    }
+
+    .check-pill.checked[data-value="4"]{
+      background:#ee8135;
+      border-color:#ee8135;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="5"]{
+      background:#081f43;
+      border-color:#081f43;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="Camp"]{
+      background:#00204e;
+      border-color:#00204e;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="Dill"]{
+      background:#f47920;
+      border-color:#f47920;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="F"]{
+      background:#d5a6bd;
+      border-color:#d5a6bd;
+      color:#ffffff;
+    }
+
+    .check-pill.checked[data-value="M"]{
+      background:#6fa8dc;
+      border-color:#6fa8dc;
+      color:#ffffff;
+    }
+
+    .check-pill:hover{
+
+      border-color:#b8c9df;
+      background:#f8fbff;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      padding:0;
+      flex:1 1 auto;
+      min-height:0;
+      position:relative;
+      background:#fff;
+      z-index:1;
+      isolation:isolate;
+      border-bottom-left-radius:var(--radius-2xl);
+      border-bottom-right-radius:var(--radius-2xl);
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:13px;
+      table-layout:fixed;
+      position:relative;
+      z-index:1;
+    }
+
+    thead{
+      position:relative;
+      z-index:4;
+    }
+
+    tbody{
+      position:relative;
+      z-index:1;
+    }
+
+    .grouped-table .name-col{width:32%}
+    .grouped-table .date-col{width:17%}
+    .grouped-table .id-col{width:17%}
+    .grouped-table .dupr-col{width:17%}
+    .grouped-table .eligibility-col{width:17%}
+
+    .combined-table .name-col{width:28%}
+    .combined-table .team-col{width:12%}
+    .combined-table .gender-col{width:12%}
+    .combined-table .date-col{width:15%}
+    .combined-table .id-col{width:14%}
+    .combined-table .dupr-col{width:9%}
+    .combined-table .eligibility-col{width:10%}
+
+    .col-left{text-align:left}
+    .col-center{text-align:center}
+
+    th, td{
+      padding:0 12px;
+      vertical-align:middle;
+    }
+
+    th{
+      height:var(--header-row-height);
+      min-height:var(--header-row-height);
+      max-height:var(--header-row-height);
+      line-height:var(--header-row-height);
+      color:#7387a2;
+      font-weight:800;
+      border-bottom:1px solid #e3ecf7;
+      white-space:nowrap;
+      background:#fbfdff;
+      position:sticky;
+      top:0;
+      cursor:pointer;
+      user-select:none;
+      z-index:6;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      box-shadow:0 1px 0 #e3ecf7;
+      background-clip:padding-box;
+    }
+
+    th:hover{
+      background:#f4f8fd;
+    }
+
+    tr{
+      height:var(--row-height);
+    }
+
+    td{
+      border-bottom:1px solid #edf2f9;
+      color:#17355f;
+      height:var(--row-height);
+      min-height:var(--row-height);
+      max-height:var(--row-height);
+      line-height:var(--row-height);
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      position:relative;
+      z-index:1;
+      background:transparent;
+    }
+
+    tr:hover td{
+      background:#f8fbff;
+    }
+
+    .dupr-cell,
+    .eligibility-cell{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+    }
+
+    .dupr-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:52px;
+      height:28px;
+      padding:0 12px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      white-space:nowrap;
+      border:1px solid #cfe0ff;
+      line-height:28px;
+      background:#edf4ff;
+      color:#174ea6;
+      font-family:'DM Sans',sans-serif;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .dupr-badge.search-dupr{
+      min-width:64px;
+      height:32px;
+      line-height:32px;
+      font-size:12px;
+      padding:0 14px;
+      box-shadow:0 6px 14px rgba(23,78,166,.12);
+    }
+
+    .division-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:52px;
+      height:28px;
+      padding:0 12px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      white-space:nowrap;
+      border:1px solid transparent;
+      line-height:28px;
+    }
+
+    .div1{background:#0038b8;color:#ffffff;border-color:#0038b8}
+    .div2{background:#0b7e39;color:#ffffff;border-color:#0b7e39}
+    .div3{background:#ffd22e;color:#3b3000;border-color:#e4bb20}
+    .div4{background:#ee8135;color:#ffffff;border-color:#ee8135}
+    .div5{background:#081f43;color:#ffffff;border-color:#081f43}
+    .divx{background:#eef3f9;color:#526983;border-color:#d8e2ee}
+
+    .group-camp-women .ph,
+    .group-dill-women .ph,
+    .group-camp-men .ph,
+    .group-dill-men .ph,
+    .combined-panel .ph{
+      border-top:none;
+    }
+
+    .empty{
+      text-align:center;
+      color:var(--muted);
+      padding:22px 12px;
+      font-size:12px;
+      line-height:1.7;
+    }
+
+    .sort-arrow{
+      display:inline-block;
+      margin-left:4px;
+      font-size:10px;
+      color:#90a2bb;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:18px;
+      right:18px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:10px 14px;
+      font-size:12px;
+      max-width:320px;
+      z-index:200;
+      transform:translateY(60px);
+      opacity:0;
+      transition:.22s;
+      box-shadow:0 18px 40px rgba(8,30,67,.16);
+      color:#17355f;
+    }
+
+    .toast.show{transform:translateY(0);opacity:1}
+
+
+    @media (max-width: 1400px){
+      .group-eligibility-inline{
+        flex-basis:220px;
+        max-width:220px;
+      }
+      .ph h2{font-size:30px;}
+      .subnote{font-size:10px;}
+    }
+
+
+    @media (max-width: 1200px){
+      .group-top-line,
+      .group-bottom-line{
+        flex-wrap:wrap;
+      }
+
+      .group-eligibility-inline{
+        margin-left:0;
+        max-width:none;
+      }
+    }
+    @media (max-width: 1200px){
+      .top-controls{
+        grid-template-columns:auto minmax(320px, 360px) minmax(0, 1fr);
+        min-height:auto;
+        height:auto;
+      }
+
+      .field{
+        width:100%;
+        max-width:100%;
+      }
+
+      .field input{
+        width:100%;
+        max-width:100%;
+      }
+
+      .cards{
+        grid-template-columns:1fr;
+      }
+
+      .combined-filters{
+        width:100%;
+      }
+
+      .search-profile{
+        max-width:100%;
+        height:46px;
+        min-height:46px;
+        padding:0 10px;
+        gap:8px;
+      }
+
+      .search-profile-main{
+        gap:6px;
+      }
+
+      .search-profile-text{
+        max-width:180px;
+      }
+
+      .search-profile-badges{
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width: 800px){
+      .top-shell{
+        position:sticky;
+        top:0;
+        z-index:100;
+      }
+
+      .league-header{
+        grid-template-columns:1fr;
+        gap:12px;
+        padding:14px 14px 12px;
+      }
+
+      .league-brand{
+        gap:12px;
+      }
+
+      .league-logo-wrap{
+        width:72px;
+        height:72px;
+        border-radius:18px;
+      }
+
+      .league-header h1{
+        font-size:28px;
+        letter-spacing:1px;
+      }
+
+      .league-header p{
+        font-size:10px;
+        margin-top:4px;
+      }
+
+      .header-right{
+        justify-content:flex-start;
+        gap:10px;
+      }
+
+      .pill-stat{
+        min-width:112px;
+        padding:11px 12px;
+        font-size:12px;
+      }
+
+      .page{
+        padding:12px;
+      }
+
+      .page > .panel:first-child{
+        position:sticky;
+        z-index:90;
+      }
+
+      .top-controls{
+        display:flex;
+        flex-direction:column;
+        align-items:stretch;
+        gap:10px;
+        min-height:auto;
+        height:auto;
+        padding:12px 14px;
+      }
+
+      .top-button-wrap,
+      .field,
+      .search-results-wrap{
+        width:100%;
+      }
+
+      .top-button-wrap{
+        justify-content:stretch;
+      }
+
+      .top-button-wrap{order:1;}
+      .field{order:2;}
+      .search-results-wrap{order:3;}
+
+
+      .action-btn,
+      .field input,
+      .search-results-wrap,
+      .search-profile{
+        width:100%;
+        max-width:100%;
+        height:46px;
+        min-height:46px;
+      }
+
+      .search-results-wrap{
+        display:flex;
+        align-items:center;
+      }
+
+      .search-profile{
+        overflow:hidden;
+      }
+
+      .search-profile-text{
+        max-width:none;
+        min-width:0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-shell">
+    <div class="league-header">
+      <div class="league-brand">
+        <div class="league-logo-wrap">
+          <img id="league-logo" class="league-logo-img" alt="League Logo" style="display:none;">
+          <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+        </div>
+        <div class="league-text">
+          <h1>Connecticut Pickleball League</h1>
+          <p>League Player Directory</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="pill-stat" id="women-pill">0 Women</div>
+        <div class="pill-stat" id="men-pill">0 Men</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="panel">
+      <div class="top-controls">
+        <div class="top-button-wrap">
+          <button id="all-players-btn" class="action-btn" onclick="toggleAllPlayers()">View All Players</button>
+        </div>
+
+        <div class="field">
+          <input id="search-input" type="text" placeholder="Search by name or DUPR ID to find a specific player" oninput="renderAll()">
+        </div>
+
+        <div class="search-results-wrap" id="search-results-wrap"></div>
+      </div>
+    </div>
+
+    <div id="grouped-panel" class="grouped-panel">
+      <div class="cards">
+        <div class="panel group-panel group-camp-women">
+          <div class="ph">
+            <div class="header-filter-row">
+              <div class="group-head">
+                <div class="group-logo-wrap">
+                  <img id="camp-logo-1" class="group-logo-img" alt="Camp Logo" style="display:none;">
+                  <div id="camp-logo-fallback-1" class="group-logo-fallback">C</div>
+                </div>
+                <div class="group-text-block">
+                  <div class="group-top-line">
+                    <div class="group-title-row">
+                      <h2>Camp Women</h2>
+                      <span class="count-inline" id="count-inline-camp-women">0</span>
+                    </div>
+                    <div class="group-eligibility-inline" id="eligibility-filter-camp-women">
+                      <label class="check-pill"><input type="checkbox" value="1" onchange="renderAll()"><span>D1</span></label>
+                      <label class="check-pill"><input type="checkbox" value="2" onchange="renderAll()"><span>D2</span></label>
+                      <label class="check-pill"><input type="checkbox" value="3" onchange="renderAll()"><span>D3</span></label>
+                      <label class="check-pill"><input type="checkbox" value="4" onchange="renderAll()"><span>D4</span></label>
+                      <label class="check-pill"><input type="checkbox" value="5" onchange="renderAll()"><span>D5</span></label>
+                    </div>
+                  </div>
+                  <div class="group-bottom-line">
+                    <div class="group-description">
+                      <div class="subnote">Eligibility includes division listed and all higher divisions.</div>
+                      <div class="subnote">DUPR rating at the time the player registered.</div>
+                    </div>
+                    <button type="button" class="clear-filter-btn" onclick="clearFilters('eligibility-filter-camp-women')">Clear Filters</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-camp-women"></div>
+        </div>
+
+        <div class="panel group-panel group-dill-women">
+          <div class="ph">
+            <div class="header-filter-row">
+              <div class="group-head">
+                <div class="group-logo-wrap">
+                  <img id="dill-logo-1" class="group-logo-img" alt="Dill Logo" style="display:none;">
+                  <div id="dill-logo-fallback-1" class="group-logo-fallback">D</div>
+                </div>
+                <div class="group-text-block">
+                  <div class="group-top-line">
+                    <div class="group-title-row">
+                      <h2>Dill Women</h2>
+                      <span class="count-inline" id="count-inline-dill-women">0</span>
+                    </div>
+                    <div class="group-eligibility-inline" id="eligibility-filter-dill-women">
+                      <label class="check-pill"><input type="checkbox" value="1" onchange="renderAll()"><span>D1</span></label>
+                      <label class="check-pill"><input type="checkbox" value="2" onchange="renderAll()"><span>D2</span></label>
+                      <label class="check-pill"><input type="checkbox" value="3" onchange="renderAll()"><span>D3</span></label>
+                      <label class="check-pill"><input type="checkbox" value="4" onchange="renderAll()"><span>D4</span></label>
+                      <label class="check-pill"><input type="checkbox" value="5" onchange="renderAll()"><span>D5</span></label>
+                    </div>
+                  </div>
+                  <div class="group-bottom-line">
+                    <div class="group-description">
+                      <div class="subnote">Eligibility includes division listed and all higher divisions.</div>
+                      <div class="subnote">DUPR rating at the time the player registered.</div>
+                    </div>
+                    <button type="button" class="clear-filter-btn" onclick="clearFilters('eligibility-filter-dill-women')">Clear Filters</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-dill-women"></div>
+        </div>
+
+        <div class="panel group-panel group-camp-men">
+          <div class="ph">
+            <div class="header-filter-row">
+              <div class="group-head">
+                <div class="group-logo-wrap">
+                  <img id="camp-logo-2" class="group-logo-img" alt="Camp Logo" style="display:none;">
+                  <div id="camp-logo-fallback-2" class="group-logo-fallback">C</div>
+                </div>
+                <div class="group-text-block">
+                  <div class="group-top-line">
+                    <div class="group-title-row">
+                      <h2>Camp Men</h2>
+                      <span class="count-inline" id="count-inline-camp-men">0</span>
+                    </div>
+                    <div class="group-eligibility-inline" id="eligibility-filter-camp-men">
+                      <label class="check-pill"><input type="checkbox" value="1" onchange="renderAll()"><span>D1</span></label>
+                      <label class="check-pill"><input type="checkbox" value="2" onchange="renderAll()"><span>D2</span></label>
+                      <label class="check-pill"><input type="checkbox" value="3" onchange="renderAll()"><span>D3</span></label>
+                      <label class="check-pill"><input type="checkbox" value="4" onchange="renderAll()"><span>D4</span></label>
+                      <label class="check-pill"><input type="checkbox" value="5" onchange="renderAll()"><span>D5</span></label>
+                    </div>
+                  </div>
+                  <div class="group-bottom-line">
+                    <div class="group-description">
+                      <div class="subnote">Eligibility includes division listed and all higher divisions.</div>
+                      <div class="subnote">DUPR rating at the time the player registered.</div>
+                    </div>
+                    <button type="button" class="clear-filter-btn" onclick="clearFilters('eligibility-filter-camp-men')">Clear Filters</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-camp-men"></div>
+        </div>
+
+        <div class="panel group-panel group-dill-men">
+          <div class="ph">
+            <div class="header-filter-row">
+              <div class="group-head">
+                <div class="group-logo-wrap">
+                  <img id="dill-logo-2" class="group-logo-img" alt="Dill Logo" style="display:none;">
+                  <div id="dill-logo-fallback-2" class="group-logo-fallback">D</div>
+                </div>
+                <div class="group-text-block">
+                  <div class="group-top-line">
+                    <div class="group-title-row">
+                      <h2>Dill Men</h2>
+                      <span class="count-inline" id="count-inline-dill-men">0</span>
+                    </div>
+                    <div class="group-eligibility-inline" id="eligibility-filter-dill-men">
+                      <label class="check-pill"><input type="checkbox" value="1" onchange="renderAll()"><span>D1</span></label>
+                      <label class="check-pill"><input type="checkbox" value="2" onchange="renderAll()"><span>D2</span></label>
+                      <label class="check-pill"><input type="checkbox" value="3" onchange="renderAll()"><span>D3</span></label>
+                      <label class="check-pill"><input type="checkbox" value="4" onchange="renderAll()"><span>D4</span></label>
+                      <label class="check-pill"><input type="checkbox" value="5" onchange="renderAll()"><span>D5</span></label>
+                    </div>
+                  </div>
+                  <div class="group-bottom-line">
+                    <div class="group-description">
+                      <div class="subnote">Eligibility includes division listed and all higher divisions.</div>
+                      <div class="subnote">DUPR rating at the time the player registered.</div>
+                    </div>
+                    <button type="button" class="clear-filter-btn" onclick="clearFilters('eligibility-filter-dill-men')">Clear Filters</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap" id="table-dill-men"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="combined-panel" class="panel combined-panel">
+      <div class="ph">
+        <div class="header-filter-row">
+          <div>
+            <div class="group-title-row">
+              <h2>All League Players</h2>
+              <span class="count-inline" id="count-combined">0</span>
+            </div>
+            <div class="subnote">Eligibility includes division listed and all higher divisions.</div>
+            <div class="subnote">DUPR rating at the time the player registered.</div>
+          </div>
+          <div class="combined-filters-wrap">
+            <div class="combined-filters">
+              <div class="header-filter-box">
+                <div class="filter-head"><div class="label">Eligibility</div></div>
+                <div class="multi-check" id="eligibility-filter-combined">
+                  <label class="check-pill"><input type="checkbox" value="1" onchange="renderAll()"><span>D1</span></label>
+                  <label class="check-pill"><input type="checkbox" value="2" onchange="renderAll()"><span>D2</span></label>
+                  <label class="check-pill"><input type="checkbox" value="3" onchange="renderAll()"><span>D3</span></label>
+                  <label class="check-pill"><input type="checkbox" value="4" onchange="renderAll()"><span>D4</span></label>
+                  <label class="check-pill"><input type="checkbox" value="5" onchange="renderAll()"><span>D5</span></label>
+                </div>
+              </div>
+              <div class="header-filter-box">
+                <div class="filter-head"><div class="label">Team</div></div>
+                <div class="multi-check" id="team-filter-combined">
+                  <label class="check-pill"><input type="checkbox" value="Camp" onchange="renderAll()"><span>Camp</span></label>
+                  <label class="check-pill"><input type="checkbox" value="Dill" onchange="renderAll()"><span>Dill</span></label>
+                </div>
+              </div>
+              <div class="header-filter-box">
+                <div class="filter-head"><div class="label">Gender</div></div>
+                <div class="multi-check" id="gender-filter-combined">
+                  <label class="check-pill"><input type="checkbox" value="F" onchange="renderAll()"><span>Women</span></label>
+                  <label class="check-pill"><input type="checkbox" value="M" onchange="renderAll()"><span>Men</span></label>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="clear-filter-btn combined-clear-btn" onclick="clearCombinedFilters()">Clear Filters</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap" id="table-combined"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    alert('PLAYERS DIRECTORY HTML LOADED');
+    let allPlayers = [];
+    let showAllPlayers = false;
+
+    let sortState = {
+      campWomen: { field: 'name', direction: 'asc' },
+      dillWomen: { field: 'name', direction: 'asc' },
+      campMen: { field: 'name', direction: 'asc' },
+      dillMen: { field: 'name', direction: 'asc' },
+      combined: { field: 'name', direction: 'asc' }
+    };
+
+
+
+    function updateStickyOffsets() {
+      const topShell = document.querySelector('.top-shell');
+      const searchPanel = document.querySelector('.page > .panel:first-child');
+      if (!topShell || !searchPanel) return;
+
+      const shellHeight = Math.ceil(topShell.getBoundingClientRect().height);
+      searchPanel.style.top = `calc(env(safe-area-inset-top, 0px) + ${shellHeight}px)`;
+    }
+
+    google.script.run
+  .withSuccessHandler((data) => {
+    allPlayers = Array.isArray(data.players) ? data.players : [];
+    applyBranding(data.branding || {});
+    updateStickyOffsets();
+    renderAll();
+    showToast('Player directory loaded');
+  })
+  .withFailureHandler((err) => {
+    showToast('Load failed: ' + getErrorMessage(err));
+  })
+  .getPlayersDirectoryData();
+
+    function applyBranding(branding) {
+      const leagueLogo = document.getElementById('league-logo');
+      const leagueFallback = document.getElementById('league-logo-fallback');
+
+      if (branding && branding.leagueLogoUrl) {
+        leagueLogo.src = branding.leagueLogoUrl;
+        leagueLogo.style.display = 'block';
+        leagueFallback.style.display = 'none';
+      } else {
+        leagueLogo.style.display = 'none';
+        leagueFallback.style.display = 'block';
+      }
+
+      applyGroupLogo(branding?.campLogoUrl, ['camp-logo-1','camp-logo-2'], ['camp-logo-fallback-1','camp-logo-fallback-2']);
+      applyGroupLogo(branding?.dillLogoUrl, ['dill-logo-1','dill-logo-2'], ['dill-logo-fallback-1','dill-logo-fallback-2']);
+    }
+
+    function applyGroupLogo(url, imageIds, fallbackIds) {
+      imageIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (url) {
+          el.src = url;
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      fallbackIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = url ? 'none' : 'flex';
+      });
+    }
+
+    function toggleAllPlayers() {
+      showAllPlayers = !showAllPlayers;
+      renderAll();
+    }
+
+    function setSort(tableKey, field) {
+      const state = sortState[tableKey];
+      if (state.field === field) {
+        state.direction = state.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.field = field;
+        state.direction = 'asc';
+      }
+      renderAll();
+    }
+
+    function syncCheckPillStates() {
+      document.querySelectorAll('.check-pill').forEach(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        if (input) label.dataset.value = input.value || '';
+        label.classList.toggle('checked', !!input?.checked);
+      });
+    }
+
+    function getCheckedValues(containerId) {
+      const root = document.getElementById(containerId);
+      if (!root) return [];
+      return [...root.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
+    }
+
+    function clearFilters(containerId) {
+      const root = document.getElementById(containerId);
+      if (!root) return;
+      root.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+      renderAll();
+    }
+
+    function clearCombinedFilters() {
+      ['eligibility-filter-combined','team-filter-combined','gender-filter-combined'].forEach(clearFiltersNoRender);
+      renderAll();
+    }
+
+    function clearFiltersNoRender(containerId) {
+      const root = document.getElementById(containerId);
+      if (!root) return;
+      root.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    }
+
+    function getSearchTerm() {
+      return document.getElementById('search-input').value.trim().toLowerCase();
+    }
+
+    function renderSearchResults(rows) {
+      const wrap = document.getElementById('search-results-wrap');
+      const search = getSearchTerm();
+
+      if (!search || !rows.length) {
+        wrap.innerHTML = '';
+        return;
+      }
+
+      const p = rows[0];
+      wrap.innerHTML = `
+        <div class="search-profile">
+          <div class="search-profile-main">
+            <div class="search-profile-text">${escapeHtml(p.name || '')}</div>
+            <div class="search-profile-meta">
+              <span class="search-profile-muted">${escapeHtml(p.club || '')}</span>
+              <span class="search-profile-muted">${escapeHtml(displayGender(p.gender))}</span>
+              <span class="search-profile-muted">Reg ${escapeHtml(p.registeredDateDisplay || '')}</span>
+              <span class="search-profile-muted">${escapeHtml(p.duprId || '')}</span>
+              <span class="dupr-badge search-dupr">${escapeHtml(p.registeredDupr || '')}</span>
+              ${renderEligibilityPillInline(p.eligibility)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      syncCheckPillStates();
+
+      const searchFiltered = getSearchFilteredPlayers();
+      renderSearchResults(searchFiltered);
+
+      const womenCount = allPlayers.filter(p => p.gender === 'F').length;
+      const menCount = allPlayers.filter(p => p.gender === 'M').length;
+
+      document.getElementById('women-pill').textContent = `${womenCount} Women`;
+      document.getElementById('men-pill').textContent = `${menCount} Men`;
+
+      document.getElementById('all-players-btn').classList.toggle('primary', showAllPlayers);
+
+      document.getElementById('grouped-panel').classList.toggle('hidden', showAllPlayers);
+      document.getElementById('combined-panel').classList.toggle('active', showAllPlayers);
+
+      if (showAllPlayers) {
+        const combined = getCombinedFilteredPlayers([...allPlayers])
+          .sort((a, b) => comparePlayers(a, b, sortState.combined.field, sortState.combined.direction));
+
+        renderCombinedTable(combined);
+        document.getElementById('count-combined').textContent = combined.length;
+      } else {
+        const campWomen = getGroupedFilteredPlayers([...allPlayers], 'Camp', 'F', 'eligibility-filter-camp-women')
+          .sort((a, b) => comparePlayers(a, b, sortState.campWomen.field, sortState.campWomen.direction));
+
+        const dillWomen = getGroupedFilteredPlayers([...allPlayers], 'Dill', 'F', 'eligibility-filter-dill-women')
+          .sort((a, b) => comparePlayers(a, b, sortState.dillWomen.field, sortState.dillWomen.direction));
+
+        const campMen = getGroupedFilteredPlayers([...allPlayers], 'Camp', 'M', 'eligibility-filter-camp-men')
+          .sort((a, b) => comparePlayers(a, b, sortState.campMen.field, sortState.campMen.direction));
+
+        const dillMen = getGroupedFilteredPlayers([...allPlayers], 'Dill', 'M', 'eligibility-filter-dill-men')
+          .sort((a, b) => comparePlayers(a, b, sortState.dillMen.field, sortState.dillMen.direction));
+
+        renderGroupedTable('table-camp-women', campWomen, 'campWomen');
+        renderGroupedTable('table-dill-women', dillWomen, 'dillWomen');
+        renderGroupedTable('table-camp-men', campMen, 'campMen');
+        renderGroupedTable('table-dill-men', dillMen, 'dillMen');
+
+        document.getElementById('count-inline-camp-women').textContent = campWomen.length;
+        document.getElementById('count-inline-dill-women').textContent = dillWomen.length;
+        document.getElementById('count-inline-camp-men').textContent = campMen.length;
+        document.getElementById('count-inline-dill-men').textContent = dillMen.length;
+      }
+    }
+
+    function getSearchFilteredPlayers() {
+      const search = getSearchTerm();
+      let rows = [...allPlayers];
+
+      if (search) {
+        rows = rows.filter(p => [p.name, p.duprId].join(' | ').toLowerCase().includes(search));
+      } else {
+        rows = [];
+      }
+
+      return rows;
+    }
+
+    function getGroupedFilteredPlayers(rows, team, gender, eligibilityFilterId) {
+      const selectedEligibility = getCheckedValues(eligibilityFilterId);
+      let filtered = rows.filter(p => p.club === team && p.gender === gender);
+
+      if (selectedEligibility.length) {
+        filtered = filtered.filter(p => selectedEligibility.includes(String(p.eligibility || '')));
+      }
+
+      return filtered;
+    }
+
+    function getCombinedFilteredPlayers(rows) {
+      const selectedEligibility = getCheckedValues('eligibility-filter-combined');
+      const selectedTeams = getCheckedValues('team-filter-combined');
+      const selectedGenders = getCheckedValues('gender-filter-combined');
+
+      let filtered = [...rows];
+
+      if (selectedEligibility.length) {
+        filtered = filtered.filter(p => selectedEligibility.includes(String(p.eligibility || '')));
+      }
+      if (selectedTeams.length) {
+        filtered = filtered.filter(p => selectedTeams.includes(String(p.club || '')));
+      }
+      if (selectedGenders.length) {
+        filtered = filtered.filter(p => selectedGenders.includes(String(p.gender || '')));
+      }
+
+      return filtered;
+    }
+
+    function comparePlayers(a, b, sortField, direction) {
+      let av = '';
+      let bv = '';
+
+      if (sortField === 'name') {
+        av = String(a.name || '').toLowerCase();
+        bv = String(b.name || '').toLowerCase();
+      } else if (sortField === 'club') {
+        av = String(a.club || '').toLowerCase();
+        bv = String(b.club || '').toLowerCase();
+      } else if (sortField === 'gender') {
+        av = String(a.gender || '').toLowerCase();
+        bv = String(b.gender || '').toLowerCase();
+      } else if (sortField === 'registeredDate') {
+        av = String(a.registeredDateSort || '');
+        bv = String(b.registeredDateSort || '');
+      } else if (sortField === 'duprId') {
+        av = String(a.duprId || '').toLowerCase();
+        bv = String(b.duprId || '').toLowerCase();
+      } else if (sortField === 'registeredDupr') {
+        av = Number(a.registeredDuprSort ?? -1);
+        bv = Number(b.registeredDuprSort ?? -1);
+      } else if (sortField === 'eligibility') {
+        av = Number(a.eligibility || 99);
+        bv = Number(b.eligibility || 99);
+      }
+
+      let result = 0;
+      if (typeof av === 'number' && typeof bv === 'number') {
+        result = av - bv;
+      } else {
+        result = String(av).localeCompare(String(bv));
+      }
+
+      return direction === 'desc' ? -result : result;
+    }
+
+    function renderGroupedTable(containerId, rows, tableKey) {
+      if (!rows.length) {
+        document.getElementById(containerId).innerHTML = `<div class="empty">No players match the current filters.</div>`;
+        return;
+      }
+
+      document.getElementById(containerId).innerHTML = `
+        <table class="grouped-table">
+          <thead>
+            <tr>
+              ${renderHeader(tableKey, 'name', 'Name', 'name-col col-left')}
+              ${renderHeader(tableKey, 'registeredDate', 'Registered', 'date-col col-left')}
+              ${renderHeader(tableKey, 'duprId', 'DUPR ID', 'id-col col-left')}
+              ${renderHeader(tableKey, 'registeredDupr', 'DUPR', 'dupr-col col-center')}
+              ${renderHeader(tableKey, 'eligibility', 'Eligibility', 'eligibility-col col-center')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(p => renderGroupedRow(p)).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderCombinedTable(rows) {
+      if (!rows.length) {
+        document.getElementById('table-combined').innerHTML = `<div class="empty">No players match the current filters.</div>`;
+        return;
+      }
+
+      document.getElementById('table-combined').innerHTML = `
+        <table class="combined-table">
+          <thead>
+            <tr>
+              ${renderHeader('combined', 'name', 'Name', 'name-col col-left')}
+              ${renderHeader('combined', 'club', 'Team', 'team-col col-left')}
+              ${renderHeader('combined', 'gender', 'Gender', 'gender-col col-left')}
+              ${renderHeader('combined', 'registeredDate', 'Registered', 'date-col col-left')}
+              ${renderHeader('combined', 'duprId', 'DUPR ID', 'id-col col-left')}
+              ${renderHeader('combined', 'registeredDupr', 'DUPR', 'dupr-col col-center')}
+              ${renderHeader('combined', 'eligibility', 'Eligibility', 'eligibility-col col-center')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(p => renderCombinedRow(p)).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderHeader(tableKey, field, label, cls) {
+      const state = sortState[tableKey];
+      const arrow = state.field === field ? (state.direction === 'asc' ? '▲' : '▼') : '↕';
+      return `<th class="${cls}" onclick="setSort('${tableKey}','${field}')">${label}<span class="sort-arrow">${arrow}</span></th>`;
+    }
+
+    function renderGroupedRow(p) {
+      return `
+        <tr>
+          <td class="col-left" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.registeredDateDisplay || '')}">${escapeHtml(p.registeredDateDisplay || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.duprId || '')}">${escapeHtml(p.duprId || '')}</td>
+          <td class="col-center"><div class="dupr-cell">${p.registeredDupr ? `<span class="dupr-badge">${escapeHtml(p.registeredDupr)}</span>` : ''}</div></td>
+          <td class="col-center">${renderEligibilityPill(p.eligibility)}</td>
+        </tr>
+      `;
+    }
+
+    function renderCombinedRow(p) {
+      return `
+        <tr>
+          <td class="col-left" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.club || '')}">${escapeHtml(p.club || '')}</td>
+          <td class="col-left" title="${escapeHtml(displayGender(p.gender))}">${escapeHtml(displayGender(p.gender))}</td>
+          <td class="col-left" title="${escapeHtml(p.registeredDateDisplay || '')}">${escapeHtml(p.registeredDateDisplay || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.duprId || '')}">${escapeHtml(p.duprId || '')}</td>
+          <td class="col-center"><div class="dupr-cell">${p.registeredDupr ? `<span class="dupr-badge">${escapeHtml(p.registeredDupr)}</span>` : ''}</div></td>
+          <td class="col-center">${renderEligibilityPill(p.eligibility)}</td>
+        </tr>
+      `;
+    }
+
+    function displayGender(value) {
+      if (value === 'F') return 'Women';
+      if (value === 'M') return 'Men';
+      return value || '';
+    }
+
+    function renderEligibilityPillInline(value) {
+      const v = String(value || '').trim();
+      if (!v || !['1','2','3','4','5'].includes(v)) return '—';
+      return `<span class="division-pill div${v}">D${v}</span>`;
+    }
+
+    function renderEligibilityPill(value) {
+      const v = String(value || '').trim();
+      if (!v || !['1','2','3','4','5'].includes(v)) {
+        return `<div class="eligibility-cell"><span class="division-pill divx">—</span></div>`;
+      }
+      return `<div class="eligibility-cell"><span class="division-pill div${v}">D${v}</span></div>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+
+    function getErrorMessage(err) {
+      return err && err.message ? err.message : String(err || 'Unknown error');
+    }
+
+    function resolveBrandingUrl_(value) {
+  const s = String(value || '').trim();
+  if (!s) return '';
+
+  if (/^https?:\/\//i.test(s)) return s;
+
+  if (typeof normalizeLogoUrl_ === 'function') {
+    return normalizeLogoUrl_(s);
+  }
+
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(s)}&sz=w1200`;
+}
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+function boot() {
+  allPlayers = [
+    {
+      id: 'PLY001',
+      playerId: 'PLY001',
+      name: 'Test Player',
+      club: 'Camp',
+      gender: 'F',
+      registeredDateDisplay: '04/09/26',
+      registeredDateSort: '2026-04-09',
+      registeredDupr: '3.500',
+      registeredDuprSort: 3.5,
+      eligibility: '4',
+      duprId: 'TEST123'
+    }
+  ];
+
+  updateStickyOffsets();
+  renderAll();
+  showToast('Player directory loaded');
+}    window.addEventListener('resize', updateStickyOffsets);
+    window.addEventListener('orientationchange', updateStickyOffsets);
+  </script>
+</body>
+</html>
