@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecticut Pickleball League — Season Stats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Variables ── */
+    :root {
+      --navy:    #081f43; --blue: #123a7c; --green: #0b7e39; --gold: #ffd22e; --gold-h: #f3c400;
+      --bg:      #e8eef7; --panel: #ffffff; --soft: #f2f6fc; --border: #ccd6e8; --border-s: #dde5f3;
+      --text:    #0d1f3c; --muted: #5a6e8a; --inv: #f8fbff;
+      --ok:      #0b7e39; --warn: #c96a00; --danger: #c8231c;
+      --r: 12px; --r-lg: 18px; --sh: 0 6px 24px rgba(8,30,67,.09);
+      --top-offset: 120px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input, select { font-family: inherit; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; min-height: 100vh; }
+
+    /* ── Sticky top ── */
+    #top-static { position: sticky; top: 0; z-index: 50; background: var(--bg); box-shadow: 0 4px 20px rgba(8,30,67,.12); }
+
+    /* ── Header ── */
+    .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); }
+    .league-header { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .league-brand { display: flex; align-items: center; gap: 12px; }
+    .league-logo-wrap { width: 56px; height: 56px; border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.20); flex-shrink: 0; padding: 2px; overflow: hidden; }
+    .league-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .league-logo-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--navy); }
+    .league-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1.6px; color: #fff; line-height: 1; }
+    .league-text p  { color: #d8e5fb; font-size: 11px; margin-top: 4px; letter-spacing: .12em; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-action { height: 34px; padding: 0 14px; border-radius: 8px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.28); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; }
+    .btn-action:hover { background: rgba(255,255,255,.22); }
+    .pill { padding: 6px 14px; border-radius: 8px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+
+    /* ── Division bar ── */
+    .div-bar { background: var(--panel); border-bottom: 1px solid var(--border-s); padding: 9px 20px; display: flex; align-items: center; gap: 16px; }
+    .div-bar-label { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+    .div-select { background: var(--soft); border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 14px; font-weight: 700; color: var(--text); outline: none; cursor: pointer; appearance: none; min-width: 200px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%235a6e8a'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+    .div-select:focus { border-color: var(--blue); background-color: #f0f5ff; }
+
+    /* ── Single-column page ── */
+    .page { display: flex; flex-direction: column; gap: 12px; padding: 12px 20px; }
+    .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
+
+    /* ── Section head ── */
+    .sec-head { padding: 10px 18px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; }
+    .sec-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--navy); }
+    .sec-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: #fff; flex: 1; }
+    .ps-expand-btn { margin-left: auto; height: 28px; padding: 0 12px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .ps-expand-btn:hover { background: rgba(255,255,255,.22); }
+    .ps-expand-btn.active { background: rgba(255,213,46,.25); border-color: rgba(255,213,46,.6); color: var(--gold); }
+
+    /* ── #5 header controls ── */
+    .ps-filter-input { height: 28px; padding: 0 10px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 12px; color: rgba(255,255,255,.90); outline: none; width: 140px; }
+    .ps-filter-input::placeholder { color: rgba(255,255,255,.45); }
+    .ps-hdr-btn { height: 28px; padding: 0 10px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .ps-hdr-btn:hover { background: rgba(255,255,255,.22); }
+
+    /* ════════════════════════════════════════════
+       SERIES HERO  (2-team divisions)
+    ════════════════════════════════════════════ */
+    .series-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+    .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .sh-logo-big { width: 96px; height: 96px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .sh-logo-big img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .sh-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: #fff; text-align: center; }
+    .sh-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .sh-series-lbl { font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
+    .sh-score { font-family: 'Bebas Neue', sans-serif; font-size: 68px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
+    .sh-score em { color: var(--gold); font-style: normal; }
+    .sh-leader { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); text-align: center; margin-top: 4px; }
+
+    /* ════════════════════════════════════════════
+       GAME-TYPE TILES
+    ════════════════════════════════════════════ */
+    .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 4), 1fr); border-top: 1px solid var(--border-s); }
+    .gt-tile { padding: 18px 16px; border-right: 1px solid var(--border-s); display: flex; flex-direction: column; gap: 12px; }
+    .gt-tile:last-child { border-right: none; }
+    .gt-tile-head { display: flex; align-items: center; justify-content: space-between; }
+    .gt-type-lbl { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; }
+    .gt-type-lbl.all    { color: var(--navy); }
+    .gt-type-lbl.womens { color: #123a7c; }
+    .gt-type-lbl.mens   { color: var(--green); }
+    .gt-type-lbl.mixed  { color: #7a5c00; }
+    .gt-type-lbl.coed   { color: #0d5229; }
+    .gt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .gt-dot.all    { background: var(--navy); }
+    .gt-dot.womens { background: #123a7c; }
+    .gt-dot.mens   { background: var(--green); }
+    .gt-dot.mixed  { background: #ffd22e; }
+    .gt-dot.coed   { background: #0d5229; }
+    .gt-scores { display: flex; flex-direction: column; gap: 7px; }
+    .gt-score-row { display: flex; align-items: center; gap: 10px; }
+    .gt-mini-logo { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-s); background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .gt-mini-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .gt-score-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+    .gt-wins { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 900; line-height: 1; }
+    .gt-wins.winner { color: var(--ok); }
+    .gt-wins.loser  { color: var(--muted); opacity: .5; font-size: 22px; }
+    .gt-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--ok); background: #e8f9ef; border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
+    .gt-bar-track { height: 5px; border-radius: 3px; background: var(--soft); border: 1px solid var(--border-s); overflow: hidden; }
+    .gt-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+    .gt-bar-fill.all    { background: var(--green); }
+    .gt-bar-fill.womens { background: #123a7c; }
+    .gt-bar-fill.mens   { background: var(--green); }
+    .gt-bar-fill.mixed  { background: #c9a000; }
+    .gt-bar-fill.coed   { background: #0d5229; }
+
+    /* ════════════════════════════════════════════
+       MULTI-TEAM STANDINGS TABLE  (3+ teams)
+    ════════════════════════════════════════════ */
+    .st-table { width: 100%; border-collapse: collapse; }
+    .st-team-th { text-align: left; padding: 7px 12px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--soft); border-bottom: 1px solid var(--border-s); border-right: 1px solid var(--border-s); }
+    .st-match-th { padding: 7px 12px; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--soft); border-bottom: 1px solid var(--border-s); border-left: 1px solid var(--border-s); white-space: nowrap; width: 80px; }
+    .ts2-col-head { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 7px 12px; text-align: center; white-space: nowrap; width: 64px; border-left: 1px solid rgba(0,0,0,.14); border-bottom: 1px solid rgba(0,0,0,.14); }
+    .ts2-col-head.ts2-col-all    { background: #081f43; color: #ffd22e; }
+    .ts2-col-head.ts2-col-womens { background: #123a7c; color: #ffffff; }
+    .ts2-col-head.ts2-col-mens   { background: #0b7e39; color: #ffffff; }
+    .ts2-col-head.ts2-col-mixed  { background: #ffd22e; color: #081f43; }
+    .ts2-col-head.ts2-col-coed   { background: #0d5229; color: #a3f0c0; }
+    .st-row td { border-top: 1px solid var(--border-s); }
+    .st-row:first-of-type td { border-top: none; }
+    .st-team-cell { padding: 0 !important; border-right: 1px solid var(--border-s); }
+    .st-team-inner { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
+    .st-rank { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--muted); min-width: 24px; text-align: center; flex-shrink: 0; line-height: 1; }
+    .st-rank.rank-1 { color: var(--gold); }
+    .st-rank.rank-2 { color: #aab8cc; }
+    .st-rank.rank-3 { color: #c8a87a; }
+    .st-logo { width: 52px; height: 52px; border-radius: 10px; background: transparent; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .st-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .st-name { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    .st-name.rank-1 { color: var(--navy); }
+    .st-match-cell { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 700; text-align: center; padding: 8px 12px; border-left: 1px solid var(--border-s); vertical-align: middle; white-space: nowrap; width: 80px; }
+    .st-match-cell.st-match-win  { color: var(--ok); font-weight: 800; }
+    .st-match-cell.st-match-loss { color: var(--muted); }
+    .st-score-cell { text-align: center; padding: 7px 12px; border-left: 1px solid var(--border-s); vertical-align: middle; width: 64px; }
+    .st-wins { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 900; display: block; line-height: 1.1; color: var(--text); }
+    .st-score-cell.st-win  .st-wins { color: var(--ok); font-weight: 800; }
+    .st-score-cell.st-loss .st-wins { color: var(--muted); opacity: .65; }
+    .st-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; display: block; margin-top: 1px; color: var(--ok); }
+
+    /* ════════════════════════════════════════════
+       PLAYER STATS — full width, Women | Men
+    ════════════════════════════════════════════ */
+    .ps-two-col { display: flex; }
+    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); }
+    .ps-col:last-child { border-right: none; }
+
+    .ps-col-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .ps-col-dot.womens { background: #123a7c; }
+    .ps-col-dot.mens   { background: var(--green); }
+    .ps-col-dot.other  { background: var(--muted); }
+
+    /* Table */
+    .pst { width: 100%; border-collapse: collapse; }
+    .pst th { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
+    .pst .sr td { padding: 13px 12px; border-bottom: 1px solid var(--border-s); text-align: center; vertical-align: middle; }
+    .pst .sr { cursor: pointer; }
+    .pst .sr:hover td { background: #f5f8ff; }
+    .pst .sr:hover + .dr td { background: #f5f8ff; }
+    .pst .sr.open td { background: #eef2ff; }
+    .pst .sr.open:hover td { background: #e8eeff; }
+
+    /* Detail row */
+    .dr { display: none; }
+    .dr.open { display: table-row; }
+    .dr td { padding: 7px 12px 9px; border-bottom: 1px solid var(--border-s); border-top: 1px dashed var(--border-s); background: #f8faff; text-align: center; vertical-align: top; }
+    .dr-spacer { padding: 0 !important; }
+    .dr-item { display: flex; flex-direction: column; gap: 1px; align-items: center; }
+    .dr-types { display: flex; gap: 16px; justify-content: center; align-items: flex-start; }
+    .dr-lbl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
+    .dr-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text); }
+    .dr-rec-row { display: flex; align-items: baseline; gap: 7px; }
+    .dr-diff { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; }
+    .dr-diff.ok  { color: var(--ok); }
+    .dr-diff.dim { color: var(--muted); opacity: .7; }
+    .dr-type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; width: fit-content; }
+    .dr-type-badge.womens { background: #123a7c22; color: #123a7c; border: 1px solid #123a7c44; }
+    .dr-type-badge.mens   { background: #0b7e3922; color: #0b7e39; border: 1px solid #0b7e3944; }
+    .dr-type-badge.mixed  { background: #ffd22e44; color: #7a5c00; border: 1px solid #ffd22eaa; }
+    .dr-type-badge.coed   { background: #0d522922; color: #0d5229; border: 1px solid #0d522966; }
+
+    /* Summary cell styles */
+    .td-rank { text-align: center !important; font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 800; color: var(--muted); width: 32px; padding: 13px 4px !important; }
+    .td-rank.q  { color: var(--ok); }
+    .td-rank.nq { color: var(--muted); opacity: .4; }
+    .td-logo { width: 38px; padding: 8px 4px !important; text-align: center !important; }
+    .logo-sq { width: 30px; height: 30px; border-radius: 7px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+    .logo-sq img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .td-name { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .td-rating { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; }
+    .td-rec { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .td-diff { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 800; }
+    .td-diff.pos { color: var(--ok); }
+    .td-diff.neg { color: var(--muted); opacity: .6; }
+    .td-dpg  { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+    .td-dpg.pos { color: var(--ok); opacity: .8; }
+    .td-dpg.neg { color: var(--muted); opacity: .5; }
+    .td-gms { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); }
+    .td-q { width: 36px; padding-right: 10px !important; text-align: center !important; }
+    .q-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; font-size: 10px; font-weight: 800; }
+    .q-chip.q  { background: #e3f7ec; color: var(--ok); border: 1px solid #a8e6c0; }
+    .q-chip.nq { background: var(--soft); color: var(--muted); border: 1px solid var(--border-s); }
+
+    /* ── #4 th-group-lbl ── */
+    .th-group-lbl { font-size: 13px !important; font-weight: 800 !important; letter-spacing: .04em !important; text-transform: none !important; color: var(--text) !important; vertical-align: middle; }
+
+    /* ── #7 sortable columns ── */
+    .th-sortable { cursor: pointer; user-select: none; }
+    .th-sortable:hover { color: var(--text) !important; }
+    .th-sort-asc::after  { content: ' ▲'; font-size: 9px; }
+    .th-sort-desc::after { content: ' ▼'; font-size: 9px; }
+
+    /* ── Utility ── */
+    .loading-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; color: var(--muted); font-size: 12px; }
+    .spinner { width: 30px; height: 30px; border: 3px solid var(--border-s); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .empty-state .ico { font-size: 28px; margin-bottom: 8px; }
+
+    /* ── #9 print ── */
+    @media print {
+      body > *:not(.page) { display: none; }
+      .sec-head { display: none; }
+      .ps-hdr-btn, .ps-filter-input, .ps-expand-btn { display: none; }
+      .dr { display: table-row !important; }
+      .page { padding: 0; }
+    }
+
+    /* ── #10 legend ── */
+    .legend-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 999; }
+    .legend-overlay.open { display: block; }
+    .legend-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 1000; background: #fff; border-radius: 14px; padding: 22px 26px; width: 380px; max-width: 92vw; box-shadow: 0 8px 40px rgba(0,0,0,.18); }
+    .legend-popup.open { display: block; }
+    .legend-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .legend-title { font-weight: 800; font-size: 15px; color: var(--text); }
+    .legend-close { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--muted); padding: 2px 6px; border-radius: 5px; }
+    .legend-close:hover { background: var(--soft); }
+    .legend-list { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+    .legend-list dt { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .legend-list dd { margin: 0; color: var(--muted); line-height: 1.4; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px)  { .gt-tiles { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 700px)  { .page { padding: 10px 12px; } .series-hero { padding: 20px 14px; gap: 10px; } .sh-score { font-size: 48px; } .sh-logo-big { width: 70px; height: 70px; } }
+  </style>
+</head>
+<body>
+
+<div id="top-static">
+  <div class="app-header">
+    <div class="league-header">
+      <div class="league-brand">
+        <div class="league-logo-wrap">
+          <img id="league-logo" alt="" style="display:none;">
+          <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+        </div>
+        <div class="league-text">
+          <h1 id="league-title">Connecticut Pickleball League</h1>
+          <p>Season Stats</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="pill" id="hdr-season">Season 2025</div>
+        <button class="btn-action" id="fs-btn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
+      </div>
+    </div>
+  </div>
+  <div class="div-bar">
+    <span class="div-bar-label">Division</span>
+    <select id="divisionSelect" class="div-select" onchange="handleDivisionChange()">
+      <option value="">Loading…</option>
+    </select>
+  </div>
+</div>
+
+<div class="page">
+  <div class="side-panel" id="seriesPanel">
+    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
+  </div>
+  <div class="side-panel" id="playerPanel">
+    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
+  </div>
+</div>
+
+<!-- #10 Legend -->
+<div class="legend-overlay" id="legendOverlay" onclick="toggleLegend()"></div>
+<div class="legend-popup" id="legendPopup">
+  <div class="legend-hdr">
+    <span class="legend-title">Legend</span>
+    <button class="legend-close" onclick="toggleLegend()">&#x2715;</button>
+  </div>
+  <dl class="legend-list">
+    <dt>Gms</dt><dd>Total games played for the season</dd>
+    <dt>Rating</dt><dd>Measure of performance used to determine MVP rankings — blended Win% and Pts%</dd>
+    <dt>W–L</dt><dd>Record in all games played</dd>
+    <dt>+/–</dt><dd>Total points scored minus total points allowed in all games</dd>
+    <dt>Per Gm</dt><dd>Average point differential per game</dd>
+    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in 50% of rounds to qualify (24 total games by end of season)</dd>
+    <dt>Play%</dt><dd>Games played divided by total rounds</dd>
+    <dt>Win%</dt><dd>Wins divided by games played</dd>
+    <dt>Pts%</dt><dd>Total points scored ÷ (winning game score of 21 × games played)</dd>
+    <dt>Game type</dt><dd>Women's / Men's / Mixed subset of total record and +/–</dd>
+  </dl>
+</div>
+
+<script>
+  let currentDivisionKey = '';
+  let currentBranding    = null;
+  let currentData        = null;
+
+  window.addEventListener('load', () => {
+    loadBranding();
+    loadDivisions();
+    updateStickyOffset();
+  });
+  window.addEventListener('resize', updateStickyOffset);
+
+  function updateStickyOffset() {
+    const h = document.getElementById('top-static')?.offsetHeight || 0;
+    document.documentElement.style.setProperty('--top-offset', h + 'px');
+  }
+
+  function toggleFullscreen() {
+    const btn = document.getElementById('fs-btn');
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      if (btn) btn.textContent = '\u2715 Exit Full';
+    } else {
+      document.exitFullscreen().catch(() => {});
+      if (btn) btn.textContent = '\u26F6 Fullscreen';
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('fs-btn');
+    if (btn) btn.textContent = document.fullscreenElement ? '\u2715 Exit Full' : '\u26F6 Fullscreen';
+  });
+
+  // ── Branding ──────────────────────────────────────────────────────────────
+  function loadBranding() {
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); }
+        catch (e) { console.error(e); }
+      })
+      .withFailureHandler(e => console.error(e))
+      .getScorecardBrandingV1();
+  }
+
+  function applyBranding(b) {
+    setText('league-title', b.leagueTitle || 'Connecticut Pickleball League');
+    const img = document.getElementById('league-logo');
+    const fb  = document.getElementById('league-logo-fallback');
+    if (b.leagueLogoUrl && img && fb) {
+      img.src = b.leagueLogoUrl; img.style.display = 'block'; fb.style.display = 'none';
+    }
+  }
+
+  // ── Divisions ─────────────────────────────────────────────────────────────
+  function loadDivisions() {
+    if (!hasGas()) { setSeriesEmpty('No GAS connection.'); return; }
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { populateDivisions(JSON.parse(raw) || []); }
+        catch (e) { setSeriesEmpty('Failed to load divisions.'); }
+      })
+      .withFailureHandler(() => setSeriesEmpty('Server error.'))
+      .getSeasonDivisionsV1();
+  }
+
+  function populateDivisions(divs) {
+    const sel = document.getElementById('divisionSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    if (!divs.length) {
+      sel.innerHTML = '<option value="">No divisions</option>';
+      setSeriesEmpty('No divisions found.'); return;
+    }
+    divs.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.key || d.division_id || '';
+      o.textContent = d.label || d.division_name || d.key || 'Division';
+      sel.appendChild(o);
+    });
+    currentDivisionKey = sel.value;
+    loadSeasonData(currentDivisionKey);
+  }
+
+  function handleDivisionChange() {
+    const sel = document.getElementById('divisionSelect');
+    if (!sel) return;
+    currentDivisionKey = sel.value;
+    loadSeasonData(currentDivisionKey);
+  }
+
+  // ── Season Data ───────────────────────────────────────────────────────────
+  function loadSeasonData(divisionKey) {
+    setSeriesLoading();
+    setPlayerLoading();
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try {
+          currentData = JSON.parse(raw);
+          renderSeries(currentData.standings || []);
+          renderPlayerStats(currentData.playerStats || []);
+        } catch (e) {
+          setSeriesEmpty('Render error: ' + esc(e.message || String(e)));
+          console.error(e);
+        }
+      })
+      .withFailureHandler(e => setSeriesEmpty('Load error: ' + esc(e?.message || String(e))))
+      .getSeasonDataV1(divisionKey);
+  }
+
+  // ── Render Series / Standings ─────────────────────────────────────────────
+  function renderSeries(rows) {
+    if (!rows.length) { setSeriesEmpty('No standings data.'); return; }
+    document.getElementById('seriesPanel').innerHTML =
+      rows.length === 2 ? renderHeroAndTiles(rows) : renderStandingsTable(rows);
+  }
+
+  function renderHeroAndTiles(rows) {
+    const a = rows[0], b = rows[1];
+    const aWins = a.matches_won || 0, bWins = b.matches_won || 0;
+    const tied  = aWins === bWins;
+    const leaderText = tied ? 'Series Tied' : `${esc(a.team_name)} Leads`;
+    const scoreHtml  = tied
+      ? `<span class="sh-score">${aWins} – ${bWins}</span>`
+      : `<span class="sh-score"><em>${aWins}</em> – ${bWins}</span>`;
+
+    const hero = `
+      <div class="series-hero">
+        <div class="sh-team">
+          <div class="sh-logo-big">${buildLogoHtml(a.team_name, 'lg')}</div>
+          <span class="sh-team-name">${esc(a.team_name)}</span>
+        </div>
+        <div class="sh-center">
+          <span class="sh-series-lbl">Season Series</span>
+          ${scoreHtml}
+          <span class="sh-leader">${leaderText}</span>
+        </div>
+        <div class="sh-team">
+          <div class="sh-logo-big">${buildLogoHtml(b.team_name, 'lg')}</div>
+          <span class="sh-team-name">${esc(b.team_name)}</span>
+        </div>
+      </div>`;
+
+    const gtypes  = ['all', 'womens', 'mens', 'mixed', 'coed'];
+    const glabels = { all: 'All Games', womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed' };
+    const active  = gtypes.filter(gt => (a[gt+'_w'] != null) || (b[gt+'_w'] != null));
+
+    const tilesHtml = active.map(gt => {
+      const aw = a[gt+'_w'] || 0, bw = b[gt+'_w'] || 0;
+      const ad = a[gt+'_diff'] || 0;
+      const total = aw + bw || 1;
+      const aWins = aw > bw;
+      return `<div class="gt-tile">
+        <div class="gt-tile-head">
+          <span class="gt-type-lbl ${gt}">${esc(glabels[gt])}</span>
+          <span class="gt-dot ${gt}"></span>
+        </div>
+        <div class="gt-scores">
+          <div class="gt-score-row">
+            <div class="gt-mini-logo">${buildLogoHtml(a.team_name, 'xs')}</div>
+            <div class="gt-score-right">
+              <span class="gt-wins ${aWins ? 'winner' : 'loser'}">${aw}</span>
+              ${aWins && ad > 0 ? `<span class="gt-diff">+${ad}</span>` : ''}
+            </div>
+          </div>
+          <div class="gt-score-row">
+            <div class="gt-mini-logo">${buildLogoHtml(b.team_name, 'xs')}</div>
+            <div class="gt-score-right">
+              <span class="gt-wins ${!aWins && bw > aw ? 'winner' : 'loser'}">${bw}</span>
+            </div>
+          </div>
+        </div>
+        <div class="gt-bar-track">
+          <div class="gt-bar-fill ${gt}" style="width:${Math.round(aw/total*100)}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    return hero + `<div class="gt-tiles" style="--tile-cols:${active.length}">${tilesHtml}</div>`;
+  }
+
+  function renderStandingsTable(rows) {
+    const gtypes  = ['womens', 'mens', 'mixed', 'coed'];
+    const glabels = { womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed' };
+    const active  = gtypes.filter(gt => rows.some(r => r[gt+'_w'] != null));
+    const leaders = {};
+    active.forEach(gt => leaders[gt] = Math.max(...rows.map(r => r[gt+'_w'] || 0)));
+
+    const typeHeads = active.map(gt =>
+      `<th class="ts2-col-head ts2-col-${gt}">${esc(glabels[gt])}</th>`
+    ).join('');
+
+    const rowsHtml = rows.map((r, i) => {
+      const rank = i + 1, rc = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+      const mw = r.matches_won || 0, ml = r.matches_lost || 0;
+      const mc = mw > ml ? 'st-match-win' : mw < ml ? 'st-match-loss' : '';
+      const typeCells = active.map(gt => {
+        const w = r[gt+'_w'], diff = r[gt+'_diff'] || 0;
+        if (w == null) return `<td class="st-score-cell"><span class="st-wins" style="color:var(--border-s)">—</span></td>`;
+        const cc = w >= leaders[gt] && w > 0 ? 'st-win' : w < leaders[gt] ? 'st-loss' : '';
+        return `<td class="st-score-cell ${cc}">
+          <span class="st-wins">${w}</span>
+          ${diff > 0 ? `<span class="st-diff">+${diff}</span>` : ''}
+        </td>`;
+      }).join('');
+      return `<tr class="st-row">
+        <td class="st-team-cell"><div class="st-team-inner">
+          <span class="st-rank ${rc}">${rank}</span>
+          <div class="st-logo">${buildLogoHtml(r.team_name, 'sm')}</div>
+          <span class="st-name ${rc}">${esc(r.team_name || '')}</span>
+        </div></td>
+        <td class="st-match-cell ${mc}">${mw} – ${ml}</td>
+        ${typeCells}
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="sec-head">
+        <div class="sec-badge">S</div>
+        <span class="sec-label">Season Standings</span>
+      </div>
+      <table class="st-table">
+        <thead><tr>
+          <th class="st-team-th">Team</th>
+          <th class="st-match-th">Matches</th>
+          ${typeHeads}
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+  }
+
+  // ── Render Player Stats ───────────────────────────────────────────────────
+  function buildPlayerPanel(players) {
+    const el = document.getElementById('playerPanel');
+    if (!players.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ico">&#x1F3D3;</div>No player data.</div>'; return;
+    }
+
+    const sortFn = (a, b) => b.wins - a.wins || a.losses - b.losses
+                              || (b.points_for - b.points_against) - (a.points_for - a.points_against);
+    const women = players.filter(p => p.isWomens).sort(sortFn);
+    const men   = players.filter(p => p.isMens).sort(sortFn);
+    const other = players.filter(p => !p.isWomens && !p.isMens).sort(sortFn);
+
+    const markQ = list => list.map((p, i) => ({ ...p, qualified: p.qualified ?? (i < Math.ceil(list.length / 2)) }));
+
+    const typeOrder = ['womens', 'mens', 'mixed', 'coed'];
+    const typeLbl   = { womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed' };
+
+    const buildCol = (rawList, dotCls, colLabel) => {
+      if (!rawList.length) return '';
+      const list = markQ(rawList);
+      const maxGms = Math.max(...list.map(p => (p.wins || 0) + (p.losses || 0)));
+
+      const detailTypes = typeOrder.filter(t => list.some(p => p[t+'_w'] != null));
+
+      const buildRow = (p, i) => {
+        const gms    = (p.wins || 0) + (p.losses || 0);
+        const allDiff = (p.points_for || 0) - (p.points_against || 0);
+        const diffStr = allDiff > 0 ? '+' + allDiff : String(allDiff);
+        const diffCls = allDiff > 0 ? 'pos' : allDiff < 0 ? 'neg' : '';
+        const ratingStr = p.rating != null ? Number(p.rating).toFixed(1) : '—';
+        const qual   = p.qualified;
+        const rankCls = qual ? 'q' : 'nq';
+
+        const winPct    = gms > 0 ? ((p.wins / gms) * 100).toFixed(1) + '%' : '—';
+        const ptsTot    = (p.points_for || 0) + (p.points_against || 0);
+        const ptsPct    = ptsTot > 0 ? ((p.points_for / ptsTot) * 100).toFixed(1) + '%' : '—';
+        const possGms   = (p.team_match_count || 0) * 8 || maxGms;
+        // #1: toFixed(1) for Play%
+        const playPct   = possGms > 0 ? ((gms / possGms) * 100).toFixed(1) : '0.0';
+        const dpg       = gms > 0 ? (allDiff / gms) : 0;
+        const dpgStr    = (dpg >= 0 ? '+' : '') + dpg.toFixed(1);
+
+        // #2 & #3: type cells with dr-rec-row; second cell gets colspan="2"
+        const typeItems = detailTypes.map((t, ti) => {
+          const w = p[t+'_w'], l = p[t+'_l'], d = p[t+'_diff'];
+          if (w == null) return ti === 1 ? `<td colspan="2"></td>` : `<td></td>`;
+          const dStr = d > 0 ? '+' + d : String(d);
+          const dCls = d > 0 ? 'ok' : d < 0 ? 'dim' : '';
+          const colspan = ti === 1 ? ' colspan="2"' : '';
+          return `<td${colspan}><div class="dr-item"><span class="dr-lbl">${esc(typeLbl[t])}</span><div class="dr-rec-row"><span class="dr-val">${w}–${l}</span><span class="dr-diff ${dCls}">${esc(dStr)}</span></div></div></td>`;
+        });
+        while (typeItems.length < 2) {
+          const colspan = typeItems.length === 1 ? ' colspan="2"' : '';
+          typeItems.push(`<td${colspan}></td>`);
+        }
+        const typeTds = typeItems.slice(0, 2).join('');
+
+        return `<tr class="sr">
+          <td class="td-rank ${rankCls}">${i + 1}</td>
+          <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name, 'xs')}</div></td>
+          <td class="td-name">${esc(p.name)}</td>
+          <td class="td-gms">${gms}</td>
+          <td class="td-rating">${esc(ratingStr)}</td>
+          <td class="td-rec">${p.wins}–${p.losses}</td>
+          <td class="td-diff ${diffCls}">${esc(diffStr)}</td>
+          <td class="td-dpg ${diffCls}">${esc(dpgStr)}</td>
+          <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}">${qual ? 'Q' : 'NQ'}</span></td>
+        </tr>
+        <tr class="dr">
+          <td colspan="3" class="dr-spacer"></td>
+          <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">${playPct}%</span></div></td>
+          <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">${esc(winPct)}</span></div></td>
+          <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">${esc(ptsPct)}</span></div></td>
+          ${typeTds}
+        </tr>`;
+      };
+
+      // #4: thead with colspan="3" th-group-lbl, no separate ps-col-head div
+      return `
+        <table class="pst">
+          <thead><tr>
+            <th colspan="3" class="th-l th-group-lbl"><span class="ps-col-dot ${dotCls}"></span> ${esc(colLabel)}</th>
+            <th style="width:76px" data-sort="gms" data-sort-type="num" class="th-sortable">Gms</th>
+            <th style="width:76px" data-sort="rating" data-sort-type="num" class="th-sortable">Rating</th>
+            <th style="width:76px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
+            <th style="width:76px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
+            <th style="width:76px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
+            <th style="width:36px;padding:7px 10px 7px 4px"></th>
+          </tr></thead>
+          <tbody>${list.map(buildRow).join('')}</tbody>
+        </table>`;
+    };
+
+    const womenHtml = buildCol(women, 'womens', 'Women');
+    const menHtml   = buildCol(men,   'mens',   'Men');
+    const otherHtml = buildCol(other, 'other',  'Other');
+
+    // #5: add controls to sec-hdr
+    let html = `
+      <div class="sec-head">
+        <div class="sec-badge">P</div>
+        <span class="sec-label">Player Standings</span>
+        <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players\u2026">
+        <button class="ps-hdr-btn" onclick="downloadCSV()">\u2193 CSV</button>
+        <button class="ps-hdr-btn" onclick="downloadPDF()">\u2193 PDF</button>
+        <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
+        <button class="ps-expand-btn" id="psExpandBtn" onclick="toggleExpand()">Detail \u25b8</button>
+      </div>
+      <div class="ps-container" id="ps-container">`;
+
+    if (womenHtml || menHtml) {
+      html += `<div class="ps-two-col">
+        <div class="ps-col">${womenHtml}</div>
+        <div class="ps-col">${menHtml}</div>
+      </div>`;
+    }
+    if (otherHtml) {
+      html += `<div style="border-top:1px solid var(--border-s)"><div class="ps-two-col"><div class="ps-col">${otherHtml}</div><div class="ps-col"></div></div></div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+
+    // #7: init sortable after render
+    initSortableHeaders();
+
+    // #6: filter listener (re-attach after innerHTML rebuild)
+    document.getElementById('psFilter')?.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('tr.sr').forEach(sr => {
+        const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
+        const match = !q || name.includes(q);
+        sr.style.display = match ? '' : 'none';
+        const tbody = sr.parentElement;
+        const rows = Array.from(tbody.rows);
+        const idx = rows.indexOf(sr);
+        const dr = rows[idx + 1];
+        if (dr?.classList.contains('dr')) {
+          if (!match) dr.style.display = 'none';
+          else dr.style.display = dr.classList.contains('open') ? 'table-row' : 'none';
+        }
+      });
+    });
+  }
+
+  function renderPlayerStats(players) {
+    buildPlayerPanel(players);
+  }
+
+  // Row click — event delegation so clicks anywhere inside the <tr> work,
+  // even after innerHTML re-renders wipe inline handlers
+  document.addEventListener('click', function(e) {
+    const sr = e.target.closest('tr.sr');
+    if (!sr) return;
+    const tbody = sr.parentElement;
+    const rows  = Array.from(tbody.rows);
+    const idx   = rows.indexOf(sr);
+    const dr    = rows[idx + 1];
+    if (!dr || !dr.classList.contains('dr')) return;
+    const open = dr.classList.toggle('open');
+    sr.classList.toggle('open', open);
+    syncExpandBtn();
+  });
+
+  function toggleExpand() {
+    const btn = document.getElementById('psExpandBtn');
+    if (!btn) return;
+    const drs = document.querySelectorAll('tr.dr');
+    const srs = document.querySelectorAll('tr.sr');
+    const anyOpen = [...drs].some(d => d.classList.contains('open'));
+    drs.forEach(d => d.classList.toggle('open', !anyOpen));
+    srs.forEach(s => s.classList.toggle('open', !anyOpen));
+    btn.textContent = anyOpen ? 'Detail \u25b8' : 'Summary \u25c2';
+    btn.classList.toggle('active', !anyOpen);
+  }
+
+  function syncExpandBtn() {
+    const btn = document.getElementById('psExpandBtn');
+    if (!btn) return;
+    const drs     = document.querySelectorAll('tr.dr');
+    const allOpen = [...drs].every(d => d.classList.contains('open'));
+    btn.textContent = allOpen ? 'Summary \u25c2' : 'Detail \u25b8';
+    btn.classList.toggle('active', allOpen);
+  }
+
+  // #7 Sortable columns
+  function initSortableHeaders() {
+    document.querySelectorAll('th.th-sortable').forEach(th => {
+      th.addEventListener('click', function() {
+        const table = this.closest('table');
+        const tbody = table.querySelector('tbody');
+        const ths   = Array.from(table.querySelectorAll('th'));
+        const colIdx = ths.indexOf(this);
+        const curDir = this.dataset.sortDir;
+        const newDir = curDir === 'asc' ? 'desc' : 'asc';
+        ths.forEach(h => { delete h.dataset.sortDir; h.classList.remove('th-sort-asc','th-sort-desc'); });
+        this.dataset.sortDir = newDir;
+        this.classList.add(newDir === 'asc' ? 'th-sort-asc' : 'th-sort-desc');
+        const allRows = Array.from(tbody.rows);
+        const pairs = [];
+        for (let i = 0; i < allRows.length; i++) {
+          if (allRows[i].classList.contains('sr')) {
+            const dr = allRows[i+1]?.classList.contains('dr') ? allRows[i+1] : null;
+            pairs.push({ sr: allRows[i], dr, val: getCellNum(allRows[i], colIdx) });
+            if (dr) i++;
+          }
+        }
+        pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
+        pairs.forEach(({ sr, dr }) => { tbody.appendChild(sr); if (dr) tbody.appendChild(dr); });
+        pairs.forEach(({ sr }, i) => {
+          const rk = sr.querySelector('.td-rank');
+          if (rk) rk.textContent = i + 1;
+        });
+      });
+    });
+  }
+
+  function getCellNum(row, colIdx) {
+    const td = row.cells[colIdx];
+    if (!td) return 0;
+    const txt = td.textContent.replace(/[^0-9.\-+]/g, '');
+    return parseFloat(txt) || 0;
+  }
+
+  // #8 CSV Download
+  function downloadCSV() {
+    const tables = document.querySelectorAll('table.pst');
+    let csv = '';
+    tables.forEach(table => {
+      const groupLabel = table.closest('.ps-col')?.querySelector('.th-group-lbl')?.textContent.trim() || '';
+      csv += groupLabel + '\n';
+      csv += '#,Player,Gms,Rating,W,L,+/-,Per Gm,Qualified\n';
+      table.querySelectorAll('tr.sr').forEach((sr, i) => {
+        if (sr.style.display === 'none') return;
+        const name  = sr.querySelector('.td-name')?.textContent.trim() || '';
+        const gms   = sr.querySelector('.td-gms')?.textContent.trim() || '';
+        const rat   = sr.querySelector('.td-rating')?.textContent.trim() || '';
+        const rec   = sr.querySelector('.td-rec')?.textContent.trim() || '';
+        const [w,l] = rec.split('\u2013').map(s=>s.trim());
+        const diff  = sr.querySelector('.td-diff')?.textContent.trim() || '';
+        const dpg   = sr.querySelector('.td-dpg')?.textContent.trim() || '';
+        const qual  = sr.querySelector('.q-chip')?.textContent.trim() || '';
+        csv += [i+1, `"${name}"`, gms, rat, w||'', l||'', diff, dpg, qual].join(',') + '\n';
+      });
+      csv += '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'cpbl_standings.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // #9 PDF Download
+  function downloadPDF() {
+    window.print();
+  }
+
+  // #10 Legend
+  function toggleLegend() {
+    document.getElementById('legendPopup').classList.toggle('open');
+    document.getElementById('legendOverlay').classList.toggle('open');
+  }
+
+  // ── Loading / empty states ─────────────────────────────────────────────────
+  function setSeriesLoading() {
+    document.getElementById('seriesPanel').innerHTML =
+      '<div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>';
+  }
+  function setSeriesEmpty(msg) {
+    document.getElementById('seriesPanel').innerHTML =
+      `<div class="empty-state"><div class="ico">&#x1F4CA;</div>${esc(msg)}</div>`;
+  }
+  function setPlayerLoading() {
+    document.getElementById('playerPanel').innerHTML =
+      '<div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>';
+  }
+
+  // ── Logo helper ───────────────────────────────────────────────────────────
+  function buildLogoHtml(teamName, size) {
+    const t = String(teamName || '').toLowerCase();
+    const dynLogos  = currentBranding?.clubLogos || {};
+    const legacyMap = {};
+    if (currentBranding?.campLogoUrl) legacyMap['camp'] = currentBranding.campLogoUrl;
+    if (currentBranding?.dillLogoUrl) legacyMap['dill'] = currentBranding.dillLogoUrl;
+    const logos = Object.keys(dynLogos).length ? dynLogos : legacyMap;
+    for (const [kw, url] of Object.entries(logos)) {
+      if (url && t.includes(kw.toLowerCase()))
+        return '<img src="' + esc(url) + '" alt="' + esc(teamName) + '" style="width:100%;height:100%;object-fit:contain;">';
+    }
+    const initials = String(teamName || 'TM').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+    const palette  = ['#123a7c','#0b7e39','#7c3a12','#3a127c','#127c3a','#7c6012'];
+    const idx      = Math.abs(String(teamName).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % palette.length;
+    const fs       = size === 'lg' ? '16px' : size === 'sm' ? '13px' : '9px';
+    return `<span style="font-family:'Bebas Neue',sans-serif;font-size:${fs};color:#fff;background:${palette[idx]};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:inherit;">${esc(initials)}</span>`;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function hasGas() { return typeof google !== 'undefined' && google.script && google.script.run; }
+  function setText(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
+  function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+</script>
+</body>
+</html>
