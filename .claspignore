@@ -1,0 +1,12 @@
+# Exclude static-hosting files — these are Firebase/web assets, not GAS scripts
+public/**
+dill-dinkers/**
+scorecard/**
+
+# Exclude local tooling and config
+.claude/**
+.DS_Store
+*.py
+*.tsv
+*.json
+!appsscript.json

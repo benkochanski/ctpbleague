@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Local Claude Code tooling
+.claude/
+
+# clasp / Apps Script deploy state
+.clasp.json
+.clasprc.json
+
+# Original handbook source (duplicated in public/assets/handbook.pdf)
+CT_Pickleball_League_Handbook.pdf
+
+# Scratch / throwaway
+untitled folder/
+sandbox.js
+schedule_new_rows.tsv
+scorecard_1.html
+
+# Python tooling env (if you ever add one)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if you ever add a build step)
+node_modules/
+.env
+.env.local

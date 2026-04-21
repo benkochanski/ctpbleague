@@ -341,37 +341,72 @@ function recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId) {
   const homeTeamId = matchObj.home_team_id;
   const awayTeamId = matchObj.away_team_id;
 
+  const REG = (typeof MATCH_SCORING !== 'undefined' && MATCH_SCORING.REGULATION_ROUNDS) || 8;
+  const WIN_REG = (typeof MATCH_SCORING !== 'undefined' && MATCH_SCORING.GAMES_TO_WIN_REGULATION) || 17;
+  const WIN_OVERALL = (typeof MATCH_SCORING !== 'undefined' && MATCH_SCORING.GAMES_TO_WIN_OVERALL) || 18;
+
   const matchRounds = roundsTable.rows
     .map(r => rowToObjectScorecard_(roundsTable, r.rowNumber))
     .filter(r => r && String(r.match_id).trim() === String(matchId).trim());
 
   let homeRoundsWon = 0;
   let awayRoundsWon = 0;
-  let completedRounds = 0;
+  let homeRegGames = 0;
+  let awayRegGames = 0;
+  let homeSdbGames = 0;
+  let awaySdbGames = 0;
+  let regulationRoundsComplete = true;
+  let hasAnyActivity = false;
 
   matchRounds.forEach(r => {
-    if (String(r.status).trim() === 'completed') completedRounds++;
-    if (String(r.winning_team_id).trim() === String(homeTeamId).trim()) homeRoundsWon++;
-    if (String(r.winning_team_id).trim() === String(awayTeamId).trim()) awayRoundsWon++;
+    const rn = Number(r.round_number);
+    const isReg = rn <= REG;
+    const isComplete = String(r.status).trim() === 'completed' || String(r.status).trim().toLowerCase() === 'complete';
+    const hGames = Number(r.home_games_won || 0);
+    const aGames = Number(r.away_games_won || 0);
+
+    if (isReg) {
+      if (!isComplete) regulationRoundsComplete = false;
+      homeRegGames += hGames;
+      awayRegGames += aGames;
+      if (String(r.winning_team_id).trim() === String(homeTeamId).trim()) homeRoundsWon++;
+      if (String(r.winning_team_id).trim() === String(awayTeamId).trim()) awayRoundsWon++;
+    } else {
+      homeSdbGames += hGames;
+      awaySdbGames += aGames;
+    }
+
+    if (hGames > 0 || aGames > 0 || isComplete) hasAnyActivity = true;
   });
 
-  const allRoundsComplete = matchRounds.length > 0 && completedRounds === matchRounds.length;
+  const homeTotalGames = homeRegGames + homeSdbGames;
+  const awayTotalGames = awayRegGames + awaySdbGames;
 
   let winningTeamId = '';
-  if (allRoundsComplete) {
-    if (homeRoundsWon > awayRoundsWon) winningTeamId = homeTeamId;
-    if (awayRoundsWon > homeRoundsWon) winningTeamId = awayTeamId;
+  if (homeRegGames >= WIN_REG && homeRegGames > awayRegGames) {
+    winningTeamId = homeTeamId;
+  } else if (awayRegGames >= WIN_REG && awayRegGames > homeRegGames) {
+    winningTeamId = awayTeamId;
+  } else if (regulationRoundsComplete && homeRegGames === 16 && awayRegGames === 16) {
+    if (homeTotalGames >= WIN_OVERALL && homeTotalGames > awayTotalGames) winningTeamId = homeTeamId;
+    else if (awayTotalGames >= WIN_OVERALL && awayTotalGames > homeTotalGames) winningTeamId = awayTeamId;
   }
 
   let status = 'pending';
-  if (completedRounds > 0 && !allRoundsComplete) status = 'in_progress';
-  if (allRoundsComplete) status = 'completed';
+  if (hasAnyActivity && !winningTeamId) status = 'in_progress';
+  if (winningTeamId) status = 'completed';
 
   if (matchesTable.headerMap.home_rounds_won) {
     setCellByHeaderScorecard_(matchesSheet, matchesTable.headerMap, matchRow.rowNumber, 'home_rounds_won', homeRoundsWon);
   }
   if (matchesTable.headerMap.away_rounds_won) {
     setCellByHeaderScorecard_(matchesSheet, matchesTable.headerMap, matchRow.rowNumber, 'away_rounds_won', awayRoundsWon);
+  }
+  if (matchesTable.headerMap.home_games_won) {
+    setCellByHeaderScorecard_(matchesSheet, matchesTable.headerMap, matchRow.rowNumber, 'home_games_won', homeTotalGames);
+  }
+  if (matchesTable.headerMap.away_games_won) {
+    setCellByHeaderScorecard_(matchesSheet, matchesTable.headerMap, matchRow.rowNumber, 'away_games_won', awayTotalGames);
   }
   if (matchesTable.headerMap.winning_team_id) {
     setCellByHeaderScorecard_(matchesSheet, matchesTable.headerMap, matchRow.rowNumber, 'winning_team_id', winningTeamId);
@@ -384,6 +419,8 @@ function recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId) {
     match_id: matchId,
     home_rounds_won: homeRoundsWon,
     away_rounds_won: awayRoundsWon,
+    home_games_won: homeTotalGames,
+    away_games_won: awayTotalGames,
     winning_team_id: winningTeamId,
     status: status
   };
@@ -505,6 +542,8 @@ function getScorecardDataV5(matchId) {
   const data = getScorecardDataV2(matchId);
   return JSON.stringify(data);
 }
+
+
 
 function getPlayerGendersV1() {
   const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Players');

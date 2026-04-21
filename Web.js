@@ -200,17 +200,55 @@ function resolveCaptainRouteByEmailV1(email) {
 
 function doGet(e) {
   const params = e && e.parameter ? e.parameter : {};
-  const page = String(params.page || 'scoreboard').trim().toLowerCase();
+  const page = String(params.page || 'seasonstats').trim().toLowerCase();
+
+  if (page === 'player') {
+    const t = HtmlService.createTemplateFromFile('PlayerPage');
+    t.initialPlayerId   = String(params.playerId   || '').trim();
+    t.initialPlayerName = String(params.playerName || '').trim();
+    const playerOut = t.evaluate();
+    playerOut.setTitle('CTPBL Player Stats');
+    playerOut.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    return playerOut;
+  }
+
+  if (page === 'seasonstats') {
+    const t = HtmlService.createTemplateFromFile('SeasonStats');
+    t.initialPlayerId = String(params.playerId || '').trim();
+    // Inject the real exec URL so client-side JS can open other pages correctly.
+    // window.location.href inside a GAS page returns the sandbox googleusercontent.com
+    // domain, not the script.google.com/macros/s/.../exec endpoint.
+    t.webAppUrl = ScriptApp.getService().getUrl();
+    return t.evaluate()
+      .setTitle('CTPBL Player Stats')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
 
   if (page === 'scorecard') {
     return HtmlService.createTemplateFromFile('Scorecard')
       .evaluate()
-      .setTitle('CPBL Score Entry');
+      .setTitle('CPBL Score Entry')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
   if (page === 'players') {
     return HtmlService.createHtmlOutputFromFile('PlayersDirectory')
-      .setTitle('Connecticut Pickleball League Players');
+      .setTitle('Connecticut Pickleball League Players')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'gamereport') {
+    const tGr = HtmlService.createTemplateFromFile('GameReport');
+    tGr.initialMatchId = String(params.matchId || '').trim();
+    return tGr.evaluate()
+      .setTitle('CPL Game Report')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'publicdata') {
+    return ContentService
+      .createTextOutput(JSON.stringify(getPublicSiteData_()))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   if (page === 'scoreboard') {
@@ -575,6 +613,104 @@ function getPublicDashboardData() {
     rounds: getObjects_(SHEETS.MATCH_ROUNDS),
     games: getObjects_(SHEETS.MATCH_GAMES)
   };
+}
+
+/**
+ * Bundle of read-only data for the ctpbleague.com public hub.
+ * Cached in CacheService for 60s to cut sheet reads under load.
+ */
+function getPublicSiteData_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('publicSiteData_v1');
+  if (cached) return JSON.parse(cached);
+
+  const str = (v) => String(v == null ? '' : v).trim();
+  const num = (v) => (v === '' || v == null || isNaN(Number(v))) ? 0 : Number(v);
+
+  const divisions = getObjects_(SHEETS.DIVISIONS).map(d => ({
+    division_id:     str(d.division_id),
+    division_name:   str(d.division_name || d.division_id),
+    division_order:  num(d.division_order),
+    active:          normalizeBool_(d.active)
+  })).filter(d => d.active !== false);
+
+  const clubs = getObjects_(SHEETS.CLUBS).map(c => ({
+    club_id:    str(c.club_id),
+    club_name:  str(c.club_name),
+    short_name: str(c.short_name),
+    logo_url:   str(c.logo_url).startsWith('http')
+      ? str(c.logo_url)
+      : (str(c.logo_url) ? driveImageUrl_(str(c.logo_url)) : '')
+  }));
+
+  const teams = getObjects_(SHEETS.TEAMS).map(t => ({
+    team_id:     str(t.team_id),
+    team_name:   str(t.team_name),
+    club_id:     str(t.club_id),
+    division_id: str(t.division_id)
+  }));
+
+  const matches = getObjects_(SHEETS.MATCHES).map(m => ({
+    match_id:         str(m.match_id),
+    season_id:        str(m.season_id),
+    division_id:      str(m.division_id),
+    home_team_id:     str(m.home_team_id),
+    away_team_id:     str(m.away_team_id),
+    match_date:       str(m.match_date),
+    start_time:       str(m.start_time),
+    venue:            str(m.venue),
+    status:           str(m.status).toLowerCase(),
+    home_rounds_won:  num(m.home_rounds_won),
+    away_rounds_won:  num(m.away_rounds_won),
+    home_games_won:   num(m.home_games_won),
+    away_games_won:   num(m.away_games_won),
+    winning_team_id:  str(m.winning_team_id)
+  }));
+
+  const standings = getObjects_(SHEETS.STANDINGS_SUMMARY).map(s => ({
+    season_id:       str(s.season_id),
+    division_id:     str(s.division_id),
+    team_id:         str(s.team_id),
+    matches_played:  num(s.matches_played),
+    match_wins:      num(s.match_wins),
+    match_losses:    num(s.match_losses),
+    rounds_won:      num(s.rounds_won),
+    rounds_lost:     num(s.rounds_lost),
+    games_won:       num(s.games_won),
+    games_lost:      num(s.games_lost),
+    points_for:      num(s.points_for),
+    points_against:  num(s.points_against),
+    point_diff:      num(s.point_diff),
+    standings_rank:  num(s.standings_rank)
+  }));
+
+  const seasons = getObjects_(SHEETS.SEASONS).map(s => ({
+    season_id:   str(s.season_id),
+    season_name: str(s.season_name),
+    start_date:  str(s.start_date),
+    end_date:    str(s.end_date),
+    status:      str(s.status).toLowerCase()
+  }));
+
+  const currentSeason =
+    seasons.find(s => s.status === 'active') ||
+    seasons.find(s => s.status === 'open') ||
+    seasons[seasons.length - 1] ||
+    null;
+
+  const payload = {
+    generatedAt:   new Date().toISOString(),
+    currentSeason: currentSeason || null,
+    seasons,
+    divisions,
+    clubs,
+    teams,
+    matches,
+    standings
+  };
+
+  cache.put('publicSiteData_v1', JSON.stringify(payload), 60);
+  return payload;
 }
 
 function getUserDisplayMap_() {

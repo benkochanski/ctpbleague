@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connecticut Pickleball League — Season Stats</title>
+  <title>CTPBL Season Stats</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -21,8 +21,11 @@
     button, input, select { font-family: inherit; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; min-height: 100vh; }
 
-    /* ── Sticky top ── */
-    #top-static { position: sticky; top: 0; z-index: 50; background: var(--bg); box-shadow: 0 4px 20px rgba(8,30,67,.12); }
+    /* ── Layout ── */
+    html, body { height: 100%; overflow: hidden; }
+    #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    #top-static { flex-shrink: 0; background: var(--bg); box-shadow: 0 4px 20px rgba(8,30,67,.12); z-index: 50; }
+    .page { flex: 1; min-height: 0; overflow-y: auto; }
 
     /* ── Header ── */
     .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); }
@@ -38,18 +41,19 @@
     .btn-action:hover { background: rgba(255,255,255,.22); }
     .pill { padding: 6px 14px; border-radius: 8px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.88); }
 
-    /* ── Division bar ── */
-    .div-bar { background: var(--panel); border-bottom: 1px solid var(--border-s); padding: 9px 20px; display: flex; align-items: center; gap: 16px; }
-    .div-bar-label { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
-    .div-select { background: var(--soft); border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 14px; font-weight: 700; color: var(--text); outline: none; cursor: pointer; appearance: none; min-width: 200px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%235a6e8a'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
-    .div-select:focus { border-color: var(--blue); background-color: #f0f5ff; }
+    /* ── Division selector in hero ── */
+    .div-select-hero { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 13px; font-weight: 700; color: #fff; outline: none; cursor: pointer; appearance: none; min-width: 180px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; }
+    .div-select-hero:focus { background-color: rgba(255,255,255,.20); }
+    .div-select-hero option { background: var(--navy); color: #fff; }
 
     /* ── Single-column page ── */
-    .page { display: flex; flex-direction: column; gap: 12px; padding: 12px 20px; }
-    .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
+    .page { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 0 20px 12px; }
+    .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: clip; }
+    #playerPanel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: visible; }
+    .ps-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
     /* ── Section head ── */
-    .sec-head { padding: 10px 18px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; }
+    .sec-head { padding: 10px 18px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
     .sec-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--navy); }
     .sec-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: #fff; flex: 1; }
     .ps-expand-btn { margin-left: auto; height: 28px; padding: 0 12px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
@@ -67,8 +71,8 @@
     ════════════════════════════════════════════ */
     .series-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
     .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .sh-logo-big { width: 96px; height: 96px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    .sh-logo-big img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .sh-logo-big { height: 96px; width: auto; min-width: 64px; max-width: 160px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .sh-logo-big img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
     .sh-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: #fff; text-align: center; }
     .sh-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .sh-series-lbl { font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
@@ -80,37 +84,28 @@
        GAME-TYPE TILES
     ════════════════════════════════════════════ */
     .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 4), 1fr); border-top: 1px solid var(--border-s); }
-    .gt-tile { padding: 18px 16px; border-right: 1px solid var(--border-s); display: flex; flex-direction: column; gap: 12px; }
+    .gt-tile { padding: 10px 30px; border-right: 1px solid var(--border-s); }
     .gt-tile:last-child { border-right: none; }
-    .gt-tile-head { display: flex; align-items: center; justify-content: space-between; }
-    .gt-type-lbl { font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; }
+    .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
     .gt-type-lbl.all    { color: var(--navy); }
     .gt-type-lbl.womens { color: #123a7c; }
     .gt-type-lbl.mens   { color: var(--green); }
     .gt-type-lbl.mixed  { color: #7a5c00; }
     .gt-type-lbl.coed   { color: #0d5229; }
-    .gt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .gt-dot.all    { background: var(--navy); }
-    .gt-dot.womens { background: #123a7c; }
-    .gt-dot.mens   { background: var(--green); }
-    .gt-dot.mixed  { background: #ffd22e; }
-    .gt-dot.coed   { background: #0d5229; }
-    .gt-scores { display: flex; flex-direction: column; gap: 7px; }
-    .gt-score-row { display: flex; align-items: center; gap: 10px; }
-    .gt-mini-logo { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border-s); background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .gt-mini-logo img { width: 100%; height: 100%; object-fit: contain; }
-    .gt-score-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
-    .gt-wins { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 900; line-height: 1; }
-    .gt-wins.winner { color: var(--ok); }
-    .gt-wins.loser  { color: var(--muted); opacity: .5; font-size: 22px; }
-    .gt-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--ok); background: #e8f9ef; border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
-    .gt-bar-track { height: 5px; border-radius: 3px; background: var(--soft); border: 1px solid var(--border-s); overflow: hidden; }
-    .gt-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
-    .gt-bar-fill.all    { background: var(--green); }
-    .gt-bar-fill.womens { background: #123a7c; }
-    .gt-bar-fill.mens   { background: var(--green); }
-    .gt-bar-fill.mixed  { background: #c9a000; }
-    .gt-bar-fill.coed   { background: #0d5229; }
+    /* mini banner */
+    .gt-mini-banner { display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; gap: 6px; }
+    .gt-mini-logo { width: 72px; height: 64px; border-radius: 14px; border: 1.5px solid var(--border-s); background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .gt-mini-logo img { width: auto !important; height: 100% !important; object-fit: contain !important; }
+    .gt-score-col { position: relative; height: 64px; display: flex; align-items: center; justify-content: center; }
+    .gt-score-nums { display: flex; align-items: flex-start; gap: 6px; }
+    .gt-score-side { display: flex; flex-direction: column; align-items: center; }
+    .gt-snum-wrap { height: 64px; display: flex; align-items: center; justify-content: center; position: relative; min-width: 36px; }
+    .gt-sdash-wrap { height: 64px; display: flex; align-items: center; }
+    .gt-snum { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 900; line-height: 1; color: var(--muted); }
+    .gt-snum.leader { color: var(--ok); }
+    .gt-sdash { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; color: var(--border); line-height: 1; }
+    .gt-diff { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; color: var(--ok); white-space: nowrap; }
+    .gt-diff-spacer { display: none; }
 
     /* ════════════════════════════════════════════
        MULTI-TEAM STANDINGS TABLE  (3+ teams)
@@ -149,8 +144,12 @@
        PLAYER STATS — full width, Women | Men
     ════════════════════════════════════════════ */
     .ps-two-col { display: flex; }
-    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); }
+    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); display: flex; flex-direction: column; }
     .ps-col:last-child { border-right: none; }
+    /* Fills remaining column space after a shorter table so the column border extends cleanly */
+    .pst-filler { flex: 1; background: var(--panel); }
+    /* Invisible spacer row injected into shorter table to keep sticky thead alive */
+    .pst-pad { visibility: hidden; pointer-events: none; }
 
     .ps-col-dot { width: 7px; height: 7px; border-radius: 50%; }
     .ps-col-dot.womens { background: #123a7c; }
@@ -159,7 +158,7 @@
 
     /* Table */
     .pst { width: 100%; border-collapse: collapse; }
-    .pst th { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
+    .pst th { position: sticky; top: 0; z-index: 5; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
     .pst .sr td { padding: 13px 12px; border-bottom: 1px solid var(--border-s); text-align: center; vertical-align: middle; }
     .pst .sr { cursor: pointer; }
     .pst .sr:hover td { background: #f5f8ff; }
@@ -170,16 +169,21 @@
     /* Detail row */
     .dr { display: none; }
     .dr.open { display: table-row; }
-    .dr td { padding: 7px 12px 9px; border-bottom: 1px solid var(--border-s); border-top: 1px dashed var(--border-s); background: #f8faff; text-align: center; vertical-align: top; }
+    .dr td { padding: 7px 12px 9px; border-bottom: 1px solid var(--border-s); border-top: 1px dashed var(--border-s); background: #f8faff; text-align: center; vertical-align: middle; }
     .dr-spacer { padding: 0 !important; }
     .dr-item { display: flex; flex-direction: column; gap: 1px; align-items: center; }
-    .dr-types { display: flex; gap: 16px; justify-content: center; align-items: flex-start; }
     .dr-lbl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
     .dr-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text); }
-    .dr-rec-row { display: flex; align-items: baseline; gap: 7px; }
     .dr-diff { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; }
     .dr-diff.ok  { color: var(--ok); }
     .dr-diff.dim { color: var(--muted); opacity: .7; }
+    /* subrow type cells */
+    .dr-type-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .dr-sub-row { display: flex; align-items: baseline; gap: 4px; justify-content: center; }
+    .dr-sub-rec { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text); }
+    .dr-sub-diff { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; }
+    .dr-sub-diff.ok  { color: var(--ok); }
+    .dr-sub-diff.dim { color: var(--muted); opacity: .7; }
     .dr-type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; width: fit-content; }
     .dr-type-badge.womens { background: #123a7c22; color: #123a7c; border: 1px solid #123a7c44; }
     .dr-type-badge.mens   { background: #0b7e3922; color: #0b7e39; border: 1px solid #0b7e3944; }
@@ -189,21 +193,29 @@
     /* Summary cell styles */
     .td-rank { text-align: center !important; font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 800; color: var(--muted); width: 32px; padding: 13px 4px !important; }
     .td-rank.q  { color: var(--ok); }
-    .td-rank.nq { color: var(--muted); opacity: .4; }
+    .td-rank.nq { color: #b8c9da; }
     .td-logo { width: 38px; padding: 8px 4px !important; text-align: center !important; }
-    .logo-sq { width: 30px; height: 30px; border-radius: 7px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
-    .logo-sq img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .td-name { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+    .logo-sq { width: 30px; height: 30px; border-radius: 7px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.13); border: 1px solid var(--border-s); }
+    .logo-sq img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
+    .td-name { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; cursor: pointer; }
+    /* Name cell acts as a link — subtle blue on hover with underline affordance */
+    .sr .td-name { transition: color .12s; }
+    .sr:hover .td-name { color: var(--blue); }
+    .td-name:hover { text-decoration: underline; }
     .td-rating { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; }
     .td-rec { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
     .td-diff { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 800; }
     .td-diff.pos { color: var(--ok); }
-    .td-diff.neg { color: var(--muted); opacity: .6; }
-    .td-dpg  { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); white-space: nowrap; }
-    .td-dpg.pos { color: var(--ok); opacity: .8; }
-    .td-dpg.neg { color: var(--muted); opacity: .5; }
+    .td-diff.neg { color: #8fa3be; }
+    .td-dpg  { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .td-dpg.pos { color: #3d9e68; }
+    .td-dpg.neg { color: #a0b2c6; }
     .td-gms { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); }
     .td-q { width: 36px; padding-right: 10px !important; text-align: center !important; }
+    .th-q-toggle { text-align: center; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--soft); border-bottom: 2px solid var(--border-s); }
+    .th-q-toggle:hover { color: var(--text); }
+    .th-q-toggle.q-toggle-active { color: var(--ok); background: #e8f9ef; }
+    .q-toggle-lbl { display: block; }
     .q-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; font-size: 10px; font-weight: 800; }
     .q-chip.q  { background: #e3f7ec; color: var(--ok); border: 1px solid #a8e6c0; }
     .q-chip.nq { background: var(--soft); color: var(--muted); border: 1px solid var(--border-s); }
@@ -226,11 +238,27 @@
 
     /* ── #9 print ── */
     @media print {
-      body > *:not(.page) { display: none; }
-      .sec-head { display: none; }
-      .ps-hdr-btn, .ps-filter-input, .ps-expand-btn { display: none; }
-      .dr { display: table-row !important; }
-      .page { padding: 0; }
+      /* Release all flex/scroll height constraints so content flows naturally */
+      html, body  { height: auto !important; overflow: visible !important; }
+      #app        { height: auto !important; overflow: visible !important; display: block !important; }
+      #top-static { position: static !important; box-shadow: none; }
+      .page       { flex: none !important; overflow: visible !important; padding: 0 !important; display: block !important; }
+      #playerPanel { flex: none !important; overflow: visible !important; height: auto !important; display: block !important; }
+      .ps-scroll  { overflow: visible !important; height: auto !important; flex: none !important; display: block !important; }
+      #seriesPanel { margin: 6px 0 0 !important; border-radius: 0 !important; }
+      /* Preserve background colors in print */
+      .app-header, .sec-head, .series-hero, .gt-tiles, .pst th {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+      }
+      /* Hide all interactive / screen-only elements */
+      .ps-hdr-btn, .ps-filter-input, .ps-expand-btn,
+      .div-select-hero, .header-right { display: none !important; }
+      /* Keep sec-head (Player Standings bar) visible */
+      .sec-head { display: flex !important; border-radius: 0 !important; }
+      /* Hide detail rows for a clean printout */
+      .dr { display: none !important; }
+      /* Unstick table headers — not needed on paper */
+      .pst th { position: static !important; }
     }
 
     /* ── #10 legend ── */
@@ -252,7 +280,7 @@
   </style>
 </head>
 <body>
-
+<div id="app">
 <div id="top-static">
   <div class="app-header">
     <div class="league-header">
@@ -268,25 +296,22 @@
       </div>
       <div class="header-right">
         <div class="pill" id="hdr-season">Season 2025</div>
-        <button class="btn-action" id="fs-btn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
+        <select id="divisionSelect" class="div-select-hero" onchange="handleDivisionChange()">
+          <option value="">Loading…</option>
+        </select>
       </div>
     </div>
   </div>
-  <div class="div-bar">
-    <span class="div-bar-label">Division</span>
-    <select id="divisionSelect" class="div-select" onchange="handleDivisionChange()">
-      <option value="">Loading…</option>
-    </select>
+  <div class="side-panel" id="seriesPanel" style="margin:12px 20px;border-radius:var(--r-lg);">
+    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
   </div>
 </div>
 
 <div class="page">
-  <div class="side-panel" id="seriesPanel">
-    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
-  </div>
   <div class="side-panel" id="playerPanel">
     <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
   </div>
+</div>
 </div>
 
 <!-- #10 Legend -->
@@ -307,10 +332,12 @@
     <dt>Win%</dt><dd>Wins divided by games played</dd>
     <dt>Pts%</dt><dd>Total points scored ÷ (winning game score of 21 × games played)</dd>
     <dt>Game type</dt><dd>Women's / Men's / Mixed subset of total record and +/–</dd>
+    <dt>All / Q toggle</dt><dd>Column header above the Q indicator — click to show qualified players only (play% ≥ 50%), click again to show all</dd>
   </dl>
 </div>
 
 <script>
+  const GAS_WEB_APP_URL  = '<?= webAppUrl ?>';
   let currentDivisionKey = '';
   let currentBranding    = null;
   let currentData        = null;
@@ -326,21 +353,6 @@
     const h = document.getElementById('top-static')?.offsetHeight || 0;
     document.documentElement.style.setProperty('--top-offset', h + 'px');
   }
-
-  function toggleFullscreen() {
-    const btn = document.getElementById('fs-btn');
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      if (btn) btn.textContent = '\u2715 Exit Full';
-    } else {
-      document.exitFullscreen().catch(() => {});
-      if (btn) btn.textContent = '\u26F6 Fullscreen';
-    }
-  }
-  document.addEventListener('fullscreenchange', () => {
-    const btn = document.getElementById('fs-btn');
-    if (btn) btn.textContent = document.fullscreenElement ? '\u2715 Exit Full' : '\u26F6 Fullscreen';
-  });
 
   // ── Branding ──────────────────────────────────────────────────────────────
   function loadBranding() {
@@ -440,7 +452,6 @@
       <div class="series-hero">
         <div class="sh-team">
           <div class="sh-logo-big">${buildLogoHtml(a.team_name, 'lg')}</div>
-          <span class="sh-team-name">${esc(a.team_name)}</span>
         </div>
         <div class="sh-center">
           <span class="sh-series-lbl">Season Series</span>
@@ -449,46 +460,48 @@
         </div>
         <div class="sh-team">
           <div class="sh-logo-big">${buildLogoHtml(b.team_name, 'lg')}</div>
-          <span class="sh-team-name">${esc(b.team_name)}</span>
         </div>
       </div>`;
 
-    const gtypes  = ['all', 'womens', 'mens', 'mixed', 'coed'];
     const glabels = { all: 'All Games', womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed' };
-    const active  = gtypes.filter(gt => (a[gt+'_w'] != null) || (b[gt+'_w'] != null));
+    const allSubtypes = ['womens', 'mens', 'mixed', 'coed'];
+
+    // Build all_w / all_diff by summing all sub-types
+    a.all_w    = allSubtypes.reduce((s, gt) => s + (a[gt+'_w']    || 0), 0);
+    b.all_w    = allSubtypes.reduce((s, gt) => s + (b[gt+'_w']    || 0), 0);
+    a.all_diff = allSubtypes.reduce((s, gt) => s + (a[gt+'_diff'] || 0), 0);
+    b.all_diff = allSubtypes.reduce((s, gt) => s + (b[gt+'_diff'] || 0), 0);
+
+    const isDivision1 = /1/.test(currentDivisionKey);
+    const active = isDivision1 ? ['all', 'womens', 'coed', 'mixed'] : ['all', 'womens', 'mens', 'mixed'];
 
     const tilesHtml = active.map(gt => {
       const aw = a[gt+'_w'] || 0, bw = b[gt+'_w'] || 0;
       const ad = a[gt+'_diff'] || 0;
-      const total = aw + bw || 1;
-      const aWins = aw > bw;
+      const aLeads = aw > bw, bLeads = bw > aw;
+      const aDiff = ad > 0 ? `<span class="gt-diff">+${ad}</span>` : `<span class="gt-diff-spacer"></span>`;
+      const bDiff = ad < 0 ? `<span class="gt-diff">+${-ad}</span>` : `<span class="gt-diff-spacer"></span>`;
       return `<div class="gt-tile">
-        <div class="gt-tile-head">
-          <span class="gt-type-lbl ${gt}">${esc(glabels[gt])}</span>
-          <span class="gt-dot ${gt}"></span>
-        </div>
-        <div class="gt-scores">
-          <div class="gt-score-row">
-            <div class="gt-mini-logo">${buildLogoHtml(a.team_name, 'xs')}</div>
-            <div class="gt-score-right">
-              <span class="gt-wins ${aWins ? 'winner' : 'loser'}">${aw}</span>
-              ${aWins && ad > 0 ? `<span class="gt-diff">+${ad}</span>` : ''}
+        <div class="gt-mini-banner">
+          <div class="gt-mini-logo">${buildLogoHtml(a.team_name, 'xs')}</div>
+          <div class="gt-score-col">
+            <span class="gt-type-lbl ${gt}">${esc(glabels[gt])}</span>
+            <div class="gt-score-nums">
+              <div class="gt-score-side">
+                <div class="gt-snum-wrap"><span class="gt-snum ${aLeads ? 'leader' : ''}">${aw}</span>${aDiff}</div>
+              </div>
+              <div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div>
+              <div class="gt-score-side">
+                <div class="gt-snum-wrap"><span class="gt-snum ${bLeads ? 'leader' : ''}">${bw}</span>${bDiff}</div>
+              </div>
             </div>
           </div>
-          <div class="gt-score-row">
-            <div class="gt-mini-logo">${buildLogoHtml(b.team_name, 'xs')}</div>
-            <div class="gt-score-right">
-              <span class="gt-wins ${!aWins && bw > aw ? 'winner' : 'loser'}">${bw}</span>
-            </div>
-          </div>
-        </div>
-        <div class="gt-bar-track">
-          <div class="gt-bar-fill ${gt}" style="width:${Math.round(aw/total*100)}%"></div>
+          <div class="gt-mini-logo">${buildLogoHtml(b.team_name, 'xs')}</div>
         </div>
       </div>`;
     }).join('');
 
-    return hero + `<div class="gt-tiles" style="--tile-cols:${active.length}">${tilesHtml}</div>`;
+    return hero + (active.length ? `<div class="gt-tiles" style="--tile-cols:${active.length}">${tilesHtml}</div>` : '');
   }
 
   function renderStandingsTable(rows) {
@@ -548,58 +561,81 @@
       el.innerHTML = '<div class="empty-state"><div class="ico">&#x1F3D3;</div>No player data.</div>'; return;
     }
 
-    const sortFn = (a, b) => b.wins - a.wins || a.losses - b.losses
-                              || (b.points_for - b.points_against) - (a.points_for - a.points_against);
-    const women = players.filter(p => p.isWomens).sort(sortFn);
-    const men   = players.filter(p => p.isMens).sort(sortFn);
-    const other = players.filter(p => !p.isWomens && !p.isMens).sort(sortFn);
+    const computePlayPct = (p, maxGms) => {
+      const gms = (p.wins || 0) + (p.losses || 0);
+      const possGms = (p.team_match_count || 0) * 8 || maxGms;
+      return possGms > 0 ? gms / possGms : 0;
+    };
 
-    const markQ = list => list.map((p, i) => ({ ...p, qualified: p.qualified ?? (i < Math.ceil(list.length / 2)) }));
-
-    const typeOrder = ['womens', 'mens', 'mixed', 'coed'];
-    const typeLbl   = { womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed' };
-
-    const buildCol = (rawList, dotCls, colLabel) => {
-      if (!rawList.length) return '';
-      const list = markQ(rawList);
+    const markQ = (list) => {
       const maxGms = Math.max(...list.map(p => (p.wins || 0) + (p.losses || 0)));
+      return list.map(p => ({ ...p, qualified: computePlayPct(p, maxGms) >= 0.5 }));
+    };
 
-      const detailTypes = typeOrder.filter(t => list.some(p => p[t+'_w'] != null));
+    const qualSortFn = (a, b) => {
+      if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
+      return (b.rating ?? -999) - (a.rating ?? -999);
+    };
+
+    const hasData = p => p.name && String(p.name).trim() && ((p.wins || 0) + (p.losses || 0)) > 0;
+    const women = players.filter(p => p.isWomens && hasData(p));
+    const men   = players.filter(p => p.isMens   && hasData(p));
+    const other = players.filter(p => !p.isWomens && !p.isMens && hasData(p));
+
+    const typeLbl = { womens: "Women's", mens: "Men's", mixed: 'Mixed', coed: 'Coed', coedmix: 'Coed/Mix' };
+
+    const buildCol = (rawList, dotCls, colLabel, gender) => {
+      if (!rawList.length) return '';
+      const list = markQ(rawList).sort(qualSortFn);
+      const maxGms = Math.max(...list.map(p => (p.wins || 0) + (p.losses || 0)));
+      const isDivision1 = /1/.test(currentDivisionKey);
+
+      let detailTypes;
+      if (isDivision1) {
+        detailTypes = gender === 'womens' ? ['womens', 'coedmix'] : ['mixed', 'coed'];
+      } else {
+        detailTypes = gender === 'womens' ? ['womens', 'mixed'] : ['mens', 'mixed'];
+      }
+
+      const getTypeStats = (p, t) => {
+        if (t === 'coedmix') {
+          const w = (p.coed_w || 0) + (p.mixed_w || 0);
+          const l = (p.coed_l || 0) + (p.mixed_l || 0);
+          const d = (p.coed_diff || 0) + (p.mixed_diff || 0);
+          return { w, l, d };
+        }
+        return { w: p[t+'_w'] || 0, l: p[t+'_l'] || 0, d: p[t+'_diff'] || 0 };
+      };
 
       const buildRow = (p, i) => {
         const gms    = (p.wins || 0) + (p.losses || 0);
         const allDiff = (p.points_for || 0) - (p.points_against || 0);
         const diffStr = allDiff > 0 ? '+' + allDiff : String(allDiff);
         const diffCls = allDiff > 0 ? 'pos' : allDiff < 0 ? 'neg' : '';
-        const ratingStr = p.rating != null ? Number(p.rating).toFixed(1) : '—';
         const qual   = p.qualified;
         const rankCls = qual ? 'q' : 'nq';
 
-        const winPct    = gms > 0 ? ((p.wins / gms) * 100).toFixed(1) + '%' : '—';
+        const winPctRaw = gms > 0 ? (p.wins / gms) : 0;
         const ptsTot    = (p.points_for || 0) + (p.points_against || 0);
-        const ptsPct    = ptsTot > 0 ? ((p.points_for / ptsTot) * 100).toFixed(1) + '%' : '—';
-        const possGms   = (p.team_match_count || 0) * 8 || maxGms;
-        // #1: toFixed(1) for Play%
-        const playPct   = possGms > 0 ? ((gms / possGms) * 100).toFixed(1) : '0.0';
-        const dpg       = gms > 0 ? (allDiff / gms) : 0;
-        const dpgStr    = (dpg >= 0 ? '+' : '') + dpg.toFixed(1);
+        const ptsPctRaw = ptsTot > 0 ? (p.points_for / ptsTot) : 0;
+        const rating    = gms > 0 ? ((winPctRaw * 0.6 + ptsPctRaw * 0.4) * 100) : null;
+        const ratingStr = rating != null ? rating.toFixed(1) : '—';
+        const winPct  = gms > 0 ? (winPctRaw * 100).toFixed(1) + '%' : '—';
+        const ptsPct  = ptsTot > 0 ? (ptsPctRaw * 100).toFixed(1) + '%' : '—';
+        const possGms = (p.team_match_count || 0) * 8 || maxGms;
+        const playPct = possGms > 0 ? ((gms / possGms) * 100).toFixed(1) : '0.0';
+        const dpg     = gms > 0 ? (allDiff / gms) : 0;
+        const dpgStr  = (dpg >= 0 ? '+' : '') + dpg.toFixed(1);
 
-        // #2 & #3: type cells with dr-rec-row; second cell gets colspan="2"
         const typeItems = detailTypes.map((t, ti) => {
-          const w = p[t+'_w'], l = p[t+'_l'], d = p[t+'_diff'];
-          if (w == null) return ti === 1 ? `<td colspan="2"></td>` : `<td></td>`;
+          const { w, l, d } = getTypeStats(p, t);
           const dStr = d > 0 ? '+' + d : String(d);
           const dCls = d > 0 ? 'ok' : d < 0 ? 'dim' : '';
-          const colspan = ti === 1 ? ' colspan="2"' : '';
-          return `<td${colspan}><div class="dr-item"><span class="dr-lbl">${esc(typeLbl[t])}</span><div class="dr-rec-row"><span class="dr-val">${w}–${l}</span><span class="dr-diff ${dCls}">${esc(dStr)}</span></div></div></td>`;
+          return `<td><div class="dr-type-cell"><span class="dr-lbl">${esc(typeLbl[t])}</span><div class="dr-sub-row"><span class="dr-sub-rec">${w}–${l}</span><span class="dr-sub-diff ${dCls}">${esc(dStr)}</span></div></div></td>`;
         });
-        while (typeItems.length < 2) {
-          const colspan = typeItems.length === 1 ? ' colspan="2"' : '';
-          typeItems.push(`<td${colspan}></td>`);
-        }
-        const typeTds = typeItems.slice(0, 2).join('');
+        const typeTds = typeItems.join('');
 
-        return `<tr class="sr">
+        return `<tr class="sr" data-player-name="${esc(p.name || '')}">
           <td class="td-rank ${rankCls}">${i + 1}</td>
           <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name, 'xs')}</div></td>
           <td class="td-name">${esc(p.name)}</td>
@@ -612,10 +648,11 @@
         </tr>
         <tr class="dr">
           <td colspan="3" class="dr-spacer"></td>
-          <td><div class="dr-item"><span class="dr-lbl">Play%</span><span class="dr-val">${playPct}%</span></div></td>
-          <td><div class="dr-item"><span class="dr-lbl">Win%</span><span class="dr-val">${esc(winPct)}</span></div></td>
-          <td><div class="dr-item"><span class="dr-lbl">Pts%</span><span class="dr-val">${esc(ptsPct)}</span></div></td>
+          <td><div class="dr-type-cell"><span class="dr-lbl">Play%</span><span class="dr-sub-rec">${playPct}%</span></div></td>
+          <td><div class="dr-type-cell"><span class="dr-lbl">Win%</span><span class="dr-sub-rec">${esc(winPct)}</span></div></td>
+          <td><div class="dr-type-cell"><span class="dr-lbl">Pts%</span><span class="dr-sub-rec">${esc(ptsPct)}</span></div></td>
           ${typeTds}
+          <td></td>
         </tr>`;
       };
 
@@ -629,15 +666,16 @@
             <th style="width:76px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
             <th style="width:76px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
             <th style="width:76px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
-            <th style="width:36px;padding:7px 10px 7px 4px"></th>
+            <th style="width:36px;padding:4px 6px 4px 2px;cursor:pointer;user-select:none;" class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
           </tr></thead>
           <tbody>${list.map(buildRow).join('')}</tbody>
-        </table>`;
+        </table>
+        <div class="pst-filler"></div>`;
     };
 
-    const womenHtml = buildCol(women, 'womens', 'Women');
-    const menHtml   = buildCol(men,   'mens',   'Men');
-    const otherHtml = buildCol(other, 'other',  'Other');
+    const womenHtml = buildCol(women, 'womens', 'Women', 'womens');
+    const menHtml   = buildCol(men,   'mens',   'Men',   'mens');
+    const otherHtml = buildCol(other, 'other',  'Other', 'other');
 
     // #5: add controls to sec-hdr
     let html = `
@@ -650,7 +688,7 @@
         <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
         <button class="ps-expand-btn" id="psExpandBtn" onclick="toggleExpand()">Detail \u25b8</button>
       </div>
-      <div class="ps-container" id="ps-container">`;
+      <div class="ps-scroll"><div class="ps-container" id="ps-container">`;
 
     if (womenHtml || menHtml) {
       html += `<div class="ps-two-col">
@@ -661,7 +699,7 @@
     if (otherHtml) {
       html += `<div style="border-top:1px solid var(--border-s)"><div class="ps-two-col"><div class="ps-col">${otherHtml}</div><div class="ps-col"></div></div></div>`;
     }
-    html += '</div>';
+    html += '</div></div>';
     el.innerHTML = html;
 
     // #7: init sortable after render
@@ -671,39 +709,118 @@
     document.getElementById('psFilter')?.addEventListener('input', function() {
       const q = this.value.toLowerCase().trim();
       document.querySelectorAll('tr.sr').forEach(sr => {
-        const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
+        const name  = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
         const match = !q || name.includes(q);
         sr.style.display = match ? '' : 'none';
-        const tbody = sr.parentElement;
-        const rows = Array.from(tbody.rows);
-        const idx = rows.indexOf(sr);
-        const dr = rows[idx + 1];
+        const dr = sr.nextElementSibling;
         if (dr?.classList.contains('dr')) {
-          if (!match) dr.style.display = 'none';
-          else dr.style.display = dr.classList.contains('open') ? 'table-row' : 'none';
+          // Clearing inline style lets class-based expand CSS take over for matching rows
+          dr.style.display = match ? '' : 'none';
         }
       });
     });
   }
 
-  function renderPlayerStats(players) {
-    buildPlayerPanel(players);
+  function equalizePsColHeights() {
+    document.querySelectorAll('.ps-two-col').forEach(twoCol => {
+      const cols = twoCol.querySelectorAll('.ps-col');
+      if (cols.length < 2) return;
+      const tables = [cols[0].querySelector('.pst'), cols[1].querySelector('.pst')];
+      if (!tables[0] || !tables[1]) return;
+
+      // Reset: remove pad rows and clear all explicit row heights
+      tables.forEach(t => {
+        t.querySelectorAll('tr.pst-pad').forEach(r => r.remove());
+        t.querySelectorAll('tbody tr').forEach(r => r.style.height = '');
+      });
+
+      // ── Sync sr row heights pairwise (visible rows only) ─────────────────
+      // Filtering by offsetHeight > 0 skips rows hidden by the Q-filter or
+      // search, so hidden rows don't consume pairwise slots or skew heights.
+      const visible = r => r.offsetHeight > 0;
+      const srA = Array.from(tables[0].querySelectorAll('tbody tr.sr')).filter(visible);
+      const srB = Array.from(tables[1].querySelectorAll('tbody tr.sr')).filter(visible);
+      const srLen = Math.min(srA.length, srB.length);
+      let srH = 0;
+      for (let i = 0; i < srLen; i++) {
+        const h = Math.max(srA[i].offsetHeight, srB[i].offsetHeight);
+        srA[i].style.height = h + 'px';
+        srB[i].style.height = h + 'px';
+        srH = h; // all paired rows become this height
+      }
+      // Also capture height of any unpaired tail rows
+      [...srA, ...srB].slice(srLen * 2 - (srA.length === srB.length ? 0 : 0))
+        .forEach(r => { srH = Math.max(srH, r.offsetHeight); });
+
+      // ── Set all open dr rows to match the sr height ───────────────────────
+      // First pass: floor each open dr up to srH
+      if (srH > 0) {
+        tables.forEach(t => {
+          t.querySelectorAll('tbody tr.dr.open').forEach(dr => {
+            dr.style.height = Math.max(dr.offsetHeight, srH) + 'px';
+          });
+        });
+      }
+      // Second pass: pairwise sync open dr rows across columns
+      const drA = Array.from(tables[0].querySelectorAll('tbody tr.dr.open'));
+      const drB = Array.from(tables[1].querySelectorAll('tbody tr.dr.open'));
+      const drLen = Math.min(drA.length, drB.length);
+      for (let i = 0; i < drLen; i++) {
+        const h = Math.max(drA[i].offsetHeight, drB[i].offsetHeight);
+        drA[i].style.height = h + 'px';
+        drB[i].style.height = h + 'px';
+      }
+
+      // ── Pad shorter table so sticky thead stays alive ─────────────────────
+      const hA = tables[0].offsetHeight;
+      const hB = tables[1].offsetHeight;
+      const gap = Math.abs(hA - hB);
+      if (gap > 1) {
+        const shorter = hA < hB ? tables[0] : tables[1];
+        const pad = document.createElement('tr');
+        pad.className = 'pst-pad';
+        pad.innerHTML = `<td colspan="9" style="height:${gap}px;padding:0;border:none;background:transparent;"></td>`;
+        shorter.querySelector('tbody').appendChild(pad);
+      }
+    });
   }
 
-  // Row click — event delegation so clicks anywhere inside the <tr> work,
-  // even after innerHTML re-renders wipe inline handlers
+  function renderPlayerStats(players) {
+    buildPlayerPanel(players);
+    requestAnimationFrame(equalizePsColHeights);
+  }
+
+  // ── Expand individual row ─────────────────────────────────────────────────
   document.addEventListener('click', function(e) {
     const sr = e.target.closest('tr.sr');
     if (!sr) return;
-    const tbody = sr.parentElement;
-    const rows  = Array.from(tbody.rows);
-    const idx   = rows.indexOf(sr);
-    const dr    = rows[idx + 1];
+
+    // ── Name cell → open player page in new tab ───────────────────────────
+    // Pass only the player's display name. PlayerPage resolves it to the
+    // correct player_id via getPlayerListV1() (the authoritative players sheet).
+    // Division is omitted — players can move between divisions.
+    if (e.target.closest('.td-name')) {
+      const playerName = sr.dataset.playerName || '';
+      if (playerName) {
+        window.open(GAS_WEB_APP_URL + '?page=player&playerName=' + encodeURIComponent(playerName), '_blank');
+      }
+      return; // do NOT expand the row
+    }
+
+    // ── All other data cells → toggle detail row ──────────────────────────
+    const dr = sr.nextElementSibling;
     if (!dr || !dr.classList.contains('dr')) return;
-    const open = dr.classList.toggle('open');
+    const open = !dr.classList.contains('open');
+    showDr(dr, open);
     sr.classList.toggle('open', open);
     syncExpandBtn();
+    requestAnimationFrame(equalizePsColHeights);
   });
+
+  function showDr(dr, open) {
+    if (open) { dr.classList.add('open');    dr.style.display = 'table-row'; }
+    else       { dr.classList.remove('open'); dr.style.display = 'none'; }
+  }
 
   function toggleExpand() {
     const btn = document.getElementById('psExpandBtn');
@@ -711,10 +828,28 @@
     const drs = document.querySelectorAll('tr.dr');
     const srs = document.querySelectorAll('tr.sr');
     const anyOpen = [...drs].some(d => d.classList.contains('open'));
-    drs.forEach(d => d.classList.toggle('open', !anyOpen));
-    srs.forEach(s => s.classList.toggle('open', !anyOpen));
-    btn.textContent = anyOpen ? 'Detail \u25b8' : 'Summary \u25c2';
+    drs.forEach(d  => showDr(d,  !anyOpen));
+    srs.forEach(s  => s.classList.toggle('open', !anyOpen));
+    btn.textContent = anyOpen ? 'Detail ▸' : 'Summary ◂';
     btn.classList.toggle('active', !anyOpen);
+    requestAnimationFrame(equalizePsColHeights);
+  }
+
+  function toggleQFilter(th) {
+    const table = th.closest('table');
+    const tbody = table.querySelector('tbody');
+    const qualOnly = th.dataset.qualOnly !== 'true';
+    th.dataset.qualOnly = qualOnly;
+    th.querySelector('.q-toggle-lbl').textContent = qualOnly ? 'Q' : 'All';
+    th.classList.toggle('q-toggle-active', qualOnly);
+    tbody.querySelectorAll('tr.sr').forEach(sr => {
+      const chip = sr.querySelector('.q-chip');
+      const isQ  = chip?.classList.contains('q');
+      const hide = qualOnly && !isQ;
+      sr.style.display = hide ? 'none' : '';
+      const dr = sr.nextElementSibling;
+      if (dr?.classList.contains('dr')) dr.style.display = hide ? 'none' : dr.classList.contains('open') ? 'table-row' : 'none';
+    });
   }
 
   function syncExpandBtn() {
@@ -722,18 +857,18 @@
     if (!btn) return;
     const drs     = document.querySelectorAll('tr.dr');
     const allOpen = [...drs].every(d => d.classList.contains('open'));
-    btn.textContent = allOpen ? 'Summary \u25c2' : 'Detail \u25b8';
+    btn.textContent = allOpen ? 'Summary ◂' : 'Detail ▸';
     btn.classList.toggle('active', allOpen);
   }
 
-  // #7 Sortable columns
+  // ── Sort ──────────────────────────────────────────────────────────────────
   function initSortableHeaders() {
     document.querySelectorAll('th.th-sortable').forEach(th => {
       th.addEventListener('click', function() {
-        const table = this.closest('table');
-        const tbody = table.querySelector('tbody');
-        const ths   = Array.from(table.querySelectorAll('th'));
-        const colIdx = ths.indexOf(this);
+        const table  = this.closest('table');
+        const tbody  = table.querySelector('tbody');
+        const ths    = Array.from(table.querySelectorAll('th.th-sortable'));
+        const key    = this.dataset.sort;
         const curDir = this.dataset.sortDir;
         const newDir = curDir === 'asc' ? 'desc' : 'asc';
         ths.forEach(h => { delete h.dataset.sortDir; h.classList.remove('th-sort-asc','th-sort-desc'); });
@@ -744,53 +879,105 @@
         for (let i = 0; i < allRows.length; i++) {
           if (allRows[i].classList.contains('sr')) {
             const dr = allRows[i+1]?.classList.contains('dr') ? allRows[i+1] : null;
-            pairs.push({ sr: allRows[i], dr, val: getCellNum(allRows[i], colIdx) });
+            pairs.push({ sr: allRows[i], dr, val: getCellVal(allRows[i], key) });
             if (dr) i++;
           }
         }
         pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
         pairs.forEach(({ sr, dr }) => { tbody.appendChild(sr); if (dr) tbody.appendChild(dr); });
-        pairs.forEach(({ sr }, i) => {
-          const rk = sr.querySelector('.td-rank');
-          if (rk) rk.textContent = i + 1;
-        });
+        pairs.forEach(({ sr }, i) => { const rk = sr.querySelector('.td-rank'); if (rk) rk.textContent = i + 1; });
       });
     });
   }
 
-  function getCellNum(row, colIdx) {
-    const td = row.cells[colIdx];
-    if (!td) return 0;
-    const txt = td.textContent.replace(/[^0-9.\-+]/g, '');
-    return parseFloat(txt) || 0;
+  function getCellVal(row, key) {
+    const selectors = { gms: '.td-gms', rating: '.td-rating', diff: '.td-diff', dpg: '.td-dpg' };
+    const norm = s => s.replace(/–/g, '-');   // en-dash → hyphen
+    if (key === 'rec') {
+      const txt = norm(row.querySelector('.td-rec')?.textContent || '0');
+      return parseFloat(txt.split('-')[0]) || 0;
+    }
+    const sel = selectors[key];
+    if (!sel) return 0;
+    return parseFloat(norm(row.querySelector(sel)?.textContent || '0').replace(/[^0-9.\-]/g,'')) || 0;
   }
 
   // #8 CSV Download
   function downloadCSV() {
-    const tables = document.querySelectorAll('table.pst');
-    let csv = '';
-    tables.forEach(table => {
-      const groupLabel = table.closest('.ps-col')?.querySelector('.th-group-lbl')?.textContent.trim() || '';
-      csv += groupLabel + '\n';
-      csv += '#,Player,Gms,Rating,W,L,+/-,Per Gm,Qualified\n';
-      table.querySelectorAll('tr.sr').forEach((sr, i) => {
-        if (sr.style.display === 'none') return;
-        const name  = sr.querySelector('.td-name')?.textContent.trim() || '';
-        const gms   = sr.querySelector('.td-gms')?.textContent.trim() || '';
-        const rat   = sr.querySelector('.td-rating')?.textContent.trim() || '';
-        const rec   = sr.querySelector('.td-rec')?.textContent.trim() || '';
-        const [w,l] = rec.split('\u2013').map(s=>s.trim());
-        const diff  = sr.querySelector('.td-diff')?.textContent.trim() || '';
-        const dpg   = sr.querySelector('.td-dpg')?.textContent.trim() || '';
-        const qual  = sr.querySelector('.q-chip')?.textContent.trim() || '';
-        csv += [i+1, `"${name}"`, gms, rat, w||'', l||'', diff, dpg, qual].join(',') + '\n';
+    if (!currentData?.playerStats?.length) return;
+
+    const seasonLabel   = document.getElementById('hdr-season')?.textContent.trim() || '';
+    const divSel        = document.getElementById('divisionSelect');
+    const divisionLabel = divSel?.options[divSel.selectedIndex]?.text || currentDivisionKey;
+
+    const allPlayers = currentData.playerStats;
+    const maxGms = Math.max(...allPlayers.map(p => (p.wins||0)+(p.losses||0)));
+
+    const getRating = p => {
+      const gms = (p.wins||0)+(p.losses||0);
+      if (!gms) return null;
+      const winPct = p.wins/gms;
+      const ptsTot = (p.points_for||0)+(p.points_against||0);
+      const ptsPct = ptsTot > 0 ? p.points_for/ptsTot : 0;
+      return (winPct*0.6 + ptsPct*0.4)*100;
+    };
+
+    const processGroup = (list, gender) => {
+      const maxG = Math.max(...list.map(p => (p.wins||0)+(p.losses||0)));
+      const withQ = list.map(p => {
+        const gms = (p.wins||0)+(p.losses||0);
+        const possGms = (p.team_match_count||0)*8 || maxG;
+        const playPct = possGms > 0 ? gms/possGms : 0;
+        return { ...p, _q: playPct >= 0.5, _rating: getRating(p) };
+      }).sort((a,b) => {
+        if (a._q !== b._q) return a._q ? -1 : 1;
+        return (b._rating||0) - (a._rating||0);
       });
-      csv += '\n';
-    });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'cpbl_standings.csv'; a.click();
+
+      return withQ.map((p, i) => {
+        const gms     = (p.wins||0)+(p.losses||0);
+        const diff    = (p.points_for||0)-(p.points_against||0);
+        const ptsTot  = (p.points_for||0)+(p.points_against||0);
+        const possGms = (p.team_match_count||0)*8 || maxGms;
+        const playPct = possGms > 0 ? ((gms/possGms)*100).toFixed(1) : '0.0';
+        const winPct  = gms > 0 ? ((p.wins/gms)*100).toFixed(1) : '0.0';
+        const ptsPct  = ptsTot > 0 ? ((p.points_for/ptsTot)*100).toFixed(1) : '0.0';
+        const rating  = p._rating != null ? p._rating.toFixed(1) : '';
+        const dpg     = gms > 0 ? (diff/gms).toFixed(2) : '0.00';
+        const name    = String(p.name||'').includes(',') ? `"${p.name}"` : (p.name||'');
+        return [
+          seasonLabel, divisionLabel, gender, p.team_name||'', i+1, name,
+          gms, rating, p.wins||0, p.losses||0, diff, dpg,
+          playPct, winPct, ptsPct, p._q ? 'Y' : 'N',
+          p.womens_w||0, p.womens_l||0, p.womens_diff||0,
+          p.mens_w||0,   p.mens_l||0,   p.mens_diff||0,
+          p.mixed_w||0,  p.mixed_l||0,  p.mixed_diff||0,
+          p.coed_w||0,   p.coed_l||0,   p.coed_diff||0
+        ].join(',');
+      });
+    };
+
+    const headers = [
+      'Season','Division','Gender','Team','Rank','Name',
+      'Games','Rating','Wins','Losses','Point Diff','Diff Per Game',
+      'Play%','Win%','Pts%','Qualified',
+      "Women's W","Women's L","Women's Diff",
+      "Men's W","Men's L","Men's Diff",
+      'Mixed W','Mixed L','Mixed Diff',
+      'Coed W','Coed L','Coed Diff'
+    ].join(',');
+
+    const women = allPlayers.filter(p => p.isWomens);
+    const men   = allPlayers.filter(p => p.isMens);
+    const other = allPlayers.filter(p => !p.isWomens && !p.isMens);
+
+    const lines = [headers, ...processGroup(women,'Women'), ...processGroup(men,'Men'), ...processGroup(other,'Other')];
+    const blob  = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href = url;
+    a.download = `cpbl_stats_${(divisionLabel||'').replace(/\s+/g,'_')}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -845,3 +1032,4 @@
 </script>
 </body>
 </html>
+

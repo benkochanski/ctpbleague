@@ -43,6 +43,12 @@ const MATCH_STATUS = {
   CANCELED: 'canceled'
 };
 
+const MATCH_SCORING = {
+  REGULATION_ROUNDS: 8,
+  GAMES_TO_WIN_REGULATION: 17,
+  GAMES_TO_WIN_OVERALL: 18
+};
+
 const SUBMISSION_STATUS = {
   NOT_SUBMITTED: 'not_submitted',
   DRAFT: 'draft',

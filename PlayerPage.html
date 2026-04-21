@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CTPBL Player Stats</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #081f43; --blue: #123a7c; --green: #0b7e39; --gold: #ffd22e;
+      --bg: #e8eef7; --panel: #ffffff; --soft: #f2f6fc; --border: #ccd6e8; --border-s: #dde5f3;
+      --text: #0d1f3c; --muted: #5a6e8a;
+      --ok: #0b7e39; --warn: #c96a00; --danger: #c8231c;
+      --r: 12px; --r-lg: 18px; --sh: 0 6px 24px rgba(8,30,67,.09);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input, select { font-family: inherit; }
+    html, body { height: 100%; overflow: hidden; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; }
+    #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    #top-static { flex-shrink: 0; z-index: 50; box-shadow: 0 4px 20px rgba(8,30,67,.12); }
+
+    /* Two-column scrollable page */
+    .page { flex: 1; min-height: 0; display: flex; flex-direction: row; gap: 12px; padding: 12px 16px 16px; overflow: hidden; }
+    .stats-col { width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+    .gamelog-col { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+
+    /* ── Header ── */
+    .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); }
+    .league-header { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    .league-brand { display: flex; align-items: center; gap: 12px; }
+    .league-logo-wrap { width: 52px; height: 52px; border-radius: 13px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.20); flex-shrink: 0; padding: 2px; overflow: hidden; }
+    .league-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .league-logo-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--navy); }
+    .league-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1.6px; color: #fff; line-height: 1; }
+    .league-text p { color: #d8e5fb; font-size: 11px; margin-top: 4px; letter-spacing: .12em; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .pill { padding: 6px 14px; border-radius: 8px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.88); white-space: nowrap; }
+
+    /* ── Player search combobox ── */
+    .player-search-wrap { position: relative; }
+    .hdr-search { background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; color: #fff; outline: none; width: 220px; }
+    .hdr-search::placeholder { color: rgba(255,255,255,.5); }
+    .hdr-search:focus { background: rgba(255,255,255,.20); border-color: rgba(255,255,255,.5); }
+    .player-dropdown { position: absolute; top: calc(100% + 4px); right: 0; min-width: 260px; max-height: 320px; overflow-y: auto; background: var(--navy); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.4); z-index: 200; }
+    .pd-group { padding: 6px 12px 3px; font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.4); border-top: 1px solid rgba(255,255,255,.1); }
+    .pd-group:first-child { border-top: none; }
+    .pd-item { padding: 8px 16px; font-size: 13px; color: rgba(255,255,255,.88); cursor: pointer; transition: background .1s; }
+    .pd-item:hover, .pd-item.active { background: rgba(255,213,46,.15); color: var(--gold); }
+    .pd-empty { padding: 16px; text-align: center; font-size: 13px; color: rgba(255,255,255,.35); }
+
+    /* ── Panel ── */
+    .panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: clip; }
+
+    /* ── Player Hero ── */
+    .player-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 55%, #0d5229 100%); padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+    .ph-logo { width: 64px; height: 64px; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ph-logo img { width: auto; height: 100%; object-fit: contain; display: block; }
+    .ph-logo-fb { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--navy); }
+    .ph-info { flex: 1; min-width: 0; }
+    .ph-name { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1.8px; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ph-meta { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+    .ph-chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .ph-chip.gender { background: rgba(255,213,46,.18); color: var(--gold); border: 1px solid rgba(255,213,46,.4); }
+    .ph-kpis { display: flex; gap: 20px; flex-shrink: 0; }
+    .ph-kpi { text-align: center; }
+    .ph-kpi-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 900; color: #fff; line-height: 1; }
+    .ph-kpi-val.gold { color: var(--gold); }
+    .ph-kpi-val.ok   { color: #6ee68a; }
+    .ph-kpi-lbl { font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-top: 3px; }
+
+    /* ── Section head (sticky within its scroll container) ── */
+    .sec-head { padding: 9px 16px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
+    .sec-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--navy); }
+    .sec-label { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: #fff; flex: 1; }
+    .sec-btn { height: 26px; padding: 0 10px; border-radius: 7px; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .sec-btn:hover { background: rgba(255,255,255,.22); }
+
+    /* ── Stats Grid ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .sg-cell { padding: 12px 14px; border-right: 1px solid var(--border-s); border-bottom: 1px solid var(--border-s); }
+    .sg-cell:nth-child(4n) { border-right: none; }
+    .sg-lbl { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px; }
+    .sg-lbl.all    { color: var(--navy); }
+    .sg-lbl.womens { color: #123a7c; }
+    .sg-lbl.mens   { color: var(--green); }
+    .sg-lbl.mixed  { color: #7a5c00; }
+    .sg-lbl.coed   { color: #0d5229; }
+    .sg-rec { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 900; color: var(--text); line-height: 1; }
+    .sg-row { display: flex; gap: 6px; margin-top: 4px; align-items: baseline; flex-wrap: wrap; }
+    .sg-diff { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 800; }
+    .sg-diff.pos { color: var(--ok); }
+    .sg-diff.neg { color: var(--muted); opacity: .7; }
+    .sg-pct  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+    .sg-rat  { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; color: var(--blue); }
+
+    /* ── Stats Accordion ── */
+    .sa-lvl { border-top: 1px solid var(--border-s); }
+    .sa-trigger { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; user-select: none; background: var(--soft); transition: background .13s; }
+    .sa-trigger:hover { background: #eaf0fa; }
+    .sa-trigger.open  { background: #e4edf8; }
+    .sa-chevron { font-size: 10px; color: var(--muted); transition: transform .18s; flex-shrink: 0; }
+    .sa-trigger.open .sa-chevron { transform: rotate(90deg); }
+    .sa-title   { font-weight: 800; font-size: 13px; color: var(--text); flex: 1; }
+    .sa-sub-txt { font-size: 11px; color: var(--muted); }
+    .sa-quick   { display: flex; gap: 10px; align-items: center; }
+    .sa-qrec    { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text); }
+    .sa-qdiff   { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; }
+    .sa-qdiff.pos { color: var(--ok); }
+    .sa-qdiff.neg { color: var(--muted); opacity: .7; }
+    .sa-body { display: none; border-top: 1px dashed var(--border-s); }
+    .sa-body.open { display: block; }
+
+    /* ── Match sub-rows ── */
+    .match-lvl { border-bottom: 1px solid var(--border-s); }
+    .match-lvl:last-child { border-bottom: none; }
+    .match-trigger { display: flex; align-items: center; gap: 10px; padding: 8px 24px; cursor: pointer; user-select: none; transition: background .13s; }
+    .match-trigger:hover { background: #f5f8ff; }
+    .match-trigger.open { background: #eef3fb; }
+    .match-chevron { font-size: 9px; color: var(--muted); transition: transform .18s; flex-shrink: 0; }
+    .match-trigger.open .match-chevron { transform: rotate(90deg); }
+    .match-title { font-weight: 700; font-size: 12px; color: var(--text); flex: 1; }
+    .match-date  { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .match-body  { display: none; padding: 0 24px 10px; }
+    .match-body.open { display: block; }
+
+    /* ── Mini stats grid (inside season/match) ── */
+    .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border-s); border-radius: var(--r); overflow: clip; margin: 6px 0 4px; }
+    .mg-cell { padding: 8px 10px; border-right: 1px solid var(--border-s); }
+    .mg-cell:last-child { border-right: none; }
+    .mg-lbl  { font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+    .mg-lbl.all    { color: var(--navy); }
+    .mg-lbl.womens { color: #123a7c; }
+    .mg-lbl.mens   { color: var(--green); }
+    .mg-lbl.mixed  { color: #7a5c00; }
+    .mg-lbl.coed   { color: #0d5229; }
+    .mg-rec  { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 900; color: var(--text); }
+    .mg-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; }
+    .mg-diff.pos { color: var(--ok); }
+    .mg-diff.neg { color: var(--muted); opacity: .7; }
+
+    /* ── Game rows inside match ── */
+    .game-rows { margin-top: 4px; border: 1px solid var(--border-s); border-radius: var(--r); overflow: clip; font-size: 12px; }
+    .game-row { display: grid; grid-template-columns: 68px 1fr 68px 40px 44px; gap: 6px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--border-s); }
+    .game-row:last-child { border-bottom: none; }
+    .game-row:hover { background: #f5f8ff; }
+    .gr-names { min-width: 0; }
+    .gr-partner { color: var(--blue); font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gr-vs { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gr-score { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; text-align: right; white-space: nowrap; }
+    .gr-result { text-align: center; }
+    .gr-diff  { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; text-align: right; }
+    .gr-diff.pos { color: var(--ok); }
+    .gr-diff.neg { color: var(--muted); opacity: .7; }
+    .result-w { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--ok); }
+    .result-l { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--muted); opacity: .7; }
+
+    /* ── Game type badge ── */
+    .gt-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+    .gt-badge.womens { background: #123a7c18; color: #123a7c; border: 1px solid #123a7c33; }
+    .gt-badge.mens   { background: #0b7e3918; color: #0b7e39; border: 1px solid #0b7e3933; }
+    .gt-badge.mixed  { background: #ffd22e33; color: #7a5c00; border: 1px solid #ffd22e88; }
+    .gt-badge.coed   { background: #0d522918; color: #0d5229; border: 1px solid #0d522940; }
+
+    /* ── Gamelog column ── */
+    .gamelog-outer { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); background: var(--panel); overflow: clip; }
+    .gl-filters { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--border-s); background: var(--soft); align-items: center; flex-shrink: 0; }
+    .gl-filter-wrap { position: relative; }
+    .gl-filter-input { height: 28px; padding: 0 28px 0 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); font-size: 12px; font-weight: 600; color: var(--text); outline: none; min-width: 110px; cursor: text; }
+    .gl-filter-input::placeholder { color: var(--muted); font-weight: 400; }
+    .gl-filter-input:focus { border-color: var(--blue); }
+    .gl-filter-clear { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); cursor: pointer; line-height: 1; display: none; }
+    .gl-filter-clear.visible { display: block; }
+    .gl-search { height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); font-size: 12px; color: var(--text); outline: none; width: 130px; }
+    .gl-search::placeholder { color: var(--muted); }
+    .gl-count { font-size: 12px; color: var(--muted); margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+    .gl-clear { height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer; white-space: nowrap; }
+    .gl-clear:hover { background: #f0f4ff; }
+
+    /* Filter dropdown */
+    .gl-filter-dd { position: absolute; top: calc(100% + 3px); left: 0; min-width: 160px; max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(8,30,67,.14); z-index: 100; display: none; }
+    .gl-filter-dd.open { display: block; }
+    .gl-dd-item { padding: 7px 12px; font-size: 12px; color: var(--text); cursor: pointer; }
+    .gl-dd-item:hover, .gl-dd-item.sel { background: #eef3ff; color: var(--blue); font-weight: 700; }
+    .gl-dd-item.placeholder { color: var(--muted); }
+
+    /* ── Game Log Table ── */
+    .gl-wrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; }
+    .gl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .gl-table th { position: sticky; top: 0; background: var(--soft); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 7px 10px; border-bottom: 2px solid var(--border-s); white-space: nowrap; z-index: 5; }
+    .gl-table th.r { text-align: right; }
+    .gl-table th.c { text-align: center; }
+    .gl-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-s); vertical-align: middle; }
+    .gl-table tr:last-child td { border-bottom: none; }
+    .gl-table tr:hover td { background: #f5f8ff; }
+    .gl-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .gl-match { font-size: 12px; color: var(--text); font-weight: 600; white-space: nowrap; }
+    .gl-partner { color: var(--blue); font-weight: 700; }
+    .gl-opp     { color: var(--text); }
+    .gl-score   { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; text-align: right; white-space: nowrap; }
+    .gl-diff-pos { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; color: var(--ok); text-align: right; }
+    .gl-diff-neg { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; color: var(--muted); opacity: .7; text-align: right; }
+    .gl-result-w { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; color: var(--ok); text-align: center; }
+    .gl-result-l { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 800; color: var(--muted); opacity: .7; text-align: center; }
+    .gl-empty { padding: 36px; text-align: center; color: var(--muted); font-size: 14px; }
+
+    /* ── Loading / Empty ── */
+    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 32px; color: var(--muted); font-size: 14px; }
+    .spinner { width: 20px; height: 20px; border: 3px solid var(--border-s); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-hero { padding: 28px; text-align: center; color: rgba(255,255,255,.5); font-size: 14px; background: linear-gradient(135deg, var(--navy) 0%, #1a3870 100%); }
+    .empty-col { display: flex; align-items: center; justify-content: center; flex: 1; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Frozen top ── -->
+  <div id="top-static">
+    <div class="app-header">
+      <div class="league-header">
+        <div class="league-brand">
+          <div class="league-logo-wrap">
+            <img id="league-logo" alt="" style="display:none">
+            <div id="league-logo-fb" class="league-logo-fallback">CPL</div>
+          </div>
+          <div class="league-text">
+            <h1 id="league-title">Connecticut Pickleball League</h1>
+            <p>Player Stats</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="player-search-wrap">
+            <input id="playerSearch" type="text" class="hdr-search" placeholder="Search player…"
+              oninput="onSearchInput()" onfocus="openDropdown()" autocomplete="off" spellcheck="false">
+            <div id="playerDropdown" class="player-dropdown" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="playerHero" class="panel" style="margin:10px 16px;border-radius:var(--r-lg);">
+      <div class="empty-hero">Search for a player to view stats</div>
+    </div>
+  </div>
+
+  <!-- ── Two-column scrollable page ── -->
+  <div class="page" id="mainPage">
+    <div class="stats-col" id="statsCol" style="display:none">
+      <div class="panel" id="statsPanel"></div>
+    </div>
+    <div class="gamelog-col" id="gamelogCol" style="display:none">
+      <div class="gamelog-outer" id="gamelogPanel"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ─────────────────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────────────────── */
+let allPlayers  = [];
+let allGamelog  = [];
+let glFilters   = { season: '', type: '', match: '', partner: '', opp: '' };
+let glSearch    = '';
+let ddOpen      = false;
+
+/* ─────────────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────────────── */
+(function init() {
+  google.script.run
+    .withSuccessHandler(onPlayersLoaded)
+    .withFailureHandler(e => console.error(e))
+    .getPlayerListV1();
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.player-search-wrap')) closeDropdown();
+    if (!e.target.closest('.gl-filter-wrap')) closeAllFilterDds();
+  });
+})();
+
+/* ─────────────────────────────────────────────────────────
+   PLAYER SEARCH
+───────────────────────────────────────────────────────── */
+function onPlayersLoaded(players) {
+  allPlayers = players.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+  // GAS template variables injected server-side by doGet.
+  // window.location.search is not available inside GAS-served pages,
+  // so parameters must be passed via <?= ?> template interpolation.
+  const pid   = '<?= initialPlayerId ?>';
+  const pname = '<?= initialPlayerName ?>';
+
+  if (pid) {
+    const p = allPlayers.find(x => x.player_id === pid);
+    if (p) { document.getElementById('playerSearch').value = p.full_name; loadPlayer(p.player_id); return; }
+  }
+  if (pname) {
+    const q = pname.toLowerCase();
+    const p = allPlayers.find(x => x.full_name.toLowerCase() === q);
+    if (p) { document.getElementById('playerSearch').value = p.full_name; loadPlayer(p.player_id); }
+  }
+}
+
+function onSearchInput() {
+  openDropdown();
+}
+
+function openDropdown() {
+  ddOpen = true;
+  renderDropdown();
+  document.getElementById('playerDropdown').style.display = 'block';
+}
+
+function closeDropdown() {
+  ddOpen = false;
+  document.getElementById('playerDropdown').style.display = 'none';
+}
+
+function renderDropdown() {
+  const q = (document.getElementById('playerSearch').value || '').toLowerCase().trim();
+  const filtered = q
+    ? allPlayers.filter(p => p.full_name.toLowerCase().includes(q) || (p.team_name||'').toLowerCase().includes(q))
+    : allPlayers;
+
+  const dd = document.getElementById('playerDropdown');
+  if (!filtered.length) {
+    dd.innerHTML = '<div class="pd-empty">No players found</div>';
+    return;
+  }
+
+  const byTeam = {};
+  filtered.forEach(p => {
+    const t = p.team_name || 'Unassigned';
+    if (!byTeam[t]) byTeam[t] = [];
+    byTeam[t].push(p);
+  });
+
+  dd.innerHTML = Object.keys(byTeam).sort().map(team =>
+    `<div class="pd-group">${esc(team)}</div>` +
+    byTeam[team].map(p =>
+      `<div class="pd-item" onmousedown="selectPlayer('${esc(p.player_id)}','${esc(p.full_name).replace(/'/g,"&#39;")}')">${esc(p.full_name)}</div>`
+    ).join('')
+  ).join('');
+}
+
+function selectPlayer(id, name) {
+  document.getElementById('playerSearch').value = name;
+  closeDropdown();
+  loadPlayer(id);
+}
+
+/* ─────────────────────────────────────────────────────────
+   LOAD PLAYER
+───────────────────────────────────────────────────────── */
+function loadPlayer(playerId) {
+  document.getElementById('playerHero').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>';
+  document.getElementById('statsCol').style.display  = 'none';
+  document.getElementById('gamelogCol').style.display = 'none';
+
+  google.script.run
+    .withSuccessHandler(renderAll)
+    .withFailureHandler(err => {
+      document.getElementById('playerHero').innerHTML =
+        `<div class="empty-hero">Error: ${esc(String(err.message || err))}</div>`;
+    })
+    .getPlayerPageData(playerId);
+}
+
+/* ─────────────────────────────────────────────────────────
+   RENDER ALL
+───────────────────────────────────────────────────────── */
+function renderAll(data) {
+  const { player, gamelog, brand } = data;
+  allGamelog = gamelog || [];
+  glFilters  = { season: '', type: '', match: '', partner: '', opp: '' };
+  glSearch   = '';
+
+  const logo = document.getElementById('league-logo');
+  const fb   = document.getElementById('league-logo-fb');
+  if (brand.leagueLogoUrl) { logo.src = brand.leagueLogoUrl; logo.style.display = 'block'; fb.style.display = 'none'; }
+  if (brand.leagueTitle) document.getElementById('league-title').textContent = brand.leagueTitle;
+
+  renderHero(player, gamelog);
+  renderStats(player, gamelog);
+  renderGamelog(gamelog);
+
+  document.getElementById('statsCol').style.display  = '';
+  document.getElementById('gamelogCol').style.display = '';
+}
+
+/* ─────────────────────────────────────────────────────────
+   HERO CARD
+───────────────────────────────────────────────────────── */
+function renderHero(player, gamelog) {
+  const stats  = computeStats(gamelog);
+  const gms    = stats.all.w + stats.all.l;
+  const ptsTot = stats.all.pf + stats.all.pa;
+  const rating = gms > 0
+    ? ((stats.all.w / gms * 0.6) + (ptsTot > 0 ? stats.all.pf / ptsTot * 0.4 : 0)) * 100
+    : null;
+  const diff    = stats.all.pf - stats.all.pa;
+  const diffStr = diff >= 0 ? '+' + diff : String(diff);
+  const genderLabel = normalizeGenderLabel(player.gender);
+
+  document.getElementById('playerHero').innerHTML = `
+    <div class="player-hero">
+      <div class="ph-logo">
+        ${player.team_logo_url
+          ? `<img src="${esc(player.team_logo_url)}" alt="">`
+          : `<div class="ph-logo-fb">${esc((player.team_name||'?').substring(0,2).toUpperCase())}</div>`}
+      </div>
+      <div class="ph-info">
+        <div class="ph-name">${esc(player.full_name)}</div>
+        <div class="ph-meta">
+          ${genderLabel ? `<span class="ph-chip gender">${esc(genderLabel)}</span>` : ''}
+        </div>
+      </div>
+      <div class="ph-kpis">
+        <div class="ph-kpi">
+          <div class="ph-kpi-val">${gms}</div>
+          <div class="ph-kpi-lbl">Games</div>
+        </div>
+        <div class="ph-kpi">
+          <div class="ph-kpi-val">${stats.all.w}–${stats.all.l}</div>
+          <div class="ph-kpi-lbl">Record</div>
+        </div>
+        <div class="ph-kpi">
+          <div class="ph-kpi-val ${diff >= 0 ? 'ok' : ''}">${diffStr}</div>
+          <div class="ph-kpi-lbl">+/–</div>
+        </div>
+        <div class="ph-kpi">
+          <div class="ph-kpi-val gold">${rating != null ? rating.toFixed(1) : '—'}</div>
+          <div class="ph-kpi-lbl">Rating</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   STATS PANEL  (Career → Season → Match accordion)
+───────────────────────────────────────────────────────── */
+function renderStats(player, gamelog) {
+  const el = document.getElementById('statsPanel');
+  const isDivision1 = gamelog.some(g => /1/.test(g.division_id || ''));
+  const gameTypes = isDivision1 ? ['womens','coed','mixed'] : ['womens','mens','mixed'];
+
+  const careerGrid = buildStatsGrid(computeStats(gamelog), gameTypes, 'full');
+
+  const bySeason = {};
+  gamelog.forEach(g => {
+    const key = g.season_id || 'unknown';
+    if (!bySeason[key]) bySeason[key] = { name: g.season_name || key, games: [] };
+    bySeason[key].games.push(g);
+  });
+
+  const seasonAccordions = Object.keys(bySeason)
+    .sort((a, b) => String(bySeason[b].games[0]?.match_date||'').localeCompare(String(bySeason[a].games[0]?.match_date||'')))
+    .map(sId => {
+      const { name, games } = bySeason[sId];
+      const ss   = computeStats(games);
+      const gms  = ss.all.w + ss.all.l;
+      const diff = ss.all.pf - ss.all.pa;
+      const dStr = diff >= 0 ? '+'+diff : String(diff);
+      const dCls = diff >= 0 ? 'pos' : 'neg';
+
+      const byMatch = {};
+      games.forEach(g => {
+        const mk = g.match_id || 'unknown';
+        if (!byMatch[mk]) byMatch[mk] = { date: g.match_date, opp: g.opp_team_name, games: [] };
+        byMatch[mk].games.push(g);
+      });
+
+      const matchAccordions = Object.keys(byMatch)
+        .sort((a, b) => String(byMatch[b].date||'').localeCompare(String(byMatch[a].date||'')))
+        .map(mId => {
+          const m   = byMatch[mId];
+          const ms  = computeStats(m.games);
+          const md  = ms.all.pf - ms.all.pa;
+          const mdS = md >= 0 ? '+'+md : String(md);
+          const mdC = md >= 0 ? 'pos' : 'neg';
+          const gameRowsHtml = m.games
+            .sort((a,b) => a.round_number - b.round_number || a.game_number_in_round - b.game_number_in_round)
+            .map(g => {
+              const gd  = g.diff >= 0 ? '+'+g.diff : String(g.diff);
+              const gdC = g.diff >= 0 ? 'pos' : 'neg';
+              return `<div class="game-row">
+                <div><span class="gt-badge ${esc(g.game_type)}">${esc(gtLabel(g.game_type))}</span></div>
+                <div class="gr-names">
+                  <div class="gr-partner">${esc(g.partner_name || '—')}</div>
+                  <div class="gr-vs">vs ${esc(g.opp1_name||'?')} / ${esc(g.opp2_name||'?')}</div>
+                </div>
+                <div class="gr-score">${g.my_score} – ${g.opp_score}</div>
+                <div class="gr-result">${g.won ? '<span class="result-w">W</span>' : '<span class="result-l">L</span>'}</div>
+                <div class="gr-diff ${gdC}">${esc(gd)}</div>
+              </div>`;
+            }).join('');
+
+          return `
+            <div class="match-lvl">
+              <div class="match-trigger" onclick="toggleMatch(this)">
+                <span class="match-chevron">▶</span>
+                <span class="match-title">vs ${esc(m.opp || 'Unknown')}</span>
+                <span class="match-date">${fmtDate(m.date)}</span>
+                <span style="margin-left:10px" class="sa-qrec">${ms.all.w}–${ms.all.l}</span>
+                <span style="margin-left:5px" class="sa-qdiff ${mdC}">${esc(mdS)}</span>
+              </div>
+              <div class="match-body">
+                ${buildStatsGrid(ms, gameTypes, 'mini')}
+                <div class="game-rows">${gameRowsHtml}</div>
+              </div>
+            </div>`;
+        }).join('');
+
+      return `
+        <div class="sa-lvl">
+          <div class="sa-trigger" onclick="toggleSa(this)">
+            <span class="sa-chevron">▶</span>
+            <span class="sa-title">${esc(name)}</span>
+            <span class="sa-sub-txt">${gms}g</span>
+            <div class="sa-quick">
+              <span class="sa-qrec">${ss.all.w}–${ss.all.l}</span>
+              <span class="sa-qdiff ${dCls}">${esc(dStr)}</span>
+            </div>
+          </div>
+          <div class="sa-body">
+            ${buildStatsGrid(ss, gameTypes, 'mini')}
+            ${matchAccordions}
+          </div>
+        </div>`;
+    }).join('');
+
+  el.innerHTML = `
+    <div class="sec-head">
+      <div class="sec-badge">S</div>
+      <span class="sec-label">Stats</span>
+      <button class="sec-btn" onclick="expandAllSa()">Expand All</button>
+      <button class="sec-btn" onclick="collapseAllSa()">Collapse</button>
+    </div>
+    <div style="border-bottom:1px solid var(--border-s)">
+      <div style="padding:4px 16px 0;background:var(--soft);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Career</div>
+      ${careerGrid}
+    </div>
+    <div id="seasonAccordion">${seasonAccordions}</div>`;
+}
+
+function buildStatsGrid(stats, gameTypes, size) {
+  const types  = ['all', ...gameTypes];
+  const labels = { all:'All', womens:"W's", mens:"M's", mixed:'Mix', coed:'Coed' };
+  const isFull = size === 'full';
+  const wrapCls = isFull ? 'stats-grid' : 'mini-grid';
+  const cellCls = isFull ? 'sg-cell' : 'mg-cell';
+  const lblCls  = isFull ? 'sg-lbl'  : 'mg-lbl';
+  const recCls  = isFull ? 'sg-rec'  : 'mg-rec';
+
+  return `<div class="${wrapCls}">${types.map(t => {
+    const s    = stats[t] || { w:0, l:0, pf:0, pa:0 };
+    const gms  = s.w + s.l;
+    const diff = s.pf - s.pa;
+    const dStr = diff >= 0 ? '+'+diff : String(diff);
+    const dCls = diff >= 0 ? 'pos' : 'neg';
+
+    if (isFull) {
+      const ptsTot = s.pf + s.pa;
+      const winPct = gms > 0 ? (s.w/gms*100).toFixed(0)+'%' : '—';
+      const ptsPct = ptsTot > 0 ? (s.pf/ptsTot*100).toFixed(0)+'%' : '—';
+      const rat    = gms > 0 ? ((s.w/gms*0.6) + (ptsTot>0 ? s.pf/ptsTot*0.4 : 0))*100 : null;
+      return `<div class="${cellCls}">
+        <div class="${lblCls} ${t}">${labels[t]}</div>
+        <div class="${recCls}">${s.w}–${s.l}</div>
+        <div class="sg-row">
+          <span class="sg-diff ${dCls}">${esc(dStr)}</span>
+          <span class="sg-pct">${winPct}</span>
+          <span class="sg-pct">${ptsPct}pts</span>
+          <span class="sg-rat">${rat != null ? rat.toFixed(1) : '—'}</span>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="${cellCls}">
+        <div class="${lblCls} ${t}">${labels[t]}</div>
+        <div class="${recCls}">${s.w}–${s.l}</div>
+        <span class="mg-diff ${dCls}">${esc(dStr)}</span>
+      </div>`;
+    }
+  }).join('')}</div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   GAME LOG
+───────────────────────────────────────────────────────── */
+function renderGamelog(gamelog) {
+  const el = document.getElementById('gamelogPanel');
+
+  const seasons  = [...new Map(gamelog.map(g => [g.season_id, g.season_name])).entries()]
+    .sort((a,b) => String(b[1]).localeCompare(String(a[1])));
+  const matches  = [...new Map(gamelog.map(g => [g.match_id, `${fmtDate(g.match_date)} vs ${g.opp_team_name}`])).entries()];
+  const partners = [...new Set(gamelog.map(g => g.partner_name).filter(Boolean))].sort();
+  const opps     = [...new Set(gamelog.flatMap(g => [g.opp1_name, g.opp2_name]).filter(Boolean))].sort();
+  const types    = [...new Set(gamelog.map(g => g.game_type).filter(Boolean))].sort();
+
+  el.innerHTML = `
+    <div class="sec-head" style="border-radius:var(--r-lg) var(--r-lg) 0 0; flex-shrink:0">
+      <div class="sec-badge">G</div>
+      <span class="sec-label">Game Log</span>
+    </div>
+    <div class="gl-filters">
+      ${buildFilterField('glSeason',  'Season',  seasons.map(([v,l])=>({v,l})), 'All Seasons')}
+      ${buildFilterField('glType',    'Type',    types.map(t=>({v:t,l:gtLabel(t)})), 'All Types')}
+      ${buildFilterField('glMatch',   'Match',   matches.map(([v,l])=>({v,l})), 'All Matches')}
+      ${buildFilterField('glPartner', 'Partner', partners.map(p=>({v:p,l:p})), 'All Partners')}
+      ${buildFilterField('glOpp',     'Opponent',opps.map(o=>({v:o,l:o})), 'All Opponents')}
+      <input id="glSearch" class="gl-search" placeholder="Search name…" oninput="onGlSearch(this.value)">
+      <button class="gl-clear" onclick="clearGlFilters()">Clear</button>
+      <span id="glCount" class="gl-count">${gamelog.length} games</span>
+    </div>
+    <div class="gl-wrap">
+      <table class="gl-table">
+        <thead><tr>
+          <th>Date</th><th>Match</th><th class="c">Type</th>
+          <th>Partner</th><th>Opponents</th>
+          <th class="r">Score</th><th class="c">W/L</th><th class="r">+/–</th>
+        </tr></thead>
+        <tbody id="glBody"></tbody>
+      </table>
+    </div>`;
+
+  applyGlFilters();
+}
+
+function buildFilterField(id, placeholder, options, allLabel) {
+  const opts = [{ v:'', l: allLabel }, ...options];
+  return `
+    <div class="gl-filter-wrap" id="wrap_${id}">
+      <input type="text" id="${id}" class="gl-filter-input" placeholder="${esc(placeholder)}"
+        readonly onclick="toggleFilterDd('${id}')" autocomplete="off"
+        style="cursor:pointer">
+      <span class="gl-filter-clear" id="clr_${id}" onclick="clearGlFilter('${id}')">×</span>
+      <div class="gl-filter-dd" id="dd_${id}">
+        ${opts.map(o => `<div class="gl-dd-item${o.v===''?' placeholder':''}" data-val="${esc(o.v)}" onclick="setGlFilter('${id}','${esc(o.v)}','${esc(o.l)}')">${esc(o.l)}</div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleFilterDd(id) {
+  const dd = document.getElementById('dd_' + id);
+  const isOpen = dd.classList.contains('open');
+  closeAllFilterDds();
+  if (!isOpen) dd.classList.add('open');
+}
+
+function closeAllFilterDds() {
+  document.querySelectorAll('.gl-filter-dd.open').forEach(d => d.classList.remove('open'));
+}
+
+function setGlFilter(id, val, label) {
+  const filterKey = { glSeason:'season', glType:'type', glMatch:'match', glPartner:'partner', glOpp:'opp' }[id];
+  glFilters[filterKey] = val;
+  const input = document.getElementById(id);
+  const clr   = document.getElementById('clr_' + id);
+  input.value = val ? label : '';
+  input.placeholder = val ? '' : input.placeholder || id;
+  clr.classList.toggle('visible', !!val);
+  // reset placeholder on clear
+  if (!val) {
+    const ph = { glSeason:'Season', glType:'Type', glMatch:'Match', glPartner:'Partner', glOpp:'Opponent' }[id];
+    input.placeholder = ph;
+  }
+  closeAllFilterDds();
+  applyGlFilters();
+}
+
+function clearGlFilter(id) {
+  setGlFilter(id, '', '');
+}
+
+function onGlSearch(val) {
+  glSearch = val.toLowerCase().trim();
+  applyGlFilters();
+}
+
+function clearGlFilters() {
+  ['glSeason','glType','glMatch','glPartner','glOpp'].forEach(id => setGlFilter(id,'',''));
+  const s = document.getElementById('glSearch'); if (s) s.value = '';
+  glSearch = '';
+  applyGlFilters();
+}
+
+function applyGlFilters() {
+  const filtered = allGamelog.filter(g => {
+    if (glFilters.season  && g.season_id    !== glFilters.season)  return false;
+    if (glFilters.type    && g.game_type    !== glFilters.type)    return false;
+    if (glFilters.match   && g.match_id     !== glFilters.match)   return false;
+    if (glFilters.partner && g.partner_name !== glFilters.partner) return false;
+    if (glFilters.opp     && g.opp1_name !== glFilters.opp && g.opp2_name !== glFilters.opp) return false;
+    if (glSearch) {
+      const hay = [g.partner_name, g.opp1_name, g.opp2_name, g.my_team_name, g.opp_team_name].join(' ').toLowerCase();
+      if (!hay.includes(glSearch)) return false;
+    }
+    return true;
+  });
+
+  const tbody   = document.getElementById('glBody');
+  const countEl = document.getElementById('glCount');
+  if (!tbody) return;
+
+  if (countEl) countEl.textContent = `${filtered.length} game${filtered.length !== 1 ? 's' : ''}`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="gl-empty">No games match the current filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(g => {
+    const diff    = g.diff >= 0 ? '+'+g.diff : String(g.diff);
+    const diffCls = g.diff >= 0 ? 'gl-diff-pos' : 'gl-diff-neg';
+    return `<tr>
+      <td class="gl-date">${esc(fmtDate(g.match_date))}</td>
+      <td class="gl-match">${esc(g.my_team_name)} vs ${esc(g.opp_team_name)}</td>
+      <td style="text-align:center"><span class="gt-badge ${esc(g.game_type)}">${esc(gtLabel(g.game_type))}</span></td>
+      <td class="gl-partner">${esc(g.partner_name || '—')}</td>
+      <td class="gl-opp">${esc(g.opp1_name||'?')} / ${esc(g.opp2_name||'?')}</td>
+      <td class="gl-score">${g.my_score} – ${g.opp_score}</td>
+      <td style="text-align:center">${g.won ? '<span class="gl-result-w">W</span>' : '<span class="gl-result-l">L</span>'}</td>
+      <td class="${diffCls}">${esc(diff)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────
+   ACCORDION TOGGLES
+───────────────────────────────────────────────────────── */
+function toggleSa(trigger) {
+  trigger.classList.toggle('open');
+  trigger.nextElementSibling.classList.toggle('open');
+}
+function toggleMatch(trigger) {
+  trigger.classList.toggle('open');
+  trigger.nextElementSibling.classList.toggle('open');
+}
+function expandAllSa() {
+  document.querySelectorAll('#seasonAccordion .sa-trigger').forEach(t => { t.classList.add('open'); t.nextElementSibling.classList.add('open'); });
+}
+function collapseAllSa() {
+  document.querySelectorAll('#seasonAccordion .sa-trigger').forEach(t => { t.classList.remove('open'); t.nextElementSibling.classList.remove('open'); });
+  document.querySelectorAll('.match-trigger').forEach(t => { t.classList.remove('open'); t.nextElementSibling.classList.remove('open'); });
+}
+
+/* ─────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────── */
+function computeStats(games) {
+  const s = {
+    all:    { w:0, l:0, pf:0, pa:0 },
+    womens: { w:0, l:0, pf:0, pa:0 },
+    mens:   { w:0, l:0, pf:0, pa:0 },
+    mixed:  { w:0, l:0, pf:0, pa:0 },
+    coed:   { w:0, l:0, pf:0, pa:0 }
+  };
+  (games || []).forEach(g => {
+    const t = (g.game_type || '').toLowerCase();
+    const b = s[t];
+    if (g.won) { s.all.w++; if (b) b.w++; }
+    else        { s.all.l++; if (b) b.l++; }
+    s.all.pf += g.my_score || 0;
+    s.all.pa += g.opp_score || 0;
+    if (b) { b.pf += g.my_score || 0; b.pa += g.opp_score || 0; }
+  });
+  return s;
+}
+
+function normalizeGenderLabel(g) {
+  const s = String(g || '').toLowerCase();
+  if (['f','female','woman','women','w'].includes(s)) return 'Women';
+  if (['m','male','man','men'].includes(s)) return 'Men';
+  return g || '';
+}
+
+function gtLabel(t) {
+  return { womens:"Women's", mens:"Men's", mixed:'Mixed', coed:'Coed' }[t] || t || '—';
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const s = String(d).substring(0,10);
+  const parts = s.split('-');
+  if (parts.length < 3) return s;
+  return `${parts[1]}/${parts[2]}/${parts[0].substring(2)}`;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
+

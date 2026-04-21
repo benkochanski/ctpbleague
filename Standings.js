@@ -102,7 +102,6 @@ function refreshStandingsSummary_() {
   Object.values(grouped).forEach(group => {
     group.sort((a, b) =>
       Number(b.match_wins) - Number(a.match_wins) ||
-      Number(b.rounds_won) - Number(a.rounds_won) ||
       Number(b.games_won) - Number(a.games_won) ||
       Number(b.point_diff) - Number(a.point_diff)
     );

@@ -98,7 +98,7 @@
     .dr-lbl { font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--muted); margin-bottom: 1px; }
     .dr-val { font-family: 'DM Mono'; font-size: 14px; font-weight: 700; color: var(--text); }
     /* rec + diff inline */
-    .dr-rec-row { display: flex; align-items: baseline; gap: 7px; }
+    .dr-rec-row { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
     .dr-diff { font-family: 'DM Mono'; font-size: 12px; font-weight: 800; }
     .dr-diff.ok { color: var(--ok); } .dr-diff.dim { color: var(--muted); opacity: .7; }
     .dr-type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; width: fit-content; }
@@ -109,7 +109,7 @@
     /* ── Summary cells ── */
     .td-rank { text-align: center !important; font-family: 'DM Mono'; font-size: 14px; font-weight: 800; color: var(--muted); width: 32px; padding: 13px 4px !important; }
     .td-rank.q  { color: var(--ok); }
-    .td-rank.nq { color: var(--muted); opacity: .4; }
+    .td-rank.nq { color: #b8c9da; }
     .td-logo { width: 38px; padding: 8px 4px !important; text-align: center !important; }
     .logo-sq { width: 30px; height: 30px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 9px; color: #fff; vertical-align: middle; }
     .td-name   { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
@@ -117,9 +117,9 @@
     .td-rating { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; }
     .td-rec    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; white-space: nowrap; }
     .td-diff   { font-family: 'DM Mono'; font-size: 16px; font-weight: 800; }
-    .td-diff.pos { color: var(--ok); } .td-diff.neg { color: var(--muted); opacity: .6; }
-    .td-dpg    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; color: var(--muted); white-space: nowrap; }
-    .td-dpg.pos { color: var(--ok); opacity: .8; } .td-dpg.neg { color: var(--muted); opacity: .5; }
+    .td-diff.pos { color: var(--ok); } .td-diff.neg { color: #8fa3be; }
+    .td-dpg    { font-family: 'DM Mono'; font-size: 16px; font-weight: 700; white-space: nowrap; }
+    .td-dpg.pos { color: #3d9e68; } .td-dpg.neg { color: #a0b2c6; }
     .td-q { width: 36px; padding-right: 10px !important; text-align: center !important; }
     .q-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; font-size: 10px; font-weight: 800; }
     .q-chip.q  { background: #e3f7ec; color: var(--ok); border: 1px solid #a8e6c0; }
@@ -534,28 +534,31 @@
 </div>
 
 <script>
-  // Row click — use event delegation so clicks anywhere inside the <tr> work
+  // ── Expand individual row ─────────────────────────────────────────────────
   document.addEventListener('click', function(e) {
     const sr = e.target.closest('tr.sr');
     if (!sr) return;
-    const tbody = sr.parentElement;
-    const rows  = Array.from(tbody.rows);
-    const idx   = rows.indexOf(sr);
-    const dr    = rows[idx + 1];
+    const dr = sr.nextElementSibling;
     if (!dr || !dr.classList.contains('dr')) return;
-    const open = dr.classList.toggle('open');
+    const open = !dr.classList.contains('open');
+    showDr(dr, open);
     sr.classList.toggle('open', open);
     syncExpandBtn();
   });
+
+  function showDr(dr, open) {
+    if (open) { dr.classList.add('open');    dr.style.display = 'table-row'; }
+    else       { dr.classList.remove('open'); dr.style.display = 'none'; }
+  }
 
   function toggleExpand() {
     const btn = document.getElementById('expandBtn');
     const drs = document.querySelectorAll('tr.dr');
     const srs = document.querySelectorAll('tr.sr');
     const anyOpen = [...drs].some(d => d.classList.contains('open'));
-    drs.forEach(d => d.classList.toggle('open', !anyOpen));
-    srs.forEach(s => s.classList.toggle('open', !anyOpen));
-    btn.textContent = anyOpen ? 'Detail \u25b8' : 'Summary \u25c2';
+    drs.forEach(d  => showDr(d,  !anyOpen));
+    srs.forEach(s  => s.classList.toggle('open', !anyOpen));
+    btn.textContent = anyOpen ? 'Detail ▸' : 'Summary ◂';
     btn.classList.toggle('active', !anyOpen);
   }
 
@@ -564,36 +567,33 @@
     if (!btn) return;
     const drs     = document.querySelectorAll('tr.dr');
     const allOpen = [...drs].every(d => d.classList.contains('open'));
-    btn.textContent = allOpen ? 'Summary \u25c2' : 'Detail \u25b8';
+    btn.textContent = allOpen ? 'Summary ◂' : 'Detail ▸';
     btn.classList.toggle('active', allOpen);
   }
 
-  // #6 Filter
+  // ── Filter ────────────────────────────────────────────────────────────────
   document.getElementById('psFilter').addEventListener('input', function() {
     const q = this.value.toLowerCase().trim();
     document.querySelectorAll('tr.sr').forEach(sr => {
-      const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
+      const name  = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
       const match = !q || name.includes(q);
       sr.style.display = match ? '' : 'none';
-      const tbody = sr.parentElement;
-      const rows = Array.from(tbody.rows);
-      const idx = rows.indexOf(sr);
-      const dr = rows[idx + 1];
+      const dr = sr.nextElementSibling;
       if (dr?.classList.contains('dr')) {
-        if (!match) dr.style.display = 'none';
-        else dr.style.display = dr.classList.contains('open') ? 'table-row' : 'none';
+        // Only hide via inline style when filtering out; clearing lets class-based expand work
+        dr.style.display = match ? '' : 'none';
       }
     });
   });
 
-  // #7 Sortable columns
+  // ── Sort ──────────────────────────────────────────────────────────────────
   function initSortableHeaders() {
     document.querySelectorAll('th.th-sortable').forEach(th => {
       th.addEventListener('click', function() {
-        const table = this.closest('table');
-        const tbody = table.querySelector('tbody');
-        const ths   = Array.from(table.querySelectorAll('th'));
-        const colIdx = ths.indexOf(this);
+        const table  = this.closest('table');
+        const tbody  = table.querySelector('tbody');
+        const ths    = Array.from(table.querySelectorAll('th.th-sortable'));
+        const key    = this.dataset.sort;
         const curDir = this.dataset.sortDir;
         const newDir = curDir === 'asc' ? 'desc' : 'asc';
         ths.forEach(h => { delete h.dataset.sortDir; h.classList.remove('th-sort-asc','th-sort-desc'); });
@@ -604,25 +604,27 @@
         for (let i = 0; i < allRows.length; i++) {
           if (allRows[i].classList.contains('sr')) {
             const dr = allRows[i+1]?.classList.contains('dr') ? allRows[i+1] : null;
-            pairs.push({ sr: allRows[i], dr, val: getCellNum(allRows[i], colIdx) });
+            pairs.push({ sr: allRows[i], dr, val: getCellVal(allRows[i], key) });
             if (dr) i++;
           }
         }
         pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
         pairs.forEach(({ sr, dr }) => { tbody.appendChild(sr); if (dr) tbody.appendChild(dr); });
-        pairs.forEach(({ sr }, i) => {
-          const rk = sr.querySelector('.td-rank');
-          if (rk) rk.textContent = i + 1;
-        });
+        pairs.forEach(({ sr }, i) => { const rk = sr.querySelector('.td-rank'); if (rk) rk.textContent = i + 1; });
       });
     });
   }
 
-  function getCellNum(row, colIdx) {
-    const td = row.cells[colIdx];
-    if (!td) return 0;
-    const txt = td.textContent.replace(/[^0-9.\-+]/g, '');
-    return parseFloat(txt) || 0;
+  function getCellVal(row, key) {
+    const selectors = { gms: '.td-gms', rating: '.td-rating', diff: '.td-diff', dpg: '.td-dpg' };
+    const norm = s => s.replace(/–/g, '-');   // en-dash → hyphen before parsing
+    if (key === 'rec') {
+      const txt = norm(row.querySelector('.td-rec')?.textContent || '0');
+      return parseFloat(txt.split('-')[0]) || 0;
+    }
+    const sel = selectors[key];
+    if (!sel) return 0;
+    return parseFloat(norm(row.querySelector(sel)?.textContent || '0').replace(/[^0-9.\-]/g,'')) || 0;
   }
 
   // #8 CSV Download

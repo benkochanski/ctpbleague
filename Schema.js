@@ -28,7 +28,7 @@ function getSchemaMap_() {
       'match_id', 'season_id', 'division_id', 'home_team_id', 'away_team_id', 'match_date', 'start_time', 'venue',
       'status', 'away_lineup_due_at', 'home_lineup_due_at',
       'away_submission_status', 'home_submission_status', 'public_visibility_status',
-      'home_rounds_won', 'away_rounds_won', 'super_dreambreaker_played', 'winning_team_id', 'notes'
+      'home_rounds_won', 'away_rounds_won', 'home_games_won', 'away_games_won', 'super_dreambreaker_played', 'winning_team_id', 'notes'
     ],
     [SHEETS.MATCH_ROUNDS]: [
       'round_id', 'match_id', 'round_number', 'round_type', 'expected_game_count',

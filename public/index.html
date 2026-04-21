@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecticut Pickleball League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <button class="hamburger" id="toggleSidebar" aria-label="Toggle navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="brand">
+      <div class="brand-logo" id="brandLogo">CPL</div>
+      <div class="brand-text">
+        <div class="brand-title">Connecticut Pickleball League</div>
+        <div class="brand-sub">ctpbleague.com</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="header-btn gold" id="adminLoginBtn">Sign in</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-label">League</div>
+
+      <button class="nav-item is-active" data-route="home" data-tip="Home">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/>
+          </svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </button>
+
+      <button class="nav-item" data-route="schedule" data-tip="Schedule">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="17" rx="2"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+          </svg>
+        </span>
+        <span class="nav-label">Schedule</span>
+      </button>
+
+      <button class="nav-item" data-route="scores" data-tip="Scores">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12h5l3-9 4 18 3-9h5"/>
+          </svg>
+        </span>
+        <span class="nav-label">Scores</span>
+      </button>
+
+      <button class="nav-item" data-route="standings" data-tip="Standings">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9l6-6 6 6"/>
+            <path d="M6 15l6 6 6-6"/>
+            <line x1="12" y1="3" x2="12" y2="21"/>
+          </svg>
+        </span>
+        <span class="nav-label">Standings</span>
+      </button>
+
+      <button class="nav-item" data-route="seasonstats" data-tip="Season Stats">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="M7 16l4-4 4 3 5-7"/>
+          </svg>
+        </span>
+        <span class="nav-label">Season Stats</span>
+      </button>
+
+      <button class="nav-item" data-route="players" data-tip="Players">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </span>
+        <span class="nav-label">Players</span>
+      </button>
+
+      <button class="nav-item" data-route="scoreboard" data-tip="Live Scoreboard">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <path d="M7 10h2M7 14h2M15 10h2M15 14h2"/>
+          </svg>
+        </span>
+        <span class="nav-label">Live Scoreboard</span>
+      </button>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">About</div>
+
+      <button class="nav-item" data-route="rules" data-tip="Rules & Handbook">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </span>
+        <span class="nav-label">Rules</span>
+      </button>
+
+      <button class="nav-item" data-route="registration" data-tip="Registration">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+        </span>
+        <span class="nav-label">Registration</span>
+      </button>
+    </div>
+
+    <div class="nav-group" id="adminGroup">
+      <div class="nav-group-label">
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="11" width="16" height="10" rx="2"/>
+          <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+        </svg>
+        League Ops
+      </div>
+
+      <button class="nav-item admin-toggle" id="adminToggle">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </span>
+        <span class="nav-label">Admin Tools</span>
+        <span class="nav-lock" id="adminLockLabel">LOCKED</span>
+        <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+
+      <div class="admin-children" id="adminChildren">
+        <button class="nav-item" data-route="captain" data-admin="1" data-tip="Captain Portal">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </span>
+          <span class="nav-label">Captain / Lineups</span>
+        </button>
+
+        <button class="nav-item" data-route="display" data-admin="1" data-tip="Match Display">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </span>
+          <span class="nav-label">Match Display</span>
+        </button>
+
+        <button class="nav-item" data-route="scorecard" data-admin="1" data-tip="Scorekeeping">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Scorekeeping</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="app-backdrop" id="backdrop"></div>
+
+  <!-- Main -->
+  <main class="app-main" id="main">
+
+    <!-- Home view -->
+    <div class="page" id="page-home">
+      <div class="page-inner">
+        <div class="home-hero">
+          <h1>Welcome to the <span class="hero-accent">CT Pickleball League</span></h1>
+          <p>Live scores, season stats, and team rosters — all in one place. Captains and scorekeepers, sign in to access match tools.</p>
+        </div>
+
+        <div class="home-grid">
+          <button class="home-card" data-route="schedule">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+                <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+              </svg>
+            </div>
+            <h3>Schedule</h3>
+            <p>Upcoming matches, by week or division.</p>
+          </button>
+
+          <button class="home-card" data-route="scores">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h5l3-9 4 18 3-9h5"/>
+              </svg>
+            </div>
+            <h3>Scores</h3>
+            <p>Completed match results and game reports.</p>
+          </button>
+
+          <button class="home-card" data-route="standings">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6-6 6 6"/><path d="M6 15l6 6 6-6"/><line x1="12" y1="3" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <h3>Standings</h3>
+            <p>Team rankings and playoff positioning.</p>
+          </button>
+
+          <button class="home-card" data-route="seasonstats">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/><path d="M7 16l4-4 4 3 5-7"/>
+              </svg>
+            </div>
+            <h3>Season Stats</h3>
+            <p>Individual player performance across the season.</p>
+          </button>
+
+          <button class="home-card" data-route="players">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>Players</h3>
+            <p>League roster, by club and team.</p>
+          </button>
+
+          <button class="home-card" data-route="scoreboard">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <path d="M7 10h2M7 14h2M15 10h2M15 14h2"/>
+              </svg>
+            </div>
+            <h3>Live Scoreboard</h3>
+            <p>Follow matches as they happen.</p>
+          </button>
+
+          <button class="home-card" data-route="rules">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </div>
+            <h3>Rules</h3>
+            <p>Official league handbook and rules.</p>
+          </button>
+
+          <button class="home-card" data-route="registration">
+            <div class="home-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+            </div>
+            <h3>Register</h3>
+            <p>Sign up to play in the upcoming season.</p>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="page" id="page-schedule" style="display:none">
+      <div class="page-inner">
+        <div class="page-header page-header-row">
+          <div>
+            <h1>Schedule</h1>
+            <p class="page-subtitle">Upcoming matches across all divisions.</p>
+          </div>
+          <div class="page-controls">
+            <label class="select-field">
+              <span>Division</span>
+              <select data-filter="schedule-division"><option value="">All divisions</option></select>
+            </label>
+          </div>
+        </div>
+        <div class="data-body" id="schedule-body">
+          <div class="loading-card">Loading schedule…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scores -->
+    <div class="page" id="page-scores" style="display:none">
+      <div class="page-inner">
+        <div class="page-header page-header-row">
+          <div>
+            <h1>Scores</h1>
+            <p class="page-subtitle">Completed matches — click any match for the full game report.</p>
+          </div>
+          <div class="page-controls">
+            <label class="select-field">
+              <span>Division</span>
+              <select data-filter="scores-division"><option value="">All divisions</option></select>
+            </label>
+          </div>
+        </div>
+        <div class="data-body" id="scores-body">
+          <div class="loading-card">Loading scores…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Standings -->
+    <div class="page" id="page-standings" style="display:none">
+      <div class="page-inner">
+        <div class="page-header">
+          <h1>Standings</h1>
+          <p class="page-subtitle">Team records by division.</p>
+        </div>
+        <div class="data-body" id="standings-body">
+          <div class="loading-card">Loading standings…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="page page-flush" id="page-rules" style="display:none">
+      <div class="page-header page-header-padded">
+        <h1>Rules & Handbook</h1>
+        <p class="page-subtitle">The official Connecticut Pickleball League rulebook.</p>
+        <div class="page-actions">
+          <a class="btn-gold" href="assets/handbook.pdf" target="_blank" rel="noopener">
+            Open in new tab
+          </a>
+          <a class="btn-ghost" href="assets/handbook.pdf" download>
+            Download PDF
+          </a>
+        </div>
+      </div>
+      <div class="pdf-frame-wrap">
+        <iframe class="pdf-frame" src="assets/handbook.pdf#view=FitH" title="League Handbook"></iframe>
+      </div>
+    </div>
+
+    <!-- Registration -->
+    <div class="page" id="page-registration" style="display:none">
+      <div class="page-inner">
+        <div class="reg-hero">
+          <div class="reg-hero-text">
+            <div class="reg-badge">2026 Season</div>
+            <h1>Player Registration</h1>
+            <p>Sign up to play in the upcoming Connecticut Pickleball League season. Registration is open throughout the season.</p>
+            <a class="btn-gold btn-lg" href="https://docs.google.com/forms/d/1HUwhw7flT2vvkEJKigFxLJoHK8sMUR1O_W7DVOK36r8/viewform" target="_blank" rel="noopener">
+              Register Now
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"/>
+                <polyline points="7 7 17 7 17 17"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="reg-callouts">
+          <div class="reg-callout">
+            <div class="reg-callout-head">
+              <span class="reg-num">1</span>
+              <h3>Club authorization</h3>
+            </div>
+            <p>Please register <strong>only if authorized by a club official</strong>. If you haven't heard from a club, reach out before submitting.</p>
+          </div>
+          <div class="reg-callout">
+            <div class="reg-callout-head">
+              <span class="reg-num">2</span>
+              <h3>$20 registration fee</h3>
+            </div>
+            <p>The league fee covers administrative costs and is paid directly to your club once your registration is confirmed.</p>
+          </div>
+          <div class="reg-callout">
+            <div class="reg-callout-head">
+              <span class="reg-num">3</span>
+              <h3>What you'll need</h3>
+            </div>
+            <p>Basic contact info, your club and team, DUPR (if you have one), and a photo for the player directory.</p>
+          </div>
+        </div>
+
+        <p class="reg-note">Having trouble with the form? Email your club captain or the league commissioner.</p>
+      </div>
+    </div>
+
+    <!-- Iframe view (for GAS-hosted apps) -->
+    <iframe class="app-frame" id="appFrame" style="display:none" title="CPBL App"></iframe>
+  </main>
+</div>
+
+<!-- Auth modal -->
+<div class="auth-backdrop" id="authBackdrop">
+  <div class="auth-modal">
+    <div class="auth-lock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+      </svg>
+    </div>
+    <h2>League Ops Sign-in</h2>
+    <p>Enter the access code to unlock captain, display, and scoring tools.</p>
+    <input type="password" class="auth-input" id="authInput" placeholder="••••••" autocomplete="off">
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-actions">
+      <button class="auth-cancel" id="authCancel">Cancel</button>
+      <button class="auth-submit" id="authSubmit">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

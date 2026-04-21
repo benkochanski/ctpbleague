@@ -26,33 +26,70 @@ function refreshRoundResult_(roundId) {
 function refreshMatchResult_(matchId) {
   const matches = getObjects_(SHEETS.MATCHES);
   const rounds = getObjects_(SHEETS.MATCH_ROUNDS).filter(r => r.match_id === matchId);
+  const games = getObjects_(SHEETS.MATCH_GAMES).filter(g => g.match_id === matchId);
   const match = matches.find(m => m.match_id === matchId);
   if (!match) throw new Error('Match not found');
 
+  const REG = MATCH_SCORING.REGULATION_ROUNDS;
+  const WIN_REG = MATCH_SCORING.GAMES_TO_WIN_REGULATION;
+  const WIN_OVERALL = MATCH_SCORING.GAMES_TO_WIN_OVERALL;
+
   let homeRounds = 0;
   let awayRounds = 0;
-
   rounds
-    .filter(r => Number(r.round_number) <= 8 && r.status === ROUND_STATUS.COMPLETE)
+    .filter(r => Number(r.round_number) <= REG && r.status === ROUND_STATUS.COMPLETE)
     .forEach(r => {
       if (r.winning_team_id === match.home_team_id) homeRounds++;
       if (r.winning_team_id === match.away_team_id) awayRounds++;
     });
 
+  let homeRegGames = 0, awayRegGames = 0;
+  let homeSdbGames = 0, awaySdbGames = 0;
+  games
+    .filter(g => String(g.status).toLowerCase() === GAME_STATUS.COMPLETE)
+    .forEach(g => {
+      const isReg = Number(g.round_number) <= REG;
+      if (g.winner_team_id === match.home_team_id) {
+        if (isReg) homeRegGames++; else homeSdbGames++;
+      } else if (g.winner_team_id === match.away_team_id) {
+        if (isReg) awayRegGames++; else awaySdbGames++;
+      }
+    });
+
+  const homeTotalGames = homeRegGames + homeSdbGames;
+  const awayTotalGames = awayRegGames + awaySdbGames;
+
   match.home_rounds_won = homeRounds;
   match.away_rounds_won = awayRounds;
+  match.home_games_won = homeTotalGames;
+  match.away_games_won = awayTotalGames;
 
   const regulationRoundsComplete = rounds
-    .filter(r => Number(r.round_number) <= 8)
+    .filter(r => Number(r.round_number) <= REG)
     .every(r => r.status === ROUND_STATUS.COMPLETE);
 
-  if (regulationRoundsComplete) {
-    if (homeRounds === awayRounds) {
+  let winningTeamId = '';
+  if (homeRegGames >= WIN_REG && homeRegGames > awayRegGames) {
+    winningTeamId = match.home_team_id;
+  } else if (awayRegGames >= WIN_REG && awayRegGames > homeRegGames) {
+    winningTeamId = match.away_team_id;
+  } else if (regulationRoundsComplete && homeRegGames === 16 && awayRegGames === 16) {
+    if (homeTotalGames >= WIN_OVERALL && homeTotalGames > awayTotalGames) {
+      winningTeamId = match.home_team_id;
+    } else if (awayTotalGames >= WIN_OVERALL && awayTotalGames > homeTotalGames) {
+      winningTeamId = match.away_team_id;
+    } else if (!match.super_dreambreaker_played) {
+      overwriteObjects_(SHEETS.MATCHES, matches);
       activateSuperDreambreaker_(matchId);
-    } else {
-      match.winning_team_id = homeRounds > awayRounds ? match.home_team_id : match.away_team_id;
-      match.status = MATCH_STATUS.COMPLETED;
+      return;
     }
+  }
+
+  if (winningTeamId) {
+    match.winning_team_id = winningTeamId;
+    match.status = MATCH_STATUS.COMPLETED;
+  } else {
+    match.winning_team_id = '';
   }
 
   overwriteObjects_(SHEETS.MATCHES, matches);
