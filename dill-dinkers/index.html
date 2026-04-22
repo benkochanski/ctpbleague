@@ -40,8 +40,9 @@
     flex-shrink: 0;
   }
   header.top .logo { height: 110px; width: auto; }
-  header.top .title-block h1 { font-size: 38px; margin: 0; letter-spacing: 1px; font-weight: 900; line-height: 1; text-transform: uppercase; }
+  header.top .title-block h1 { font-size: 38px; margin: 0; letter-spacing: 1px; font-weight: 900; line-height: 1; text-transform: uppercase; color: var(--ink); }
   header.top .title-block h1 .champ { color: var(--orange); }
+  header.top .title-block .champ-line { font-size: 30px; font-weight: 900; color: var(--orange); letter-spacing: 1px; line-height: 1; text-transform: uppercase; margin-top: 4px; }
   header.top .title-block .date { font-size: 15px; color: var(--muted); margin-top: 6px; font-weight: 600; letter-spacing: .5px; }
   header.top nav { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   header.top nav a { text-decoration: none; color: var(--ink); padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 13px; border: 1.5px solid transparent; }
@@ -53,6 +54,7 @@
   body.display-mode header.top { padding: 8px 20px; }
   body.display-mode header.top .logo { height: 64px; }
   body.display-mode header.top .title-block h1 { font-size: 26px; }
+  body.display-mode header.top .title-block .champ-line { font-size: 22px; margin-top: 2px; }
   body.display-mode header.top .title-block .date { font-size: 12px; margin-top: 2px; }
   body.display-mode header.top nav { display: none; }
 
@@ -67,8 +69,200 @@
   .view { display: none; padding: 22px; }
   .view.active { display: block; }
 
+  /* Tournament Type Selector */
+  .tournament-type-wrap {
+    max-width: 800px;
+    margin: 60px auto;
+    text-align: center;
+  }
+  .tournament-type-wrap h2 {
+    margin-bottom: 32px;
+    font-size: 32px;
+  }
+  .tournament-type-buttons {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tournament-type-button {
+    flex: 1;
+    min-width: 200px;
+    padding: 32px 24px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .tournament-type-button:hover {
+    border-color: var(--orange);
+    box-shadow: 0 4px 12px rgba(244, 121, 32, 0.15);
+  }
+  .tournament-type-button h3 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: var(--ink);
+  }
+  .tournament-type-button p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
   /* Setup */
   .setup-wrap { max-width: 920px; margin: 0 auto; }
+
+  /* Partner League Setup */
+  .partner-teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .partner-team-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--soft);
+    border-radius: 8px;
+    border-left: 5px solid var(--orange);
+  }
+  .partner-team-row .seed {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--orange);
+    min-width: 28px;
+    text-align: center;
+  }
+  .partner-team-row input {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .partner-paste-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    margin-bottom: 4px;
+  }
+  .partner-paste-hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* QuadSquad Setup */
+  .quad-setup-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .team-panel {
+    margin-bottom: 32px;
+    padding: 20px;
+    background: var(--soft);
+    border-radius: 10px;
+    border-left: 6px solid var(--orange);
+  }
+  .team-panel h3 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--ink);
+  }
+  .team-name-input {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+  .team-name-input label {
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    min-width: 80px;
+  }
+  .team-name-input input {
+    flex: 1;
+    font-size: 16px;
+  }
+  .quad-players-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .quad-players-grid .player-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .quad-players-grid .player-row input {
+    font-size: 14px;
+  }
+
+  /* QuadSquad Seeding */
+  .quad-seeding-item {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+  }
+  .quad-seeding-item .seed-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .quad-seeding-item .team-select {
+    flex: 1;
+    font-size: 16px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+  }
+
+  /* Opponent Selection Buttons */
+  .opponent-button {
+    flex: 1;
+    min-width: 200px;
+    padding: 24px;
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .opponent-button:hover {
+    border-color: var(--orange);
+    box-shadow: 0 4px 12px rgba(244, 121, 32, 0.15);
+  }
+  .opponent-button.selected {
+    border-color: var(--orange);
+    background: var(--soft);
+  }
   .setup-wrap h2 { margin: 0 0 4px; }
   .league-row { display: flex; gap: 16px; align-items: center; margin: 18px 0 8px; }
   .league-row label { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
@@ -96,11 +290,56 @@
   .sync-status.off { color: #a33; }
   .sync-url { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 6px; }
 
-  /* Spin — wheel + side, pairs list in horizontal strip below */
+  /* Pair announcement popup */
+  .pair-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 60px 80px;
+    border-radius: 20px;
+    text-align: center;
+  }
+  .pair-popup .popup-content {
+    font-size: 56px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+  .pair-popup .popup-pair { margin: 12px 0; }
+  .pair-popup.show {
+    animation: fade-out 5s ease-out forwards;
+  }
+  @keyframes fade-out {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @media (min-width: 3840px) {
+    .pair-popup {
+      padding: 100px 150px;
+    }
+    .pair-popup .popup-content {
+      font-size: 100px;
+    }
+    .pair-popup .popup-pair { margin: 24px 0; }
+  }
+
+  /* Spin — 3-column: roster LEFT, label/name/wheel MIDDLE, teams-stack RIGHT */
   #view-spin { display: none; }
   #view-spin.active { display: flex; flex-direction: column; }
-  .spin-stage { display: flex; gap: 36px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 8px 20px 0; }
-  .wheel-box { position: relative; width: 460px; height: 460px; flex-shrink: 0; }
+  .spin-stage {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 36px;
+    align-items: start;
+    justify-content: center;
+    padding: 8px 20px 0;
+  }
+  .wheel-box { position: relative; width: 460px; height: 460px; flex-shrink: 0; margin: 14px auto 0; }
   body.display-mode #view-spin .wheel-box { width: 560px; height: 560px; }
   .wheel-box svg.wheel { width: 100%; height: 100%; display: block; }
   .wheel-box .pointer {
@@ -113,19 +352,19 @@
     width: 90px; height: 90px; border-radius: 50%; background: #fff; border: 4px solid var(--ink);
     display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; text-align: center; z-index: 2;
   }
-  .spin-side { width: 420px; }
+  .spin-side { width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .spin-side h2 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 800; }
-  .spin-side .current-name { font-size: 44px; font-weight: 900; color: var(--ink); line-height: 1.05; margin: 10px 0 22px; }
+  .spin-side .current-name { font-size: 44px; font-weight: 900; color: var(--ink); line-height: 1.05; margin: 10px 0 6px; }
+  .spin-side .controls { margin-top: 14px; }
   body.display-mode .spin-side { text-align: center; }
   body.display-mode .spin-side .controls { display: none; }
 
   .pairs-strip {
-    margin: 18px auto 10px;
     padding: 12px 16px;
-    max-width: 1400px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
   }
   .pair-chip {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px;
@@ -138,7 +377,7 @@
 
   /* Player roster panel (left of wheel) */
   .roster {
-    width: 460px; flex-shrink: 0;
+    width: 100%;
     background: var(--soft); border-radius: 12px; padding: 16px 18px;
     border: 2px solid var(--line);
   }
@@ -167,29 +406,145 @@
   .roster .p-row.used { opacity: .35; text-decoration: line-through; }
   .roster .p-row.drawing { outline: 3px solid var(--orange); box-shadow: 0 0 0 3px rgba(244,121,32,.3); }
 
-  /* Display mode — explicit grid so nothing wraps or clips */
+  /* Display mode — 3-column: roster LEFT, label+name+wheel MIDDLE, teams-stack RIGHT */
   body.display-mode #view-spin .spin-stage {
     display: grid;
-    grid-template-areas: "name name" "roster wheel";
-    grid-template-columns: auto auto;
-    justify-content: center; align-items: center;
-    gap: 8px 40px;
-    padding: 4px 20px 0;
-    flex: 0 0 auto;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 40px;
+    padding: 20px;
+    flex: 1 1 auto;
+    align-items: start;
+    justify-items: stretch;
   }
-  body.display-mode #view-spin .spin-side { grid-area: name; width: 100%; text-align: center; }
-  body.display-mode #view-spin .roster { grid-area: roster; width: 440px; padding: 14px 16px; }
-  body.display-mode #view-spin .wheel-box { grid-area: wheel; width: 460px; height: 460px; }
-  body.display-mode #view-spin .roster h3 { font-size: 14px; margin-bottom: 8px; }
-  body.display-mode #view-spin .roster .p-row { font-size: 17px; padding: 6px 10px; }
-  body.display-mode #view-spin .roster .p-row .sd { width: 26px; height: 26px; font-size: 12px; }
-  body.display-mode #view-spin .spin-side h2 { font-size: 18px; }
-  body.display-mode #view-spin .spin-side .current-name { font-size: 64px; margin: 4px 0 0; }
-  body.display-mode #view-spin .pair-chip { font-size: 16px; padding: 10px 14px; }
-  body.display-mode #view-spin .pair-chip .badge { width: 32px; height: 32px; font-size: 14px; }
-  body.display-mode #view-spin .pair-chip .names { font-size: 16px; }
-  body.display-mode #view-spin .pairs-strip { max-width: 100%; padding: 12px 30px; gap: 10px 14px; }
-  body.display-mode #view-spin .wheel-box .hub { width: 100px; height: 100px; font-size: 14px; }
+  body.display-mode #view-spin .roster {
+    width: 100%;
+    padding: 20px;
+  }
+  body.display-mode #view-spin .roster .roster-cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  body.display-mode #view-spin .roster h3 {
+    font-size: 24px;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  body.display-mode #view-spin .roster .p-row {
+    font-size: 22px;
+    padding: 10px 14px;
+    gap: 12px;
+  }
+  body.display-mode #view-spin .roster .p-row .sd {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  body.display-mode #view-spin .spin-side {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  body.display-mode #view-spin .spin-side h2 {
+    font-size: 32px;
+    margin: 0 0 14px;
+  }
+  body.display-mode #view-spin .spin-side .current-name {
+    font-size: 96px;
+    margin: 10px 0 16px;
+    font-weight: 900;
+  }
+  body.display-mode #view-spin .wheel-box {
+    width: 800px;
+    height: 800px;
+    margin: 0 auto;
+  }
+  body.display-mode #view-spin .wheel-box .hub {
+    width: 160px;
+    height: 160px;
+    font-size: 24px;
+    border-width: 6px;
+  }
+  body.display-mode #view-spin .pairs-strip {
+    width: 100%;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  body.display-mode #view-spin .pair-chip {
+    font-size: 22px;
+    padding: 14px 18px;
+  }
+  body.display-mode #view-spin .pair-chip .badge {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  body.display-mode #view-spin .pair-chip .names {
+    font-size: 22px;
+  }
+  body.display-mode #view-spin .controls { display: none; }
+
+  /* 4K specific scaling */
+  @media (min-width: 3840px) {
+    body.display-mode #view-spin .spin-stage {
+      grid-template-columns: 1fr 1.3fr 1fr;
+      gap: 60px;
+      padding: 40px;
+    }
+    body.display-mode #view-spin .wheel-box {
+      width: 1100px;
+      height: 1100px;
+    }
+    body.display-mode #view-spin .wheel-box .hub {
+      width: 220px;
+      height: 220px;
+      font-size: 36px;
+      border-width: 8px;
+    }
+    body.display-mode #view-spin .pairs-strip {
+      padding: 30px;
+      gap: 18px;
+    }
+    body.display-mode #view-spin .pair-chip {
+      font-size: 30px;
+      padding: 20px 24px;
+    }
+    body.display-mode #view-spin .pair-chip .badge {
+      width: 60px;
+      height: 60px;
+      font-size: 26px;
+    }
+    body.display-mode #view-spin .pair-chip .names {
+      font-size: 30px;
+    }
+    body.display-mode #view-spin .spin-side h2 {
+      font-size: 56px;
+      margin-bottom: 20px;
+    }
+    body.display-mode #view-spin .spin-side .current-name {
+      font-size: 140px;
+      margin: 20px 0 30px;
+    }
+    body.display-mode #view-spin .roster { padding: 30px; }
+    body.display-mode #view-spin .roster h3 {
+      font-size: 32px;
+      margin-bottom: 18px;
+    }
+    body.display-mode #view-spin .roster .p-row {
+      font-size: 28px;
+      padding: 14px 18px;
+    }
+    body.display-mode #view-spin .roster .p-row .sd {
+      width: 52px;
+      height: 52px;
+      font-size: 22px;
+    }
+  }
 
   /* Bracket */
   .bracket-wrap { padding: 10px 14px 14px; position: relative; }
@@ -202,7 +557,10 @@
     gap: 8px 18px;
     min-height: calc(100vh - 180px);
   }
-  body.display-mode .bracket-grid { flex: 1; min-height: 0; height: 100%; gap: 6px 16px; }
+  body.display-mode .bracket-grid { flex: 1; min-height: 0; height: 100%; gap: 6px 16px; padding: 20px; }
+  @media (min-width: 3840px) {
+    body.display-mode .bracket-grid { gap: 20px 40px; padding: 40px; }
+  }
 
   .zone-label {
     font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
@@ -255,6 +613,67 @@
   body.display-mode .slot .names { font-size: 16px; }
   body.display-mode .slot .score { font-size: 18px; font-weight: 900; }
   body.display-mode .match-header { padding: 4px 10px; font-size: 11px; font-weight: 900; }
+
+  /* 4K display scaling — bigger and bolder */
+  @media (min-width: 3840px) {
+    body.display-mode .match {
+      font-size: 42px;
+      border-radius: 16px;
+      border-width: 3px;
+      font-weight: 800;
+    }
+    body.display-mode .slot {
+      min-height: 90px;
+      padding: 18px 24px;
+      gap: 18px;
+    }
+    body.display-mode .slot .names {
+      font-size: 42px;
+      font-weight: 800;
+    }
+    body.display-mode .slot .score {
+      font-size: 56px;
+      font-weight: 900;
+      min-width: 80px;
+    }
+    body.display-mode .slot .seed-badge {
+      width: 52px;
+      height: 52px;
+      font-size: 24px;
+      font-weight: 900;
+    }
+    body.display-mode .match-header {
+      padding: 14px 24px;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      gap: 16px;
+    }
+    body.display-mode .match-header .tag {
+      padding: 6px 18px;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    body.display-mode .col-label {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+    }
+    body.display-mode .zone-label {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      padding: 12px 24px;
+    }
+    body.display-mode .gf-col .match {
+      border-width: 6px;
+    }
+    body.display-mode .gf-col .match-header {
+      font-size: 26px;
+    }
+    body.display-mode .gf-col { gap: 30px; }
+  }
 
   /* 2nd Chance — same style as winners bracket (no separate overrides) */
 
@@ -328,6 +747,305 @@
   body.display-mode .champion-banner .names { font-size: 22px; }
 
   .hidden { display: none !important; }
+
+  /* QuadSquad Bracket */
+  /* When in display mode, the fixed logo + title overlay the top of the view.
+     Push the bracket content down so the stage toolbar and first match card
+     don't collide with them. */
+  body.bracket-display #view-quad-bracket .bracket-wrap {
+    padding-top: 180px;
+  }
+  body.bracket-display #view-quad-bracket .quad-stage-toolbar {
+    margin-top: 0;
+  }
+  .quad-stage-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    border-bottom: 2px solid var(--line);
+  }
+  .quad-stage-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 24px;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .quad-stage-btn.active {
+    color: var(--ink);
+    border-bottom-color: var(--orange);
+  }
+  .quad-stage-btn.disabled, .quad-stage-btn:disabled {
+    color: #bbb;
+    cursor: not-allowed;
+  }
+  .quad-bracket-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+  }
+  .drag-grip {
+    display: inline-block;
+    color: var(--muted);
+    font-weight: 900;
+    letter-spacing: -2px;
+    margin-right: 4px;
+    cursor: grab;
+  }
+  .quad-round-label.draggable, .quad-game .pair-players.draggable {
+    cursor: grab;
+  }
+  .quad-round-label.draggable:hover, .quad-game .pair-players.draggable:hover {
+    background: rgba(244, 121, 32, 0.08);
+    border-radius: 4px;
+  }
+  .dragging {
+    opacity: 0.4;
+  }
+  .drag-over {
+    outline: 2px dashed var(--orange);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .quad-match {
+    background: #fff;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .quad-match.finals { border-color: var(--orange); background: #fff9f0; }
+  .quad-match.bronze { border-color: var(--green); background: #f5fbe8; }
+  .quad-match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--line);
+  }
+  .quad-match-header h3 {
+    margin: 0;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 900;
+  }
+  .quad-match-score {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .quad-match-teams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 8px;
+    background: var(--soft);
+    border-radius: 6px;
+  }
+  .quad-match-team {
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .quad-match-team.winner { color: var(--green); }
+  .quad-match-team.loser { color: var(--muted); }
+  .quad-match-team .seed-tag {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+  }
+  .quad-match-vs { color: var(--muted); font-weight: 600; }
+  .quad-round {
+    margin-bottom: 12px;
+  }
+  .quad-round-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+  .quad-game {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--soft);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .quad-game.won-by-1 { background: rgba(244, 121, 32, 0.1); }
+  .quad-game.won-by-2 { background: rgba(139, 199, 81, 0.15); }
+  .quad-game .pair-players {
+    font-weight: 600;
+  }
+  .quad-game .pair-players.right { text-align: right; }
+  .quad-game .game-score {
+    width: 50px;
+    padding: 4px 6px;
+    border: 1.5px solid var(--line);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .quad-game .vs-separator { color: var(--muted); font-weight: 800; }
+  .quad-dreambreaker {
+    margin-top: 12px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--orange), var(--green));
+    color: #fff;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 900;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  .quad-dreambreaker-btn {
+    background: #fff;
+    color: var(--ink);
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .quad-champion-banner {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    padding: 24px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--orange), var(--green));
+    color: #fff;
+    text-align: center;
+    font-weight: 900;
+    font-size: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .quad-champion-banner .champion-name {
+    font-size: 36px;
+    margin-top: 8px;
+    letter-spacing: 1.5px;
+  }
+
+  @media (min-width: 2560px) {
+    .quad-match { padding: 24px; }
+    .quad-match-header h3 { font-size: 24px; }
+    .quad-match-score { font-size: 28px; }
+    .quad-match-team { font-size: 20px; }
+    .quad-game { font-size: 18px; padding: 12px 14px; }
+    .quad-game .game-score { width: 70px; padding: 8px 10px; font-size: 20px; }
+    .quad-round-label { font-size: 16px; }
+    .quad-champion-banner { font-size: 36px; padding: 32px; }
+    .quad-champion-banner .champion-name { font-size: 52px; }
+  }
+
+
+  /* Large display (75" screens and above) */
+  @media (min-width: 2560px) {
+    html { font-size: 20px; }
+    header.top { padding: 24px 48px; gap: 32px; }
+    header.top .logo { height: 160px; }
+    header.top .title-block h1 { font-size: 64px; letter-spacing: 2px; }
+    header.top .title-block .champ-line { font-size: 52px; margin-top: 8px; letter-spacing: 1.5px; }
+    header.top .title-block .date { font-size: 24px; margin-top: 12px; }
+    header.top nav a { padding: 14px 24px; font-size: 18px; }
+
+    input[type=text], input[type=number] { font-size: 24px; padding: 14px 16px; }
+    .btn { padding: 16px 32px; font-size: 20px; }
+
+    .setup-wrap { max-width: 1200px; }
+    .setup-wrap h2 { font-size: 28px; }
+    .league-row { gap: 24px; margin: 28px 0 16px; }
+    .league-row label { font-size: 18px; }
+    .league-row input { font-size: 28px; }
+    .note { font-size: 18px; }
+
+    .setup-two-col { gap: 48px; }
+    .players-grid { gap: 12px; }
+    .player-row { gap: 16px; }
+    .player-row .seed { width: 56px; height: 56px; font-size: 20px; }
+    .player-row input { font-size: 22px; }
+    .group-title { font-size: 16px; margin-top: 28px; }
+
+    .sync-panel { padding: 24px 28px; }
+    .sync-panel .sync-title { font-size: 16px; }
+    .sync-row { gap: 16px; }
+    .sync-row input { font-size: 24px; width: 200px; }
+    .sync-status { font-size: 18px; }
+    .sync-url { font-size: 16px; }
+
+    .toolbar { gap: 16px; margin-top: 32px; }
+
+    /* Wheel/Spin view */
+    .spin-stage { gap: 48px; padding: 12px 32px 0; }
+    .wheel-box { width: 680px; height: 680px; }
+    body.display-mode #view-spin .wheel-box { width: 800px; height: 800px; }
+    .wheel-box .pointer { border-left: 32px solid transparent; border-right: 32px solid transparent; border-top: 52px solid var(--ink); }
+    .wheel-box .hub { width: 140px; height: 140px; font-size: 18px; border: 6px solid var(--ink); }
+    body.display-mode #view-spin .wheel-box .hub { width: 160px; height: 160px; font-size: 20px; }
+
+    .spin-side { width: 580px; }
+    .spin-side h2 { font-size: 28px; }
+    .spin-side .current-name { font-size: 72px; margin: 16px 0 32px; }
+    body.display-mode .spin-side .current-name { font-size: 96px; }
+
+    .pairs-strip { gap: 16px 20px; }
+    .pair-chip { padding: 14px 18px; font-size: 20px; }
+    .pair-chip .badge { width: 40px; height: 40px; font-size: 16px; }
+    body.display-mode #view-spin .pair-chip { font-size: 22px; }
+
+    /* Bracket view */
+    .bracket-grid { gap: 12px 24px; }
+    .match { font-size: 18px; }
+    body.display-mode .match { font-size: 22px; }
+    .match-header { padding: 6px 12px; font-size: 14px; }
+
+    .slot { padding: 8px 12px; min-height: 42px; gap: 10px; }
+    .slot .seed-badge { width: 28px; height: 28px; font-size: 12px; }
+    .slot .names { font-size: 18px; }
+    .slot .score { font-size: 20px; min-width: 44px; }
+    .slot .score-input { width: 60px; padding: 4px 8px; font-size: 18px; }
+    body.display-mode .slot { min-height: 54px; padding: 10px 16px; }
+    body.display-mode .slot .names { font-size: 22px; }
+    body.display-mode .slot .score { font-size: 26px; }
+
+    .match-footer { padding: 8px 12px; gap: 10px; }
+    .match-footer button { font-size: 14px; padding: 6px 16px; }
+
+    .zone-label { font-size: 14px; padding: 6px 14px; }
+    .col-label { font-size: 14px; margin-bottom: 10px; }
+
+    .gf-title-block .brand-title { font-size: 64px; letter-spacing: 2px; }
+    .gf-title-block .brand-date { font-size: 22px; margin-top: 10px; }
+    .gf-logo-block .logo-big { max-height: 240px; max-width: 300px; }
+
+    .champion-banner { padding: 24px; font-size: 28px; }
+    .champion-banner .names { font-size: 40px; }
+    body.display-mode .champion-banner { padding: 16px; font-size: 24px; }
+    body.display-mode .champion-banner .names { font-size: 32px; }
+  }
 </style>
 </head>
 <body>
@@ -335,16 +1053,39 @@
 <header class="top">
   <img class="logo" src="logo.jpg" alt="Dill Dinkers Pickleball">
   <div class="title-block">
-    <h1 id="page-title">Dill Dinkers <span class="champ">Championship</span></h1>
+    <h1 id="page-title">Dill Dinkers</h1>
+    <div class="champ-line" id="page-champ">Championship</div>
     <div class="date" id="page-date"></div>
   </div>
   <nav id="nav">
+    <a href="#/tournament-type" data-route="tournament-type">Format</a>
     <a href="#/setup" data-route="setup">Setup</a>
     <a href="#/spin" data-route="spin">Pair Up</a>
     <a href="#/admin" data-route="admin">Admin</a>
     <a href="#/display" data-route="display" target="_blank">Display ↗</a>
   </nav>
 </header>
+
+<!-- TOURNAMENT TYPE SELECTOR -->
+<section id="view-tournament-type" class="view">
+  <div class="tournament-type-wrap">
+    <h2>Select Tournament Format</h2>
+    <div class="tournament-type-buttons">
+      <button class="tournament-type-button" id="btn-dilldinkers">
+        <h3>Ladder League Bracket</h3>
+        <p>16 players in 8 doubles teams. Double-elimination bracket with spin pairing.</p>
+      </button>
+      <button class="tournament-type-button" id="btn-partnerleague">
+        <h3>Partner League Bracket</h3>
+        <p>8 pre-formed teams entered directly as seeds 1–8. Double-elimination bracket.</p>
+      </button>
+      <button class="tournament-type-button" id="btn-quadsquad">
+        <h3>QuadSquad</h3>
+        <p>4 teams with 4 players each. 6-game matches with dynamic opponent selection.</p>
+      </button>
+    </div>
+  </div>
+</section>
 
 <!-- SETUP -->
 <section id="view-setup" class="view">
@@ -361,11 +1102,11 @@
 
     <div class="setup-two-col">
       <div>
-        <div class="group-title" style="color: var(--orange)">Top Seeds · 1–8</div>
+        <div class="group-title" style="color: var(--orange)">Seeds 1–8</div>
         <div class="players-grid" id="top-players"></div>
       </div>
       <div>
-        <div class="group-title" style="color: var(--green)">Bottom Seeds · 9–16</div>
+        <div class="group-title" style="color: var(--green)">Seeds 9–16</div>
         <div class="players-grid" id="bot-players"></div>
       </div>
     </div>
@@ -391,25 +1132,130 @@
   </div>
 </section>
 
+<!-- PARTNER LEAGUE SETUP -->
+<section id="view-partner-setup" class="view">
+  <div class="setup-wrap">
+    <h2>Partner League Setup</h2>
+
+    <div class="league-row">
+      <label for="partner-league-name-input">League Name</label>
+      <input type="text" id="partner-league-name-input" placeholder="e.g. Spring League">
+    </div>
+    <div class="note">The page title becomes "<span id="partner-league-preview">Spring League</span> Championship".</div>
+
+    <p class="note" style="margin-top:18px">Enter 8 seeded teams. Seed 1 is the top seed.</p>
+
+    <div class="partner-paste-row">
+      <button class="btn ghost" id="btn-partner-paste-list" type="button">📋 Paste a List</button>
+      <span class="partner-paste-hint">— or type team names below</span>
+    </div>
+
+    <div id="partner-paste-area" style="display:none; margin-bottom:16px;">
+      <textarea id="partner-paste-input" placeholder="Paste one team name per line (8 lines = seeds 1–8)" rows="9" style="width:100%; font-family:inherit; font-size:14px; padding:10px; border:1.5px solid var(--line); border-radius:8px; resize:vertical; box-sizing:border-box;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn green" id="btn-partner-parse" type="button">Apply List</button>
+        <button class="btn ghost" id="btn-partner-paste-cancel" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div id="partner-teams-grid" class="partner-teams-grid"></div>
+
+    <div class="toolbar" style="margin-top:24px;">
+      <button class="btn green" id="btn-partner-continue" type="button">Continue to Bracket →</button>
+      <button class="btn ghost" id="btn-partner-fill-demo" type="button">Fill Demo Names</button>
+      <button class="btn ghost" id="btn-partner-back" type="button">Back</button>
+    </div>
+
+    <div class="sync-panel">
+      <div class="sync-title">Cloud Sync — Display on Another Computer</div>
+      <div class="sync-row">
+        <label for="partner-room-input" style="font-weight:700; font-size:13px;">Room Code</label>
+        <input type="text" id="partner-room-input" maxlength="6" placeholder="ABC123">
+        <button class="btn ghost" id="btn-partner-room-new" type="button">New Code</button>
+        <span class="sync-status" id="partner-sync-status">Checking…</span>
+      </div>
+      <div class="note">Anyone on any device can open the Display URL below to watch live.</div>
+      <div class="sync-url" id="partner-sync-url"></div>
+      <button class="btn ghost" id="btn-partner-copy-url" type="button" style="margin-top:8px;">Copy Display URL</button>
+    </div>
+  </div>
+</section>
+
+<!-- QUADSQUAD SEEDING -->
+<section id="view-quad-seeding" class="view">
+  <div class="quad-setup-wrap">
+    <h2>QuadSquad Seeding</h2>
+    <p class="note">Assign seeds 1-4 to determine playoff positions. Seed 1 will select their opponent in the next step.</p>
+    <div id="quad-seeding-container"></div>
+    <div class="toolbar" style="margin-top:24px;">
+      <button class="btn green" id="btn-quad-opponent-select" type="button">Proceed to Opponent Selection →</button>
+      <button class="btn ghost" id="btn-back-quad-setup" type="button">Back</button>
+    </div>
+  </div>
+</section>
+
+<!-- QUADSQUAD OPPONENT SELECTION -->
+<section id="view-quad-opponent-select" class="view">
+  <div class="quad-setup-wrap">
+    <h2>Select Opponent for Seed 1</h2>
+    <p class="note" style="margin-bottom:28px;">Team <strong id="seed1-team-name">—</strong> (Seed 1) will select their opponent from the remaining teams.</p>
+    <div id="quad-opponent-buttons" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px;"></div>
+    <div class="toolbar" style="margin-top:24px;">
+      <button class="btn ghost" id="btn-back-quad-seeding" type="button">Back</button>
+    </div>
+  </div>
+</section>
+
+<!-- QUADSQUAD BRACKET -->
+<section id="view-quad-bracket" class="view">
+  <div class="bracket-wrap">
+    <div id="quad-bracket-content"></div>
+  </div>
+</section>
+
+<!-- QUADSQUAD SETUP -->
+<section id="view-quad-setup" class="view">
+  <div class="quad-setup-wrap">
+    <h2>QuadSquad Tournament Setup</h2>
+
+    <div class="league-row">
+      <label for="league-name-input">League Name</label>
+      <input type="text" id="league-name-input" placeholder="e.g. Dill Dinkers">
+    </div>
+    <div class="note">The page title becomes "<span id="league-preview">Dill Dinkers</span> Championship".</div>
+
+    <div id="quad-teams-container"></div>
+
+    <div class="toolbar" style="margin-top:24px;">
+      <button class="btn" id="btn-quad-fill-demo" type="button">Fill Demo Data</button>
+      <button class="btn green" id="btn-quad-seeding" type="button">Proceed to Opponent Selection →</button>
+      <button class="btn ghost" id="btn-back-tournament-type" type="button">Back</button>
+    </div>
+  </div>
+</section>
+
 <!-- SPIN -->
 <section id="view-spin" class="view">
   <div class="spin-stage">
     <div class="roster" id="roster"></div>
-    <div class="wheel-box">
-      <div class="pointer"></div>
-      <div class="hub" id="wheel-hub">SPIN</div>
-      <svg class="wheel" id="wheel" viewBox="-210 -210 420 420"></svg>
-    </div>
     <div class="spin-side">
       <h2 id="spin-label">Drawing partner for…</h2>
       <div class="current-name" id="current-name">—</div>
+      <div class="wheel-box">
+        <div class="pointer"></div>
+        <div class="hub" id="wheel-hub">SPIN</div>
+        <svg class="wheel" id="wheel" viewBox="-210 -210 420 420"></svg>
+      </div>
       <div class="controls">
         <button class="btn" id="btn-spin" style="font-size:18px; padding:14px 28px;">Spin the Wheel</button>
         <button class="btn green" id="btn-finish-pairing" style="margin-left:8px; display:none;">Build Bracket →</button>
       </div>
     </div>
+    <div class="pairs-strip" id="pairs-list"></div>
   </div>
-  <div class="pairs-strip" id="pairs-list"></div>
+  <div class="pair-popup" id="pair-popup" style="display:none;">
+    <div class="popup-content" id="popup-content">Team 1 ↔ Team 2</div>
+  </div>
 </section>
 
 <!-- BRACKET (admin + display) -->
@@ -473,15 +1319,21 @@
 const KEY = 'ddp-tournament-v3';
 
 const defaultState = () => ({
+  tournamentType: 'dilldinkers', // 'dilldinkers', 'partnerleague', or 'quadsquad'
+  quadStage: 'semis', // 'semis' or 'finals' — which QuadSquad stage to display
   leagueName: 'Dill Dinkers',
   phase: 'setup',
   players: Array(16).fill(null).map((_, i) => ({ seed: i + 1, name: '' })),
+  partnerTeams: Array(8).fill(null).map((_, i) => ({ seed: i + 1, name: '' })), // for partnerleague
   pairings: [],
   matches: {},
   nextSeedToSpin: 1,
   usedBotSeeds: [],
   currentSpin: null,       // { id, targetRotation, chosenSeed, remaining, forSeed }
-  room: ''                  // cloud sync room code
+  lastPopup: null,         // { id, pairs: [{topName, botName, teamNum}] }
+  teams: [],               // for quadsquad: [{id, name, seed, players: [{id, name}]}]
+  opponents: {},           // for quadsquad: {team1vs: 2|3|4}
+  room: ''                 // cloud sync room code
 });
 
 let state = loadState();
@@ -546,15 +1398,29 @@ function initMatches() {
   Object.keys(BRACKET).forEach(id => {
     matches[id] = { id, team1: null, team2: null, score1: null, score2: null, winner: null, loser: null };
   });
-  const pairsBySeed = Object.fromEntries(state.pairings.map(p => [p.teamSeed, p]));
-  Object.keys(BRACKET).forEach(id => {
-    const def = BRACKET[id];
-    def.sources.forEach((src, idx) => {
-      if (src.seed && pairsBySeed[src.seed]) {
-        matches[id][idx === 0 ? 'team1' : 'team2'] = pairsBySeed[src.seed].teamSeed;
-      }
+
+  if (state.tournamentType === 'partnerleague') {
+    // Partner league: teams ARE seeds 1-8 directly — no pairing lookup needed
+    const seedSet = new Set(state.partnerTeams.map(t => t.seed));
+    Object.keys(BRACKET).forEach(id => {
+      const def = BRACKET[id];
+      def.sources.forEach((src, idx) => {
+        if (src.seed && seedSet.has(src.seed)) {
+          matches[id][idx === 0 ? 'team1' : 'team2'] = src.seed;
+        }
+      });
     });
-  });
+  } else {
+    const pairsBySeed = Object.fromEntries(state.pairings.map(p => [p.teamSeed, p]));
+    Object.keys(BRACKET).forEach(id => {
+      const def = BRACKET[id];
+      def.sources.forEach((src, idx) => {
+        if (src.seed && pairsBySeed[src.seed]) {
+          matches[id][idx === 0 ? 'team1' : 'team2'] = pairsBySeed[src.seed].teamSeed;
+        }
+      });
+    });
+  }
   return matches;
 }
 
@@ -562,7 +1428,15 @@ function initMatches() {
    ROUTING
    ========================================================================= */
 function parseRoute() {
-  const raw = (location.hash || '#/setup').replace(/^#\//, '');
+  let defaultHash;
+  if (state.tournamentType === 'quadsquad') {
+    defaultHash = state.phase === 'setup' ? '#/quad-setup' : '#/quad-bracket';
+  } else if (state.tournamentType === 'partnerleague') {
+    defaultHash = state.phase === 'setup' ? '#/partner-setup' : '#/admin';
+  } else {
+    defaultHash = state.phase === 'setup' ? '#/setup' : '#/admin';
+  }
+  const raw = (location.hash || defaultHash).replace(/^#\//, '');
   const [name, qs] = raw.split('?');
   return { name, params: new URLSearchParams(qs || '') };
 }
@@ -574,23 +1448,65 @@ function route() {
   document.body.classList.toggle('display-mode', hash === 'display');
   document.body.classList.toggle('bracket-display', hash === 'display' && state.phase === 'bracket');
 
-  if (hash === 'setup') {
-    document.getElementById('view-setup').classList.add('active');
-    renderSetup();
-  } else if (hash === 'spin') {
-    document.getElementById('view-spin').classList.add('active');
-    renderSpin();
-  } else if (hash === 'admin') {
-    document.getElementById('view-bracket').classList.add('active');
-    renderBracket();
-  } else if (hash === 'display') {
-    // Display mode switches automatically based on phase
-    if (state.phase === 'bracket') {
+  // Route based on tournament type and phase
+  if (hash === 'tournament-type') {
+    document.getElementById('view-tournament-type').classList.add('active');
+    renderTournamentType();
+  } else if (state.tournamentType === 'partnerleague') {
+    // Partner League routes — same bracket views, custom setup
+    if (hash === 'partner-setup') {
+      document.getElementById('view-partner-setup').classList.add('active');
+      renderPartnerSetup();
+    } else if (hash === 'admin') {
       document.getElementById('view-bracket').classList.add('active');
       renderBracket();
-    } else {
+    } else if (hash === 'display') {
+      document.getElementById('view-bracket').classList.add('active');
+      renderBracket();
+    }
+  } else if (state.tournamentType === 'quadsquad') {
+    // QuadSquad routes
+    if (hash === 'quad-setup') {
+      document.getElementById('view-quad-setup').classList.add('active');
+      renderQuadSetup();
+    } else if (hash === 'quad-seeding') {
+      document.getElementById('view-quad-seeding').classList.add('active');
+      renderQuadSeeding();
+    } else if (hash === 'quad-opponent-select') {
+      document.getElementById('view-quad-opponent-select').classList.add('active');
+      renderQuadOpponentSelect();
+    } else if (hash === 'quad-bracket') {
+      document.getElementById('view-quad-bracket').classList.add('active');
+      renderQuadBracket();
+    } else if (hash === 'display') {
+      if (state.phase === 'bracket') {
+        document.getElementById('view-quad-bracket').classList.add('active');
+        renderQuadBracket();
+      } else {
+        document.getElementById('view-quad-opponent-select').classList.add('active');
+        renderQuadOpponentSelect();
+      }
+    }
+  } else {
+    // Original Dill Dinkers routes
+    if (hash === 'setup') {
+      document.getElementById('view-setup').classList.add('active');
+      renderSetup();
+    } else if (hash === 'spin') {
       document.getElementById('view-spin').classList.add('active');
       renderSpin();
+    } else if (hash === 'admin') {
+      document.getElementById('view-bracket').classList.add('active');
+      renderBracket();
+    } else if (hash === 'display') {
+      // Display mode switches automatically based on phase
+      if (state.phase === 'bracket') {
+        document.getElementById('view-bracket').classList.add('active');
+        renderBracket();
+      } else {
+        document.getElementById('view-spin').classList.add('active');
+        renderSpin();
+      }
     }
   }
 }
@@ -601,7 +1517,8 @@ window.addEventListener('hashchange', route);
    ========================================================================= */
 function updateHeaderTitle() {
   const name = (state.leagueName || 'Dill Dinkers').trim() || 'Dill Dinkers';
-  document.getElementById('page-title').innerHTML = escapeHtml(name) + ' <span class="champ">Championship</span>';
+  document.getElementById('page-title').textContent = name;
+  document.getElementById('page-champ').textContent = 'Championship';
   const today = new Date();
   const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   document.getElementById('page-date').textContent = today.toLocaleDateString(undefined, opts);
@@ -610,6 +1527,266 @@ function updateHeaderTitle() {
 /* =========================================================================
    SETUP VIEW
    ========================================================================= */
+/* =========================================================================
+   TOURNAMENT TYPE SELECTOR
+   ========================================================================= */
+function renderTournamentType() {
+  // Just show the buttons (static in HTML)
+}
+
+document.getElementById('btn-dilldinkers').addEventListener('click', () => {
+  state.tournamentType = 'dilldinkers';
+  state.phase = 'setup';
+  state.players = Array(16).fill(null).map((_, i) => ({ seed: i + 1, name: '' }));
+  state.leagueName = 'Dill Dinkers';
+  saveState();
+  location.hash = '#/setup';
+});
+
+document.getElementById('btn-partnerleague').addEventListener('click', () => {
+  state.tournamentType = 'partnerleague';
+  state.phase = 'setup';
+  state.partnerTeams = Array(8).fill(null).map((_, i) => ({ seed: i + 1, name: '' }));
+  state.pairings = [];
+  state.matches = {};
+  state.leagueName = '';
+  saveState();
+  location.hash = '#/partner-setup';
+});
+
+document.getElementById('btn-quadsquad').addEventListener('click', () => {
+  state.tournamentType = 'quadsquad';
+  state.phase = 'setup';
+  state.leagueName = 'Dill Dinkers';
+  state.teams = [
+    { id: 1, name: '', seed: null, players: [{id: 1, name: ''}, {id: 2, name: ''}, {id: 3, name: ''}, {id: 4, name: ''}] },
+    { id: 2, name: '', seed: null, players: [{id: 1, name: ''}, {id: 2, name: ''}, {id: 3, name: ''}, {id: 4, name: ''}] },
+    { id: 3, name: '', seed: null, players: [{id: 1, name: ''}, {id: 2, name: ''}, {id: 3, name: ''}, {id: 4, name: ''}] },
+    { id: 4, name: '', seed: null, players: [{id: 1, name: ''}, {id: 2, name: ''}, {id: 3, name: ''}, {id: 4, name: ''}] }
+  ];
+  saveState();
+  location.hash = '#/quad-setup';
+});
+
+/* =========================================================================
+   PARTNER LEAGUE SETUP
+   ========================================================================= */
+function renderPartnerSetup() {
+  const leagueInput = document.getElementById('partner-league-name-input');
+  leagueInput.value = state.leagueName || '';
+  document.getElementById('partner-league-preview').textContent = state.leagueName || 'League';
+
+  const grid = document.getElementById('partner-teams-grid');
+  grid.innerHTML = '';
+  (state.partnerTeams || []).forEach((team, idx) => {
+    const row = document.createElement('div');
+    row.className = 'partner-team-row';
+    row.innerHTML = `<div class="seed">${idx + 1}</div>
+      <input type="text" value="${escapeHtml(team.name)}" placeholder="Team name" data-partner-seed="${idx}">`;
+    grid.appendChild(row);
+    const inp = row.querySelector('input');
+    inp.addEventListener('input', () => {
+      state.partnerTeams[idx].name = inp.value;
+      clearTimeout(nameInputTimeout);
+      nameInputTimeout = setTimeout(saveState, 300);
+    });
+  });
+  updatePartnerSyncPanel();
+}
+
+document.getElementById('partner-league-name-input').addEventListener('input', e => {
+  state.leagueName = e.target.value;
+  document.getElementById('partner-league-preview').textContent = state.leagueName || 'League';
+  clearTimeout(leagueInputTimeout);
+  leagueInputTimeout = setTimeout(saveState, 300);
+});
+
+document.getElementById('btn-partner-fill-demo').addEventListener('click', () => {
+  const demo = ['Smith & Garcia', 'Jones & Park', 'Taylor & Chen', 'Brown & Kim',
+                'Davis & Lee', 'Wilson & Patel', 'Moore & Clark', 'Anderson & White'];
+  state.partnerTeams = demo.map((n, i) => ({ seed: i + 1, name: n }));
+  if (!state.leagueName.trim()) state.leagueName = 'Partner League';
+  saveState();
+  renderPartnerSetup();
+});
+
+document.getElementById('btn-partner-back').addEventListener('click', () => {
+  location.hash = '#/tournament-type';
+});
+
+document.getElementById('btn-partner-continue').addEventListener('click', () => {
+  const missing = state.partnerTeams.filter(t => !t.name.trim());
+  if (missing.length) { alert(`Please fill in all 8 team names (${missing.length} missing).`); return; }
+  if (!state.leagueName.trim()) { alert('Please enter a league name.'); return; }
+  state.phase = 'bracket';
+  state.matches = initMatches();
+  saveState();
+  location.hash = '#/admin';
+});
+
+// Paste list UI
+document.getElementById('btn-partner-paste-list').addEventListener('click', () => {
+  const area = document.getElementById('partner-paste-area');
+  area.style.display = area.style.display === 'none' ? 'block' : 'none';
+  if (area.style.display === 'block') document.getElementById('partner-paste-input').focus();
+});
+
+document.getElementById('btn-partner-paste-cancel').addEventListener('click', () => {
+  document.getElementById('partner-paste-area').style.display = 'none';
+  document.getElementById('partner-paste-input').value = '';
+});
+
+document.getElementById('btn-partner-parse').addEventListener('click', () => {
+  const raw = document.getElementById('partner-paste-input').value;
+  // Split on newlines, then commas if only 1 line detected, strip blanks
+  let lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  if (lines.length < 2) lines = raw.split(',').map(s => s.trim()).filter(Boolean);
+  if (lines.length === 0) { alert('No names found — paste one team name per line.'); return; }
+  lines.slice(0, 8).forEach((name, i) => {
+    state.partnerTeams[i].name = name;
+  });
+  saveState();
+  renderPartnerSetup();
+  document.getElementById('partner-paste-area').style.display = 'none';
+  document.getElementById('partner-paste-input').value = '';
+});
+
+// Partner sync panel
+function updatePartnerSyncPanel() {
+  const statusEl = document.getElementById('partner-sync-status');
+  const urlEl = document.getElementById('partner-sync-url');
+  const input = document.getElementById('partner-room-input');
+  if (!statusEl || !urlEl || !input) return;
+  input.value = state.room || '';
+  const enabled = !!(window.ddpFirebase && window.ddpFirebase.enabled);
+  if (!enabled) {
+    statusEl.textContent = '✗ Not configured — paste Firebase config';
+    statusEl.className = 'sync-status off';
+  } else if (!state.room) {
+    statusEl.textContent = '○ Pick a room code to enable sync';
+    statusEl.className = 'sync-status off';
+  } else {
+    statusEl.textContent = '✓ Cloud sync active — room ' + state.room;
+    statusEl.className = 'sync-status on';
+  }
+  const base = location.href.split('#')[0];
+  urlEl.textContent = state.room ? `${base}#/display?room=${state.room}` : '(pick a room code to see the display URL)';
+}
+
+document.getElementById('partner-room-input').addEventListener('input', e => {
+  state.room = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  e.target.value = state.room;
+  saveState();
+  connectToRoom(state.room);
+  updatePartnerSyncPanel();
+});
+
+document.getElementById('btn-partner-room-new').addEventListener('click', () => {
+  state.room = randomRoomCode();
+  saveState();
+  connectToRoom(state.room);
+  updatePartnerSyncPanel();
+});
+
+document.getElementById('btn-partner-copy-url').addEventListener('click', () => {
+  const url = document.getElementById('partner-sync-url').textContent;
+  if (!url || url.startsWith('(')) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-partner-copy-url');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+});
+
+/* =========================================================================
+   QUADSQUAD SETUP
+   ========================================================================= */
+function renderQuadSetup() {
+  const leagueInput = document.getElementById('league-name-input');
+  leagueInput.value = state.leagueName || 'Dill Dinkers';
+  document.getElementById('league-preview').textContent = (state.leagueName || 'Dill Dinkers');
+
+  const container = document.getElementById('quad-teams-container');
+  container.innerHTML = '';
+
+  state.teams.forEach((team, idx) => {
+    const panel = document.createElement('div');
+    panel.className = 'team-panel';
+    panel.innerHTML = `
+      <h3>Seed ${idx + 1}</h3>
+      <div class="team-name-input">
+        <label for="team-${idx}-name">Team Name</label>
+        <input type="text" id="team-${idx}-name" value="${escapeHtml(team.name)}" placeholder="e.g. Team A">
+      </div>
+      <div class="quad-players-grid">
+        ${[0, 1, 2, 3].map(i => `
+          <div class="player-row">
+            <input type="text" value="${escapeHtml(team.players[i].name)}" placeholder="Player ${i + 1}" data-team="${idx}" data-player="${i}">
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(panel);
+
+    // Attach listeners for team name
+    document.getElementById(`team-${idx}-name`).addEventListener('input', (e) => {
+      state.teams[idx].name = e.target.value;
+      clearTimeout(leagueInputTimeout);
+      leagueInputTimeout = setTimeout(saveState, 300);
+    });
+
+    // Attach listeners for player names
+    panel.querySelectorAll('input[data-team]').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const teamIdx = parseInt(e.target.dataset.team, 10);
+        const playerIdx = parseInt(e.target.dataset.player, 10);
+        state.teams[teamIdx].players[playerIdx].name = e.target.value;
+        clearTimeout(leagueInputTimeout);
+        leagueInputTimeout = setTimeout(saveState, 300);
+      });
+    });
+  });
+
+  updateSyncPanel();
+}
+
+document.getElementById('btn-quad-fill-demo').addEventListener('click', () => {
+  const demoTeams = [
+    { name: 'Orange', players: ['Alex', 'Blake', 'Casey', 'Drew'] },
+    { name: 'Green', players: ['Eva', 'Fox', 'Grace', 'Harper'] },
+    { name: 'Blue', players: ['Ivy', 'Jack', 'Kelly', 'Lee'] },
+    { name: 'Purple', players: ['Morgan', 'Nathan', 'Olivia', 'Parker'] }
+  ];
+
+  state.teams.forEach((team, idx) => {
+    team.name = demoTeams[idx].name;
+    team.players.forEach((p, pidx) => {
+      p.name = demoTeams[idx].players[pidx];
+    });
+  });
+
+  if (!state.leagueName.trim()) state.leagueName = 'Dill Dinkers';
+  saveState();
+  renderQuadSetup();
+});
+
+document.getElementById('btn-quad-seeding').addEventListener('click', () => {
+  const missing = state.teams.filter(t => !t.name.trim() || t.players.some(p => !p.name.trim()));
+  if (missing.length) { alert('Please fill in all team names and player names.'); return; }
+  if (!state.leagueName.trim()) { alert('Please enter a league name.'); return; }
+
+  // Seed is determined by entry order: first team is Seed 1, etc.
+  state.teams.forEach((t, idx) => { t.seed = idx + 1; });
+  state.phase = 'opponent-select';
+  saveState();
+  location.hash = '#/quad-opponent-select';
+});
+
+document.getElementById('btn-back-tournament-type').addEventListener('click', () => {
+  location.hash = '#/tournament-type';
+});
+
 function renderSetup() {
   const leagueInput = document.getElementById('league-name-input');
   leagueInput.value = state.leagueName || '';
@@ -632,18 +1809,22 @@ function renderSetup() {
   bot.querySelectorAll('input').forEach(attachNameInput);
   updateSyncPanel();
 }
+let nameInputTimeout;
 function attachNameInput(inp) {
   inp.addEventListener('input', () => {
     const seed = parseInt(inp.dataset.seed, 10);
     state.players[seed-1].name = inp.value;
-    saveState();
+    clearTimeout(nameInputTimeout);
+    nameInputTimeout = setTimeout(saveState, 300);
   });
 }
 
+let leagueInputTimeout;
 document.getElementById('league-name-input').addEventListener('input', e => {
   state.leagueName = e.target.value;
   document.getElementById('league-preview').textContent = (state.leagueName || 'Dill Dinkers');
-  saveState();
+  clearTimeout(leagueInputTimeout);
+  leagueInputTimeout = setTimeout(saveState, 300);
 });
 
 document.getElementById('btn-fill-demo').addEventListener('click', () => {
@@ -751,6 +1932,9 @@ let wheelRotation = 0;
 let spinning = false;
 let lastSpinIdSeen = null;
 let displayAnimLock = false;   // display tab: animation in progress, defer storage updates
+let lastPairResult = null;     // track the most recent pair for persistent display
+let lastPopupIdSeen = null;    // deduplicate popup triggers from state sync
+let wheelLocked = false;       // when true, renderSpin skips redrawing the wheel so it stays on landed name
 
 function remainingBotSeeds() {
   const r = [];
@@ -758,23 +1942,63 @@ function remainingBotSeeds() {
   return r;
 }
 
-function renderSpin() {
+function showPairPopup(pairs, onComplete) {
+  const popup = document.getElementById('pair-popup');
+  const content = document.getElementById('popup-content');
+  const list = Array.isArray(pairs) ? pairs : [pairs];
+  content.innerHTML = list.map(p =>
+    `<div class="popup-pair">${escapeHtml(p.topName)} and ${escapeHtml(p.botName)} are playing together as the #${p.teamNum} seed</div>`
+  ).join('');
+  popup.style.display = 'block';
+  popup.classList.remove('show');
+  void popup.offsetWidth;
+  popup.classList.add('show');
+  setTimeout(() => {
+    popup.style.display = 'none';
+    popup.classList.remove('show');
+    if (typeof onComplete === 'function') onComplete();
+  }, 5100);
+}
+
+function renderSpin(opts) {
+  opts = opts || {};
   const isDisplay = location.hash === '#/display';
   renderRoster();
-  renderWheel();
   renderPairsList();
+
+  // If a new pair popup is pending, show it and lock the wheel on its landed name.
+  // The wheel stays locked after the popup fades — it only moves again on the next spin click.
+  if (state.lastPopup && state.lastPopup.id !== lastPopupIdSeen) {
+    lastPopupIdSeen = state.lastPopup.id;
+    wheelLocked = true;
+    showPairPopup(state.lastPopup.pairs, () => {
+      lastPairResult = null;
+      renderSpin();
+    });
+    return;
+  }
+
+  if (!opts.skipWheel && !wheelLocked) renderWheel();
 
   const nextSeed = state.nextSeedToSpin;
   const spinBtn = document.getElementById('btn-spin');
   const finishBtn = document.getElementById('btn-finish-pairing');
   const label = document.getElementById('spin-label');
   const nameEl = document.getElementById('current-name');
+  const hubEl = document.getElementById('wheel-hub');
 
   if (state.pairings.length >= 8) {
     label.textContent = 'All pairs drawn';
     nameEl.textContent = 'Ready for bracket';
     spinBtn.style.display = 'none';
     finishBtn.style.display = isDisplay ? 'none' : 'inline-block';
+  } else if (lastPairResult && !spinning) {
+    // Show persistent paired names until next spin starts
+    label.textContent = 'Team ' + lastPairResult.teamNum + ' paired with…';
+    nameEl.textContent = lastPairResult.botName;
+    hubEl.textContent = lastPairResult.topName + ' & ' + lastPairResult.botName;
+    spinBtn.style.display = isDisplay ? 'none' : 'inline-block';
+    finishBtn.style.display = 'none';
   } else {
     label.textContent = 'Drawing partner for…';
     nameEl.textContent = state.players[nextSeed-1]?.name || '—';
@@ -785,6 +2009,8 @@ function renderSpin() {
   // If a new spin has been broadcast (we're on display, or we missed it), animate
   if (state.currentSpin && state.currentSpin.id !== lastSpinIdSeen) {
     lastSpinIdSeen = state.currentSpin.id;
+    lastPairResult = null; // Clear when new spin starts
+    wheelLocked = false;   // New spin — unlock so animateWheelToTarget can redraw
     animateWheelToTarget(state.currentSpin.targetRotation, state.currentSpin.remaining, state.currentSpin.forSeed);
   }
 }
@@ -885,11 +2111,11 @@ function renderRoster() {
   host.innerHTML = `
     <div class="roster-cols">
       <div>
-        <h3 style="color: var(--orange)">Top · 1–8</h3>
+        <h3 style="color: var(--orange)">Seeds 1–8</h3>
         ${buildGroup(1, 8, 'top')}
       </div>
       <div>
-        <h3 style="color: var(--green)">Bottom · 9–16</h3>
+        <h3 style="color: var(--green)">Seeds 9–16</h3>
         ${buildGroup(9, 16, 'bot')}
       </div>
     </div>
@@ -913,12 +2139,20 @@ function commitPair(topSeed, botSeed, auto = false) {
   state.pairings.push({ topSeed, botSeed, teamSeed: topSeed, auto });
   state.usedBotSeeds.push(botSeed);
   state.nextSeedToSpin = topSeed + 1;
+  const topName = state.players[topSeed-1]?.name || 'Player ' + topSeed;
+  const botName = state.players[botSeed-1]?.name || 'Player ' + botSeed;
+  return { topName, botName, teamNum: topSeed };
 }
 
 document.getElementById('btn-spin').addEventListener('click', () => {
   if (spinning) return;
   const remaining = remainingBotSeeds();
   if (remaining.length === 0) return;
+  lastPairResult = null; // Clear persistent pair display when new spin starts
+
+  // Reset and redraw the wheel from its previous landed position before animating
+  wheelLocked = false;
+  renderWheel(remaining);
 
   spinning = true;
   const chosenIdx = Math.floor(Math.random() * remaining.length);
@@ -940,26 +2174,41 @@ document.getElementById('btn-spin').addEventListener('click', () => {
   lastSpinIdSeen = state.currentSpin.id;
   saveState();
 
-  // Local animation
+  // Local animation — queue the transform after the reset from renderWheel lands
   wheelRotation = targetRotation;
   const svg = document.getElementById('wheel');
-  svg.style.transform = `rotate(${targetRotation}deg)`;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      svg.style.transform = `rotate(${targetRotation}deg)`;
+    });
+  });
 
   setTimeout(() => {
-    spinning = false;
-    commitPair(state.nextSeedToSpin, chosenSeed, false);
-    state.currentSpin = null;
+    const forSeed = state.nextSeedToSpin;
+    const pair1 = commitPair(forSeed, chosenSeed, false);
+    const pairsToShow = [pair1];
 
-    // Auto-declare 8th pair if 7 pairs done and only one remaining
+    // Auto-declare 8th pair if 7 pairs done and only one remaining — combined popup
     if (state.pairings.length === 7) {
       const remain2 = remainingBotSeeds();
       if (remain2.length === 1) {
-        commitPair(8, remain2[0], true);
+        const pair2 = commitPair(8, remain2[0], true);
+        pairsToShow.push(pair2);
       }
     }
 
+    lastPairResult = pairsToShow[pairsToShow.length - 1];
+    state.currentSpin = null;
+    state.lastPopup = { id: Date.now(), pairs: pairsToShow };
     saveState();
-    renderSpin();
+    renderPairsList();
+
+    lastPopupIdSeen = state.lastPopup.id;
+    showPairPopup(pairsToShow, () => {
+      spinning = false;
+      lastPairResult = null;
+      renderSpin({ skipWheel: true });
+    });
   }, 5100);
 });
 
@@ -975,6 +2224,11 @@ document.getElementById('btn-finish-pairing').addEventListener('click', () => {
    ========================================================================= */
 function teamLabel(teamSeed) {
   if (!teamSeed) return null;
+  if (state.tournamentType === 'partnerleague') {
+    const team = (state.partnerTeams || []).find(t => t.seed === teamSeed);
+    if (!team) return null;
+    return { teamSeed, a: team.name, b: '', display: team.name };
+  }
   const p = state.pairings.find(x => x.teamSeed === teamSeed);
   if (!p) return null;
   const a = state.players[p.topSeed-1].name;
@@ -1252,9 +2506,10 @@ function renderChampion() {
   }
   if (champion) {
     const t = teamLabel(champion);
+    const nameDisplay = t.b ? `${escapeHtml(t.a)} &amp; ${escapeHtml(t.b)}` : escapeHtml(t.a);
     const el = document.createElement('div');
     el.className = 'champion-banner';
-    el.innerHTML = `🏆 Tournament Champions 🏆<div class="names">${escapeHtml(t.a)} &amp; ${escapeHtml(t.b)}</div>`;
+    el.innerHTML = `🏆 Tournament Champions 🏆<div class="names">${nameDisplay}</div>`;
     host.appendChild(el);
   }
 }
@@ -1285,7 +2540,7 @@ function escapeHtml(s) {
    BOOT
    ========================================================================= */
 updateHeaderTitle();
-if (!location.hash) location.hash = '#/setup';
+if (!location.hash) location.hash = '#/tournament-type';
 
 // If the URL carries ?room=XXX (e.g. a Display link from another computer),
 // adopt it BEFORE pushing — the remote state will overwrite our empty default.
@@ -1305,6 +2560,593 @@ if (!location.hash) location.hash = '#/setup';
 if (window.ddpFirebase && state.room) connectToRoom(state.room);
 
 route();
+/* QuadSquad Seeding */
+function renderQuadSeeding() {
+  const container = document.getElementById('quad-seeding-container');
+  container.innerHTML = '';
+  const seedOrder = [1, 2, 3, 4];
+  seedOrder.forEach(seed => {
+    const seeded = state.teams.find(t => t.seed === seed);
+    const item = document.createElement('div');
+    item.className = 'quad-seeding-item';
+    item.innerHTML = `
+      <div class="seed-number">${seed}</div>
+      <select class="team-select" data-seed="${seed}">
+        <option value="">Select team...</option>
+        ${state.teams.map(t => `<option value="${t.id}" ${t.seed === seed ? 'selected' : ''}>${t.name}</option>`).join('')}
+      </select>
+    `;
+    container.appendChild(item);
+    item.querySelector('select').addEventListener('change', (e) => {
+      const teamId = parseInt(e.target.value, 10);
+      if (!teamId) {
+        const t = state.teams.find(t => t.seed === seed);
+        if (t) t.seed = null;
+      } else {
+        state.teams.forEach(t => { if (t.id === teamId) t.seed = seed; });
+      }
+      saveState();
+      renderQuadSeeding();
+    });
+  });
+}
+
+if (document.getElementById('btn-quad-opponent-select')) {
+  document.getElementById('btn-quad-opponent-select').addEventListener('click', () => {
+    const allSeeded = state.teams.every(t => t.seed);
+    if (!allSeeded) { alert('Please assign seeds 1-4 to all teams.'); return; }
+    state.phase = 'opponent-select';
+    saveState();
+    location.hash = '#/quad-opponent-select';
+  });
+}
+
+if (document.getElementById('btn-back-quad-setup')) {
+  document.getElementById('btn-back-quad-setup').addEventListener('click', () => {
+    location.hash = '#/quad-setup';
+  });
+}
+
+/* QuadSquad Opponent Selection */
+function renderQuadOpponentSelect() {
+  const seed1 = state.teams.find(t => t.seed === 1);
+  document.getElementById('seed1-team-name').textContent = seed1.name || 'Team';
+  const container = document.getElementById('quad-opponent-buttons');
+  container.innerHTML = '';
+  const otherTeams = state.teams.filter(t => t.seed !== 1);
+  otherTeams.forEach(team => {
+    const btn = document.createElement('button');
+    btn.className = 'opponent-button';
+    btn.textContent = `Face ${team.name} (Seed ${team.seed})`;
+    btn.addEventListener('click', () => {
+      state.opponents = { team1vs: team.id };
+      state.phase = 'bracket';
+      state.matches = initQuadMatches();
+      saveState();
+      location.hash = '#/quad-bracket';
+    });
+    container.appendChild(btn);
+  });
+}
+
+if (document.getElementById('btn-back-quad-seeding')) {
+  document.getElementById('btn-back-quad-seeding').addEventListener('click', () => {
+    location.hash = '#/quad-setup';
+  });
+}
+
+// Valid 4-player round splits: each player appears in exactly one pair per round.
+// These are the only three ways to split {0,1,2,3} into two disjoint pairs.
+const QUAD_ROUND_SPLITS = [
+  [[0, 1], [2, 3]],
+  [[0, 2], [1, 3]],
+  [[0, 3], [1, 2]]
+];
+
+function quadRoundsAreValid(games) {
+  // Each non-dreambreaker round must cover all 4 players on each team with no repeats.
+  const byRound = {};
+  games.forEach(g => {
+    if (g.round >= 4) return; // dreambreaker
+    if (!byRound[g.round]) byRound[g.round] = [];
+    byRound[g.round].push(g);
+  });
+  for (const r of Object.keys(byRound)) {
+    const rgs = byRound[r];
+    if (rgs.length !== 2) return false;
+    const p1Players = [...rgs[0].pair1.players, ...rgs[1].pair1.players].sort();
+    const p2Players = [...rgs[0].pair2.players, ...rgs[1].pair2.players].sort();
+    if (p1Players.join(',') !== '0,1,2,3') return false;
+    if (p2Players.join(',') !== '0,1,2,3') return false;
+  }
+  return true;
+}
+
+function buildQuadGames(team1Id, team2Id) {
+  const games = [];
+  let gameNum = 1;
+  QUAD_ROUND_SPLITS.forEach((split, roundIdx) => {
+    split.forEach(pair => {
+      games.push({
+        gameNum: gameNum++,
+        round: roundIdx + 1,
+        pair1: { teamId: team1Id, players: pair.slice() },
+        pair2: { teamId: team2Id, players: pair.slice() },
+        score1: null,
+        score2: null,
+        winner: null
+      });
+    });
+  });
+  return games;
+}
+
+function initQuadMatches() {
+  const matches = {};
+  const seed1 = state.teams.find(t => t.seed === 1);
+  const opponents = state.teams.filter(t => t.id !== seed1.id).map(t => t.id);
+  const opponent1Id = state.opponents.team1vs;
+  // SF2 = the two teams that are neither seed1 nor opponent1
+  const sf2Teams = opponents.filter(id => id !== opponent1Id);
+  // Seed SF2 by lower seed first
+  const sf2Sorted = sf2Teams.sort((a, b) => {
+    const sa = state.teams.find(t => t.id === a).seed;
+    const sb = state.teams.find(t => t.id === b).seed;
+    return sa - sb;
+  });
+
+  matches.sf1 = { id: 'sf1', round: 'Semifinal 1', team1Id: seed1.id, team2Id: opponent1Id, games: [], gameWins: {}, winner: null };
+  matches.sf2 = { id: 'sf2', round: 'Semifinal 2', team1Id: sf2Sorted[0], team2Id: sf2Sorted[1], games: [], gameWins: {}, winner: null };
+  matches.finals = { id: 'finals', round: 'Finals', team1Id: null, team2Id: null, games: [], gameWins: {}, winner: null };
+  matches.bronze = { id: 'bronze', round: 'Bronze Medal', team1Id: null, team2Id: null, games: [], gameWins: {}, winner: null };
+
+  ['sf1', 'sf2'].forEach(matchId => {
+    const match = matches[matchId];
+    match.games = buildQuadGames(match.team1Id, match.team2Id);
+    match.gameWins[match.team1Id] = 0;
+    match.gameWins[match.team2Id] = 0;
+  });
+
+  return matches;
+}
+
+function renderQuadBracket() {
+  const container = document.getElementById('quad-bracket-content');
+  const isAdmin = !document.body.classList.contains('display-mode');
+
+  // Self-heal: earlier versions shipped a bug where SF2 had the same team in both slots.
+  // If we detect that (or any duplicate/missing team), recompute the matches from scratch.
+  const sf2 = state.matches && state.matches.sf2;
+  if (sf2 && sf2.team1Id && sf2.team1Id === sf2.team2Id && state.opponents && state.opponents.team1vs) {
+    state.matches = initQuadMatches();
+    saveState();
+  }
+
+  // Migration: earlier pairings generated invalid rounds (a player appeared in both games
+  // of a round). Rebuild any match whose round layout doesn't match a valid split AND whose
+  // games haven't been scored yet (to avoid wiping results).
+  ['sf1', 'sf2', 'finals', 'bronze'].forEach(id => {
+    const m = state.matches && state.matches[id];
+    if (!m || !m.games || m.games.length === 0) return;
+    if (!quadRoundsAreValid(m.games)) {
+      const hasScores = m.games.some(g => g.score1 != null || g.score2 != null || g.winner);
+      if (!hasScores && m.team1Id && m.team2Id) {
+        m.games = buildQuadGames(m.team1Id, m.team2Id);
+        saveState();
+      }
+    }
+  });
+
+  propagateQuadMatches();
+
+  // Auto-advance stage when both semis are complete (unless the user has explicitly
+  // navigated back — track that via a user override flag on state).
+  const sf1m = state.matches.sf1, sf2m = state.matches.sf2;
+  const semisDone = sf1m && sf2m && sf1m.winner && sf2m.winner;
+  if (semisDone && !state.quadStage) state.quadStage = 'finals';
+  if (!state.quadStage) state.quadStage = 'semis';
+  if (!semisDone && state.quadStage === 'finals') state.quadStage = 'semis';
+
+  const stage = state.quadStage;
+
+  container.innerHTML = `
+    <div class="quad-stage-toolbar">
+      <button class="quad-stage-btn ${stage === 'semis' ? 'active' : ''}" data-stage="semis">Semifinals</button>
+      <button class="quad-stage-btn ${stage === 'finals' ? 'active' : ''} ${!semisDone ? 'disabled' : ''}" data-stage="finals" ${!semisDone ? 'disabled' : ''}>Finals & Bronze</button>
+    </div>
+    <div class="quad-bracket-container" id="quad-bracket-grid"></div>
+  `;
+
+  container.querySelectorAll('.quad-stage-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      state.quadStage = btn.dataset.stage;
+      saveState();
+      renderQuadBracket();
+    });
+  });
+
+  const grid = document.getElementById('quad-bracket-grid');
+  const matchIds = stage === 'finals' ? ['finals', 'bronze'] : ['sf1', 'sf2'];
+  matchIds.forEach(matchId => {
+    const match = state.matches[matchId];
+    if (!match) return;
+    grid.appendChild(renderQuadMatch(match, isAdmin));
+  });
+
+  // Match the Dill Dinkers bracket display: logo in the upper-right, league
+  // title and date centered when viewing as a display screen.
+  if (document.body.classList.contains('bracket-display')) {
+    const leagueName = (state.leagueName || 'Dill Dinkers').trim() || 'Dill Dinkers';
+    const today = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    const logoBlock = document.createElement('div');
+    logoBlock.className = 'gf-logo-block';
+    logoBlock.innerHTML = `<img class="logo-big" src="logo.jpg" alt="Dill Dinkers Pickleball">`;
+    container.appendChild(logoBlock);
+
+    const titleBlock = document.createElement('div');
+    titleBlock.className = 'gf-title-block';
+    titleBlock.innerHTML = `
+      <div class="brand-title">${escapeHtml(leagueName)} <span class="champ">Championship</span></div>
+      <div class="brand-date">${today}</div>
+    `;
+    container.appendChild(titleBlock);
+  }
+
+  const finals = state.matches.finals;
+  if (stage === 'finals' && finals && finals.winner) {
+    const champTeam = state.teams.find(t => t.id === finals.winner);
+    const banner = document.createElement('div');
+    banner.className = 'quad-champion-banner';
+    banner.innerHTML = `
+      <div>🏆 Champion 🏆</div>
+      <div class="champion-name">${escapeHtml(champTeam.name)}</div>
+    `;
+    grid.appendChild(banner);
+  }
+}
+
+function renderQuadMatch(match, isAdmin) {
+  const team1 = state.teams.find(t => t.id === match.team1Id);
+  const team2 = state.teams.find(t => t.id === match.team2Id);
+
+  const matchDiv = document.createElement('div');
+  matchDiv.className = 'quad-match' + (match.id === 'finals' ? ' finals' : '') + (match.id === 'bronze' ? ' bronze' : '');
+  matchDiv.setAttribute('data-match-id', match.id);
+
+  if (!team1 || !team2) {
+    matchDiv.innerHTML = `
+      <div class="quad-match-header">
+        <h3>${escapeHtml(match.round)}</h3>
+      </div>
+      <div class="quad-match-teams">
+        <div class="quad-match-team" style="color: var(--muted); font-style: italic;">Awaiting ${match.id === 'finals' ? 'semifinal winners' : 'semifinal losers'}</div>
+      </div>
+    `;
+    return matchDiv;
+  }
+
+  const wins1 = match.gameWins[match.team1Id] || 0;
+  const wins2 = match.gameWins[match.team2Id] || 0;
+
+  let html = `
+    <div class="quad-match-header">
+      <h3>${escapeHtml(match.round)}</h3>
+      <div class="quad-match-score">${wins1} - ${wins2}</div>
+    </div>
+    <div class="quad-match-teams">
+      <div class="quad-match-team ${match.winner === team1.id ? 'winner' : (match.winner ? 'loser' : '')}">
+        <span class="seed-tag">Seed ${team1.seed}</span>${escapeHtml(team1.name)}
+      </div>
+      <div class="quad-match-vs">vs</div>
+      <div class="quad-match-team ${match.winner === team2.id ? 'winner' : (match.winner ? 'loser' : '')}" style="text-align:right;">
+        ${escapeHtml(team2.name)}<span class="seed-tag" style="margin-left:6px; margin-right:0;">Seed ${team2.seed}</span>
+      </div>
+    </div>
+  `;
+
+  const rounds = {};
+  match.games.forEach(g => {
+    if (!rounds[g.round]) rounds[g.round] = [];
+    rounds[g.round].push(g);
+  });
+
+  Object.keys(rounds).sort((a, b) => a - b).forEach(roundNum => {
+    const isDreambreaker = parseInt(roundNum) === 4;
+    const roundDraggable = isAdmin && !isDreambreaker;
+    html += `<div class="quad-round" data-round="${roundNum}">
+      <div class="quad-round-label ${roundDraggable ? 'draggable' : ''}" ${roundDraggable ? `draggable="true" data-drag-type="round" data-round="${roundNum}" data-match-id="${match.id}"` : ''}>
+        ${roundDraggable ? '<span class="drag-grip">⋮⋮</span>' : ''}${isDreambreaker ? 'Dreambreaker' : 'Round ' + roundNum}
+      </div>`;
+    rounds[roundNum].forEach(game => {
+      const wonClass = game.winner === team1.id ? 'won-by-1' : (game.winner === team2.id ? 'won-by-2' : '');
+      let p1Names, p2Names;
+      if (isDreambreaker) {
+        // Dreambreaker: show all four players on each team
+        p1Names = team1.players.map(p => p.name).join(' / ');
+        p2Names = team2.players.map(p => p.name).join(' / ');
+      } else {
+        p1Names = game.pair1.players.map(i => team1.players[i].name).join(' & ');
+        p2Names = game.pair2.players.map(i => team2.players[i].name).join(' & ');
+      }
+      const pair2Draggable = isAdmin && !isDreambreaker;
+      html += `
+        <div class="quad-game ${wonClass}" data-game-num="${game.gameNum}">
+          <div class="pair-players">${escapeHtml(p1Names)}</div>
+          ${isAdmin ? `<input type="number" min="0" class="game-score" data-match="${match.id}" data-game="${game.gameNum}" data-slot="1" value="${game.score1 ?? ''}" placeholder="-">` : `<div style="font-weight:800; min-width:40px; text-align:center;">${game.score1 ?? '-'}</div>`}
+          <div class="vs-separator">-</div>
+          ${isAdmin ? `<input type="number" min="0" class="game-score" data-match="${match.id}" data-game="${game.gameNum}" data-slot="2" value="${game.score2 ?? ''}" placeholder="-">` : `<div style="font-weight:800; min-width:40px; text-align:center;">${game.score2 ?? '-'}</div>`}
+          <div class="pair-players right ${pair2Draggable ? 'draggable' : ''}" ${pair2Draggable ? `draggable="true" data-drag-type="pair2" data-match-id="${match.id}" data-game-num="${game.gameNum}" data-round="${roundNum}"` : ''}>
+            ${escapeHtml(p2Names)}${pair2Draggable ? ' <span class="drag-grip">⋮⋮</span>' : ''}
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  });
+
+  if (isAdmin && wins1 === 3 && wins2 === 3 && !match.dreambreaker) {
+    html += `
+      <div class="quad-dreambreaker">
+        <div>Match tied 3-3!</div>
+        <button class="quad-dreambreaker-btn" data-match="${match.id}">Add Dreambreaker Game 7</button>
+      </div>
+    `;
+  }
+
+  matchDiv.innerHTML = html;
+
+  if (isAdmin) {
+    matchDiv.querySelectorAll('.game-score').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const matchId = e.target.dataset.match;
+        const gameNum = parseInt(e.target.dataset.game, 10);
+        const slot = e.target.dataset.slot;
+        const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
+        setQuadGameScore(matchId, gameNum, slot, val);
+      });
+    });
+
+    const dbBtn = matchDiv.querySelector('.quad-dreambreaker-btn');
+    if (dbBtn) {
+      dbBtn.addEventListener('click', () => {
+        addQuadDreambreaker(match.id);
+      });
+    }
+
+    attachQuadDragAndDrop(matchDiv, match);
+  }
+
+  return matchDiv;
+}
+
+function attachQuadDragAndDrop(matchDiv, match) {
+  const draggables = matchDiv.querySelectorAll('[draggable="true"]');
+  draggables.forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        type: el.dataset.dragType,
+        matchId: el.dataset.matchId,
+        round: el.dataset.round,
+        gameNum: el.dataset.gameNum
+      }));
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      let payload;
+      try { payload = JSON.parse(e.dataTransfer.getData('text/plain')); } catch (_) { return; }
+      if (!payload || payload.matchId !== el.dataset.matchId) return;
+      if (payload.type !== el.dataset.dragType) return;
+
+      if (payload.type === 'round') {
+        swapQuadRounds(match.id, parseInt(payload.round, 10), parseInt(el.dataset.round, 10));
+      } else if (payload.type === 'pair2') {
+        // Only allow swap within the same round
+        if (payload.round !== el.dataset.round) return;
+        swapQuadPair2(match.id, parseInt(payload.gameNum, 10), parseInt(el.dataset.gameNum, 10));
+      }
+    });
+  });
+}
+
+function swapQuadRounds(matchId, roundA, roundB) {
+  if (roundA === roundB) return;
+  const match = state.matches[matchId];
+  if (!match) return;
+  // Swap the round number on every game belonging to each round. Then reorder
+  // the games array so round 1 comes first, etc., and renumber gameNum sequentially.
+  match.games.forEach(g => {
+    if (g.round === roundA) g.round = -roundB; // temp sentinel
+    else if (g.round === roundB) g.round = -roundA;
+  });
+  match.games.forEach(g => { if (g.round < 0) g.round = -g.round; });
+  match.games.sort((a, b) => a.round - b.round);
+  match.games.forEach((g, i) => { g.gameNum = i + 1; });
+  saveState();
+  renderQuadBracket();
+}
+
+function swapQuadPair2(matchId, gameNumA, gameNumB) {
+  if (gameNumA === gameNumB) return;
+  const match = state.matches[matchId];
+  if (!match) return;
+  const gA = match.games.find(g => g.gameNum === gameNumA);
+  const gB = match.games.find(g => g.gameNum === gameNumB);
+  if (!gA || !gB) return;
+  const tmp = gA.pair2;
+  gA.pair2 = gB.pair2;
+  gB.pair2 = tmp;
+  // A swap of opponents invalidates prior game winners — retally.
+  [gA, gB].forEach(g => {
+    if (g.score1 != null && g.score2 != null && g.score1 !== g.score2) {
+      g.winner = g.score1 > g.score2 ? match.team1Id : match.team2Id;
+    } else {
+      g.winner = null;
+    }
+  });
+  match.gameWins = {};
+  match.gameWins[match.team1Id] = 0;
+  match.gameWins[match.team2Id] = 0;
+  match.games.forEach(g => { if (g.winner) match.gameWins[g.winner]++; });
+  const w1 = match.gameWins[match.team1Id], w2 = match.gameWins[match.team2Id];
+  match.winner = w1 >= 4 ? match.team1Id : (w2 >= 4 ? match.team2Id : null);
+  saveState();
+  renderQuadBracket();
+}
+
+let quadScoreTimeout;
+function setQuadGameScore(matchId, gameNum, slot, value) {
+  const match = state.matches[matchId];
+  if (!match) return;
+  const game = match.games.find(g => g.gameNum === gameNum);
+  if (!game) return;
+
+  const prevWinner = match.winner;
+  const prevGameWins = { ...match.gameWins };
+
+  if (slot === '1') game.score1 = value;
+  else game.score2 = value;
+
+  if (game.score1 !== null && game.score2 !== null && game.score1 !== game.score2) {
+    game.winner = game.score1 > game.score2 ? match.team1Id : match.team2Id;
+  } else {
+    game.winner = null;
+  }
+
+  match.gameWins = {};
+  match.gameWins[match.team1Id] = 0;
+  match.gameWins[match.team2Id] = 0;
+  match.games.forEach(g => {
+    if (g.winner) match.gameWins[g.winner]++;
+  });
+
+  const wins1 = match.gameWins[match.team1Id];
+  const wins2 = match.gameWins[match.team2Id];
+  if (wins1 >= 4) match.winner = match.team1Id;
+  else if (wins2 >= 4) match.winner = match.team2Id;
+  else match.winner = null;
+
+  // Inline DOM updates (don't re-render — would wipe focus on the input you're typing in)
+  const matchEl = document.querySelector('.quad-match[data-match-id="' + matchId + '"]');
+  if (matchEl) {
+    const scoreEl = matchEl.querySelector('.quad-match-score');
+    if (scoreEl) scoreEl.textContent = wins1 + ' - ' + wins2;
+    // Update game row highlight
+    const gameRow = matchEl.querySelector('.quad-game[data-game-num="' + gameNum + '"]');
+    if (gameRow) {
+      gameRow.classList.remove('won-by-1', 'won-by-2');
+      if (game.winner === match.team1Id) gameRow.classList.add('won-by-1');
+      else if (game.winner === match.team2Id) gameRow.classList.add('won-by-2');
+    }
+  }
+
+  clearTimeout(quadScoreTimeout);
+  quadScoreTimeout = setTimeout(() => {
+    saveState();
+    // Only do a full re-render if the match state materially changed
+    // (winner decided/undecided, or 3-3 dreambreaker condition reached)
+    const winnerChanged = prevWinner !== match.winner;
+    const hitDreambreaker = (wins1 === 3 && wins2 === 3 && !match.dreambreaker);
+    const wasDreambreaker = (prevGameWins[match.team1Id] === 3 && prevGameWins[match.team2Id] === 3);
+    if (winnerChanged || hitDreambreaker !== wasDreambreaker) {
+      // Auto-advance to Finals stage the moment both semis are decided
+      const sf1w = state.matches.sf1 && state.matches.sf1.winner;
+      const sf2w = state.matches.sf2 && state.matches.sf2.winner;
+      if (sf1w && sf2w && state.quadStage === 'semis') {
+        state.quadStage = 'finals';
+        saveState();
+      }
+      renderQuadBracket();
+    }
+  }, 400);
+}
+
+function addQuadDreambreaker(matchId) {
+  const match = state.matches[matchId];
+  if (!match) return;
+  const team1 = state.teams.find(t => t.id === match.team1Id);
+  const team2 = state.teams.find(t => t.id === match.team2Id);
+
+  match.games.push({
+    gameNum: 7,
+    round: 4,
+    pair1: { teamId: team1.id, players: [0, 1] },
+    pair2: { teamId: team2.id, players: [0, 1] },
+    score1: null,
+    score2: null,
+    winner: null
+  });
+  match.dreambreaker = true;
+  saveState();
+  renderQuadBracket();
+}
+
+function propagateQuadMatches() {
+  const sf1 = state.matches.sf1;
+  const sf2 = state.matches.sf2;
+  const finals = state.matches.finals;
+  const bronze = state.matches.bronze;
+
+  if (!sf1 || !sf2 || !finals || !bronze) return;
+
+  const ensureGames = (match) => {
+    if (!match.team1Id || !match.team2Id) return;
+    if (match.games && match.games.length > 0) return;
+    match.games = buildQuadGames(match.team1Id, match.team2Id);
+    match.gameWins = {};
+    match.gameWins[match.team1Id] = 0;
+    match.gameWins[match.team2Id] = 0;
+  };
+
+  if (sf1.winner && sf2.winner) {
+    const needsReset = finals.team1Id !== sf1.winner || finals.team2Id !== sf2.winner;
+    if (needsReset) {
+      finals.team1Id = sf1.winner;
+      finals.team2Id = sf2.winner;
+      finals.games = [];
+      finals.gameWins = {};
+      finals.winner = null;
+    }
+    ensureGames(finals);
+  } else {
+    finals.team1Id = null;
+    finals.team2Id = null;
+    finals.games = [];
+    finals.winner = null;
+  }
+
+  const sf1Loser = sf1.winner ? (sf1.team1Id === sf1.winner ? sf1.team2Id : sf1.team1Id) : null;
+  const sf2Loser = sf2.winner ? (sf2.team1Id === sf2.winner ? sf2.team2Id : sf2.team1Id) : null;
+
+  if (sf1Loser && sf2Loser) {
+    const needsReset = bronze.team1Id !== sf1Loser || bronze.team2Id !== sf2Loser;
+    if (needsReset) {
+      bronze.team1Id = sf1Loser;
+      bronze.team2Id = sf2Loser;
+      bronze.games = [];
+      bronze.gameWins = {};
+      bronze.winner = null;
+    }
+    ensureGames(bronze);
+  } else {
+    bronze.team1Id = null;
+    bronze.team2Id = null;
+    bronze.games = [];
+    bronze.winner = null;
+  }
+}
 </script>
 </body>
 </html>
