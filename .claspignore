@@ -2,6 +2,7 @@
 public/**
 dill-dinkers/**
 scorecard/**
+little-league-app/**
 
 # Exclude local tooling and config
 .claude/**

@@ -8,6 +8,36 @@ function refreshAllSummaries() {
   refreshAllSummaries_();
 }
 
+function deriveMatchWinner_(match, allGames) {
+  const REG = MATCH_SCORING.REGULATION_ROUNDS;
+  const WIN_REG = MATCH_SCORING.GAMES_TO_WIN_REGULATION;
+  const WIN_OVERALL = MATCH_SCORING.GAMES_TO_WIN_OVERALL;
+
+  const homeId = String(match.home_team_id || '').trim();
+  const awayId = String(match.away_team_id || '').trim();
+  if (!homeId || !awayId) return '';
+
+  let homeReg = 0, awayReg = 0, homeSdb = 0, awaySdb = 0;
+  allGames.forEach(g => {
+    if (g.match_id !== match.match_id) return;
+    if (String(g.status).toLowerCase() !== GAME_STATUS.COMPLETE) return;
+    const winnerId = String(g.winner_team_id || '').trim();
+    const isReg = Number(g.round_number) <= REG;
+    if (winnerId === homeId)      { isReg ? homeReg++ : homeSdb++; }
+    else if (winnerId === awayId) { isReg ? awayReg++ : awaySdb++; }
+  });
+
+  if (homeReg >= WIN_REG && homeReg > awayReg) return homeId;
+  if (awayReg >= WIN_REG && awayReg > homeReg) return awayId;
+  if (homeReg === 16 && awayReg === 16) {
+    const homeTotal = homeReg + homeSdb;
+    const awayTotal = awayReg + awaySdb;
+    if (homeTotal >= WIN_OVERALL && homeTotal > awayTotal) return homeId;
+    if (awayTotal >= WIN_OVERALL && awayTotal > homeTotal) return awayId;
+  }
+  return '';
+}
+
 function refreshStandingsSummary_() {
   const matches = getObjects_(SHEETS.MATCHES);
   const rounds = getObjects_(SHEETS.MATCH_ROUNDS);
@@ -48,15 +78,14 @@ function refreshStandingsSummary_() {
     const homeKey = `${seasonId}|${divisionId}|${match.home_team_id}`;
     const awayKey = `${seasonId}|${divisionId}|${match.away_team_id}`;
 
-    if (String(match.status).toLowerCase() === MATCH_STATUS.COMPLETED ||
-        String(match.status).toLowerCase() === MATCH_STATUS.FINALIZED) {
+    const derivedWinner = deriveMatchWinner_(match, games);
+    if (derivedWinner) {
       bucket[homeKey].matches_played++;
       bucket[awayKey].matches_played++;
-
-      if (match.winning_team_id === match.home_team_id) {
+      if (derivedWinner === match.home_team_id) {
         bucket[homeKey].match_wins++;
         bucket[awayKey].match_losses++;
-      } else if (match.winning_team_id === match.away_team_id) {
+      } else if (derivedWinner === match.away_team_id) {
         bucket[awayKey].match_wins++;
         bucket[homeKey].match_losses++;
       }
