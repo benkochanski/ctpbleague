@@ -232,7 +232,8 @@ function doGet(e) {
   }
 
   if (page === 'players') {
-    return HtmlService.createHtmlOutputFromFile('PlayersDirectory')
+    return HtmlService.createTemplateFromFile('PlayersDirectory')
+      .evaluate()
       .setTitle('Connecticut Pickleball League Players')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
