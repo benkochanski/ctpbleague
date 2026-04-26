@@ -200,7 +200,7 @@ function resolveCaptainRouteByEmailV1(email) {
 
 function doGet(e) {
   const params = e && e.parameter ? e.parameter : {};
-  const page = String(params.page || 'seasonstats').trim().toLowerCase();
+  const page = String(params.page || 'players').trim().toLowerCase();
 
   if (page === 'player') {
     const t = HtmlService.createTemplateFromFile('PlayerPage');
