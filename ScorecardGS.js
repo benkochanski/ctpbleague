@@ -258,6 +258,8 @@ function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason
   const roundSummary = recalculateRoundFromGamesV2_(roundsSheet, gamesSheet, roundId, matchId);
   const matchSummary = recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId);
 
+  try { refreshAllSummaries_(); } catch (e) { /* don't fail score save if rollup throws */ }
+
   return {
     success: true,
     game_id: gameId,

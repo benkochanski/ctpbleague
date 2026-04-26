@@ -61,7 +61,7 @@ const ROUND_STATUS = {
   INACTIVE: 'inactive',
   NOT_STARTED: 'not_started',
   IN_PROGRESS: 'in_progress',
-  COMPLETE: 'complete'
+  COMPLETE: 'completed'
 };
 
 const GAME_STATUS = {
@@ -69,6 +69,6 @@ const GAME_STATUS = {
   LINEUP_PARTIAL: 'lineup_partial',
   READY: 'ready',
   IN_PROGRESS: 'in_progress',
-  COMPLETE: 'complete',
+  COMPLETE: 'completed',
   VOID: 'void'
 };

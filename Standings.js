@@ -4,6 +4,10 @@ function refreshAllSummaries_() {
   refreshPairingStatsSummary_();
 }
 
+function refreshAllSummaries() {
+  refreshAllSummaries_();
+}
+
 function refreshStandingsSummary_() {
   const matches = getObjects_(SHEETS.MATCHES);
   const rounds = getObjects_(SHEETS.MATCH_ROUNDS);
@@ -14,6 +18,10 @@ function refreshStandingsSummary_() {
   matches.forEach(match => {
     const seasonId = match.season_id;
     const divisionId = match.division_id;
+
+    const homeId = String(match.home_team_id || '').trim();
+    const awayId = String(match.away_team_id || '').trim();
+    if (!homeId || !awayId || homeId === 'TBD' || awayId === 'TBD') return;
 
     [match.home_team_id, match.away_team_id].forEach(teamId => {
       const key = `${seasonId}|${divisionId}|${teamId}`;
