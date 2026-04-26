@@ -8,6 +8,12 @@ function refreshAllSummaries() {
   refreshAllSummaries_();
 }
 
+function gameHasResult_(g) {
+  if (g.home_score === '' || g.home_score == null) return false;
+  if (g.away_score === '' || g.away_score == null) return false;
+  return String(g.winner_team_id || '').trim() !== '';
+}
+
 function deriveMatchWinner_(match, allGames) {
   const REG = MATCH_SCORING.REGULATION_ROUNDS;
   const WIN_REG = MATCH_SCORING.GAMES_TO_WIN_REGULATION;
@@ -20,7 +26,7 @@ function deriveMatchWinner_(match, allGames) {
   let homeReg = 0, awayReg = 0, homeSdb = 0, awaySdb = 0;
   allGames.forEach(g => {
     if (g.match_id !== match.match_id) return;
-    if (String(g.status).toLowerCase() !== GAME_STATUS.COMPLETE) return;
+    if (!gameHasResult_(g)) return;
     const winnerId = String(g.winner_team_id || '').trim();
     const isReg = Number(g.round_number) <= REG;
     if (winnerId === homeId)      { isReg ? homeReg++ : homeSdb++; }
@@ -92,7 +98,7 @@ function refreshStandingsSummary_() {
     }
 
     rounds
-      .filter(r => r.match_id === match.match_id && String(r.status).toLowerCase() === ROUND_STATUS.COMPLETE)
+      .filter(r => r.match_id === match.match_id && String(r.winning_team_id || '').trim() !== '')
       .forEach(r => {
         if (r.winning_team_id === match.home_team_id) {
           bucket[homeKey].rounds_won++;
@@ -104,7 +110,7 @@ function refreshStandingsSummary_() {
       });
 
     games
-      .filter(g => g.match_id === match.match_id && String(g.status).toLowerCase() === GAME_STATUS.COMPLETE)
+      .filter(g => g.match_id === match.match_id && gameHasResult_(g))
       .forEach(g => {
         const hs = Number(g.home_score || 0);
         const as = Number(g.away_score || 0);
@@ -155,7 +161,7 @@ function refreshPlayerStatsSummary_() {
   const bucket = {};
 
   games
-    .filter(g => String(g.status).toLowerCase() === GAME_STATUS.COMPLETE)
+    .filter(g => gameHasResult_(g))
     .forEach(g => {
       const match = matches.find(m => m.match_id === g.match_id);
       if (!match) return;
@@ -229,7 +235,7 @@ function refreshPairingStatsSummary_() {
   const bucket = {};
 
   games
-    .filter(g => String(g.status).toLowerCase() === GAME_STATUS.COMPLETE)
+    .filter(g => gameHasResult_(g))
     .forEach(g => {
       const match = matches.find(m => m.match_id === g.match_id);
       if (!match) return;
