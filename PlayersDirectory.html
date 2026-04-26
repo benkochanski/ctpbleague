@@ -1731,27 +1731,7 @@
       toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-function boot() {
-  allPlayers = [
-    {
-      id: 'PLY001',
-      playerId: 'PLY001',
-      name: 'Test Player',
-      club: 'Camp',
-      gender: 'F',
-      registeredDateDisplay: '04/09/26',
-      registeredDateSort: '2026-04-09',
-      registeredDupr: '3.500',
-      registeredDuprSort: 3.5,
-      eligibility: '4',
-      duprId: 'TEST123'
-    }
-  ];
-
-  updateStickyOffsets();
-  renderAll();
-  showToast('Player directory loaded');
-}    window.addEventListener('resize', updateStickyOffsets);
+    window.addEventListener('resize', updateStickyOffsets);
     window.addEventListener('orientationchange', updateStickyOffsets);
   </script>
 </body>
