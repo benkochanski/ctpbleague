@@ -1714,7 +1714,8 @@
   const s = String(value || '').trim();
   if (!s) return '';
 
-  if (/^https?:\/\//i.test(s)) return s;
+  const lower = s.toLowerCase();
+  if (lower.startsWith('http://') || lower.startsWith('https://')) return s;
 
   if (typeof normalizeLogoUrl_ === 'function') {
     return normalizeLogoUrl_(s);
