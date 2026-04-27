@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: TOP-HALF script start');
+    console.log('PD: Q1 start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1427,116 +1427,7 @@
     }
 
     function clearCombinedFilters() {
-      ['eligibility-filter-combined','team-filter-combined','gender-filter-combined'].forEach(clearFiltersNoRender);
-      renderAll();
-    }
-
-    function clearFiltersNoRender(containerId) {
-      const root = document.getElementById(containerId);
-      if (!root) return;
-      root.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
-    }
-
-    function getSearchTerm() {
-      return document.getElementById('search-input').value.trim().toLowerCase();
-    }
-
-    function renderSearchResults(rows) {
-      const wrap = document.getElementById('search-results-wrap');
-      const search = getSearchTerm();
-
-      if (!search || !rows.length) {
-        wrap.innerHTML = '';
-        return;
-      }
-
-      const p = rows[0];
-      wrap.innerHTML = `
-        <div class="search-profile">
-          <div class="search-profile-main">
-            <div class="search-profile-text">${escapeHtml(p.name || '')}</div>
-            <div class="search-profile-meta">
-              <span class="search-profile-muted">${escapeHtml(p.club || '')}</span>
-              <span class="search-profile-muted">${escapeHtml(displayGender(p.gender))}</span>
-              <span class="search-profile-muted">Reg ${escapeHtml(p.registeredDateDisplay || '')}</span>
-              <span class="search-profile-muted">${escapeHtml(p.duprId || '')}</span>
-              <span class="dupr-badge search-dupr">${escapeHtml(p.registeredDupr || '')}</span>
-              ${renderEligibilityPillInline(p.eligibility)}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderAll() {
-      syncCheckPillStates();
-
-      const searchFiltered = getSearchFilteredPlayers();
-      renderSearchResults(searchFiltered);
-
-      const womenCount = allPlayers.filter(p => p.gender === 'F').length;
-      const menCount = allPlayers.filter(p => p.gender === 'M').length;
-
-      document.getElementById('women-pill').textContent = `${womenCount} Women`;
-      document.getElementById('men-pill').textContent = `${menCount} Men`;
-
-      document.getElementById('all-players-btn').classList.toggle('primary', showAllPlayers);
-
-      document.getElementById('grouped-panel').classList.toggle('hidden', showAllPlayers);
-      document.getElementById('combined-panel').classList.toggle('active', showAllPlayers);
-
-      if (showAllPlayers) {
-        const combined = getCombinedFilteredPlayers([...allPlayers])
-          .sort((a, b) => comparePlayers(a, b, sortState.combined.field, sortState.combined.direction));
-
-        renderCombinedTable(combined);
-        document.getElementById('count-combined').textContent = combined.length;
-      } else {
-        const campWomen = getGroupedFilteredPlayers([...allPlayers], 'Camp', 'F', 'eligibility-filter-camp-women')
-          .sort((a, b) => comparePlayers(a, b, sortState.campWomen.field, sortState.campWomen.direction));
-
-        const dillWomen = getGroupedFilteredPlayers([...allPlayers], 'Dill', 'F', 'eligibility-filter-dill-women')
-          .sort((a, b) => comparePlayers(a, b, sortState.dillWomen.field, sortState.dillWomen.direction));
-
-        const campMen = getGroupedFilteredPlayers([...allPlayers], 'Camp', 'M', 'eligibility-filter-camp-men')
-          .sort((a, b) => comparePlayers(a, b, sortState.campMen.field, sortState.campMen.direction));
-
-        const dillMen = getGroupedFilteredPlayers([...allPlayers], 'Dill', 'M', 'eligibility-filter-dill-men')
-          .sort((a, b) => comparePlayers(a, b, sortState.dillMen.field, sortState.dillMen.direction));
-
-        renderGroupedTable('table-camp-women', campWomen, 'campWomen');
-        renderGroupedTable('table-dill-women', dillWomen, 'dillWomen');
-        renderGroupedTable('table-camp-men', campMen, 'campMen');
-        renderGroupedTable('table-dill-men', dillMen, 'dillMen');
-
-        document.getElementById('count-inline-camp-women').textContent = campWomen.length;
-        document.getElementById('count-inline-dill-women').textContent = dillWomen.length;
-        document.getElementById('count-inline-camp-men').textContent = campMen.length;
-        document.getElementById('count-inline-dill-men').textContent = dillMen.length;
-      }
-    }
-
-    function getSearchFilteredPlayers() {
-      const search = getSearchTerm();
-      let rows = [...allPlayers];
-
-      if (search) {
-        rows = rows.filter(p => [p.name, p.duprId].join(' | ').toLowerCase().includes(search));
-      } else {
-        rows = [];
-      }
-
-      return rows;
-    }
-
-    function getGroupedFilteredPlayers(rows, team, gender, eligibilityFilterId) {
-      const selectedEligibility = getCheckedValues(eligibilityFilterId);
-      let filtered = rows.filter(p => p.club === team && p.gender === gender);
-
-      if (selectedEligibility.length) {
-        filtered = filtered.filter(p => selectedEligibility.includes(String(p.eligibility || '')));
-      }
-    console.log('PD: TOP-HALF script end');
+    console.log('PD: Q1 end');
   </script>
 </body>
 </html>
