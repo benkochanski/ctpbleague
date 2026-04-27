@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: Q1b start');
+    console.log('PD: Q1c start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1339,7 +1339,20 @@
       const shellHeight = Math.ceil(topShell.getBoundingClientRect().height);
       searchPanel.style.top = `calc(env(safe-area-inset-top, 0px) + ${shellHeight}px)`;
     }
-    console.log('PD: Q1b end');
+
+    google.script.run
+  .withSuccessHandler((data) => {
+    allPlayers = Array.isArray(data.players) ? data.players : [];
+    applyBranding(data.branding || {});
+    updateStickyOffsets();
+    renderAll();
+    showToast('Player directory loaded');
+  })
+  .withFailureHandler((err) => {
+    showToast('Load failed: ' + getErrorMessage(err));
+  })
+  .getPlayersDirectoryData();
+    console.log('PD: Q1c end');
   </script>
 </body>
 </html>
