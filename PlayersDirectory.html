@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: H1 start');
+    console.log('PD: H2 start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1559,7 +1559,112 @@
 
       return filtered;
     }
-    console.log('PD: H1 end');
+
+    function comparePlayers(a, b, sortField, direction) {
+      let av = '';
+      let bv = '';
+
+      if (sortField === 'name') {
+        av = String(a.name || '').toLowerCase();
+        bv = String(b.name || '').toLowerCase();
+      } else if (sortField === 'club') {
+        av = String(a.club || '').toLowerCase();
+        bv = String(b.club || '').toLowerCase();
+      } else if (sortField === 'gender') {
+        av = String(a.gender || '').toLowerCase();
+        bv = String(b.gender || '').toLowerCase();
+      } else if (sortField === 'registeredDate') {
+        av = String(a.registeredDateSort || '');
+        bv = String(b.registeredDateSort || '');
+      } else if (sortField === 'duprId') {
+        av = String(a.duprId || '').toLowerCase();
+        bv = String(b.duprId || '').toLowerCase();
+      } else if (sortField === 'registeredDupr') {
+        av = Number(a.registeredDuprSort ?? -1);
+        bv = Number(b.registeredDuprSort ?? -1);
+      } else if (sortField === 'eligibility') {
+        av = Number(a.eligibility || 99);
+        bv = Number(b.eligibility || 99);
+      }
+
+      let result = 0;
+      if (typeof av === 'number' && typeof bv === 'number') {
+        result = av - bv;
+      } else {
+        result = String(av).localeCompare(String(bv));
+      }
+
+      return direction === 'desc' ? -result : result;
+    }
+
+    function renderGroupedTable(containerId, rows, tableKey) {
+      if (!rows.length) {
+        document.getElementById(containerId).innerHTML = `<div class="empty">No players match the current filters.</div>`;
+        return;
+      }
+
+      document.getElementById(containerId).innerHTML = `
+        <table class="grouped-table">
+          <thead>
+            <tr>
+              ${renderHeader(tableKey, 'name', 'Name', 'name-col col-left')}
+              ${renderHeader(tableKey, 'registeredDate', 'Registered', 'date-col col-left')}
+              ${renderHeader(tableKey, 'duprId', 'DUPR ID', 'id-col col-left')}
+              ${renderHeader(tableKey, 'registeredDupr', 'DUPR', 'dupr-col col-center')}
+              ${renderHeader(tableKey, 'eligibility', 'Eligibility', 'eligibility-col col-center')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(p => renderGroupedRow(p)).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderCombinedTable(rows) {
+      if (!rows.length) {
+        document.getElementById('table-combined').innerHTML = `<div class="empty">No players match the current filters.</div>`;
+        return;
+      }
+
+      document.getElementById('table-combined').innerHTML = `
+        <table class="combined-table">
+          <thead>
+            <tr>
+              ${renderHeader('combined', 'name', 'Name', 'name-col col-left')}
+              ${renderHeader('combined', 'club', 'Team', 'team-col col-left')}
+              ${renderHeader('combined', 'gender', 'Gender', 'gender-col col-left')}
+              ${renderHeader('combined', 'registeredDate', 'Registered', 'date-col col-left')}
+              ${renderHeader('combined', 'duprId', 'DUPR ID', 'id-col col-left')}
+              ${renderHeader('combined', 'registeredDupr', 'DUPR', 'dupr-col col-center')}
+              ${renderHeader('combined', 'eligibility', 'Eligibility', 'eligibility-col col-center')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(p => renderCombinedRow(p)).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderHeader(tableKey, field, label, cls) {
+      const state = sortState[tableKey];
+      const arrow = state.field === field ? (state.direction === 'asc' ? '▲' : '▼') : '↕';
+      return `<th class="${cls}" onclick="setSort('${tableKey}','${field}')">${label}<span class="sort-arrow">${arrow}</span></th>`;
+    }
+
+    function renderGroupedRow(p) {
+      return `
+        <tr>
+          <td class="col-left" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.registeredDateDisplay || '')}">${escapeHtml(p.registeredDateDisplay || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.duprId || '')}">${escapeHtml(p.duprId || '')}</td>
+          <td class="col-center"><div class="dupr-cell">${p.registeredDupr ? `<span class="dupr-badge">${escapeHtml(p.registeredDupr)}</span>` : ''}</div></td>
+          <td class="col-center">${renderEligibilityPill(p.eligibility)}</td>
+        </tr>
+      `;
+    }
+    console.log('PD: H2 end');
   </script>
 </body>
 </html>
