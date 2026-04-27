@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: H3 start');
+    console.log('PD: H4 start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1711,7 +1711,20 @@
     function getErrorMessage(err) {
       return err && err.message ? err.message : String(err || 'Unknown error');
     }
-    console.log('PD: H3 end');
+
+    function resolveBrandingUrl_(value) {
+  const s = String(value || '').trim();
+  if (!s) return '';
+
+  if (/^https?:\/\//i.test(s)) return s;
+
+  if (typeof normalizeLogoUrl_ === 'function') {
+    return normalizeLogoUrl_(s);
+  }
+
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(s)}&sz=w1200`;
+}
+    console.log('PD: H4 end');
   </script>
 </body>
 </html>
