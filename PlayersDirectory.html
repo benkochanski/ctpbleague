@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: H4a start');
+    console.log('PD: H4b start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1715,9 +1715,10 @@
     function resolveBrandingUrl_(value) {
   const s = String(value || '').trim();
   if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
   return s;
 }
-    console.log('PD: H4a end');
+    console.log('PD: H4b end');
   </script>
 </body>
 </html>
