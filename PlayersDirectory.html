@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: Q1aaa start');
+    console.log('PD: Q1b start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1330,7 +1330,16 @@
     };
 
 
-    console.log('PD: Q1aaa end');
+
+    function updateStickyOffsets() {
+      const topShell = document.querySelector('.top-shell');
+      const searchPanel = document.querySelector('.page > .panel:first-child');
+      if (!topShell || !searchPanel) return;
+
+      const shellHeight = Math.ceil(topShell.getBoundingClientRect().height);
+      searchPanel.style.top = `calc(env(safe-area-inset-top, 0px) + ${shellHeight}px)`;
+    }
+    console.log('PD: Q1b end');
   </script>
 </body>
 </html>
