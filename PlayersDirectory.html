@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: H2 start');
+    console.log('PD: H3 start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1664,7 +1664,54 @@
         </tr>
       `;
     }
-    console.log('PD: H2 end');
+
+    function renderCombinedRow(p) {
+      return `
+        <tr>
+          <td class="col-left" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.club || '')}">${escapeHtml(p.club || '')}</td>
+          <td class="col-left" title="${escapeHtml(displayGender(p.gender))}">${escapeHtml(displayGender(p.gender))}</td>
+          <td class="col-left" title="${escapeHtml(p.registeredDateDisplay || '')}">${escapeHtml(p.registeredDateDisplay || '')}</td>
+          <td class="col-left" title="${escapeHtml(p.duprId || '')}">${escapeHtml(p.duprId || '')}</td>
+          <td class="col-center"><div class="dupr-cell">${p.registeredDupr ? `<span class="dupr-badge">${escapeHtml(p.registeredDupr)}</span>` : ''}</div></td>
+          <td class="col-center">${renderEligibilityPill(p.eligibility)}</td>
+        </tr>
+      `;
+    }
+
+    function displayGender(value) {
+      if (value === 'F') return 'Women';
+      if (value === 'M') return 'Men';
+      return value || '';
+    }
+
+    function renderEligibilityPillInline(value) {
+      const v = String(value || '').trim();
+      if (!v || !['1','2','3','4','5'].includes(v)) return '—';
+      return `<span class="division-pill div${v}">D${v}</span>`;
+    }
+
+    function renderEligibilityPill(value) {
+      const v = String(value || '').trim();
+      if (!v || !['1','2','3','4','5'].includes(v)) {
+        return `<div class="eligibility-cell"><span class="division-pill divx">—</span></div>`;
+      }
+      return `<div class="eligibility-cell"><span class="division-pill div${v}">D${v}</span></div>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+
+    function getErrorMessage(err) {
+      return err && err.message ? err.message : String(err || 'Unknown error');
+    }
+    console.log('PD: H3 end');
   </script>
 </body>
 </html>
