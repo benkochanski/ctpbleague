@@ -1316,7 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: Q1a start');
+    console.log('PD: Q1aa start');
     alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
@@ -1344,35 +1344,7 @@
   .withSuccessHandler((data) => {
     allPlayers = Array.isArray(data.players) ? data.players : [];
     applyBranding(data.branding || {});
-    updateStickyOffsets();
-    renderAll();
-    showToast('Player directory loaded');
-  })
-  .withFailureHandler((err) => {
-    showToast('Load failed: ' + getErrorMessage(err));
-  })
-  .getPlayersDirectoryData();
-
-    function applyBranding(branding) {
-      const leagueLogo = document.getElementById('league-logo');
-      const leagueFallback = document.getElementById('league-logo-fallback');
-
-      if (branding && branding.leagueLogoUrl) {
-        leagueLogo.src = branding.leagueLogoUrl;
-        leagueLogo.style.display = 'block';
-        leagueFallback.style.display = 'none';
-      } else {
-        leagueLogo.style.display = 'none';
-        leagueFallback.style.display = 'block';
-      }
-
-      applyGroupLogo(branding?.campLogoUrl, ['camp-logo-1','camp-logo-2'], ['camp-logo-fallback-1','camp-logo-fallback-2']);
-      applyGroupLogo(branding?.dillLogoUrl, ['dill-logo-1','dill-logo-2'], ['dill-logo-fallback-1','dill-logo-fallback-2']);
-    }
-
-    function applyGroupLogo(url, imageIds, fallbackIds) {
-      imageIds.forEach((id) => {
-    console.log('PD: Q1a end');
+    console.log('PD: Q1aa end');
   </script>
 </body>
 </html>
