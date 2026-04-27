@@ -1316,6 +1316,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
 
@@ -1714,8 +1715,7 @@
   const s = String(value || '').trim();
   if (!s) return '';
 
-  const lower = s.toLowerCase();
-  if (lower.startsWith('http://') || lower.startsWith('https://')) return s;
+  if (/^https?:\/\//i.test(s)) return s;
 
   if (typeof normalizeLogoUrl_ === 'function') {
     return normalizeLogoUrl_(s);
@@ -1732,7 +1732,27 @@
       toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
     }
 
-    window.addEventListener('resize', updateStickyOffsets);
+function boot() {
+  allPlayers = [
+    {
+      id: 'PLY001',
+      playerId: 'PLY001',
+      name: 'Test Player',
+      club: 'Camp',
+      gender: 'F',
+      registeredDateDisplay: '04/09/26',
+      registeredDateSort: '2026-04-09',
+      registeredDupr: '3.500',
+      registeredDuprSort: 3.5,
+      eligibility: '4',
+      duprId: 'TEST123'
+    }
+  ];
+
+  updateStickyOffsets();
+  renderAll();
+  showToast('Player directory loaded');
+}    window.addEventListener('resize', updateStickyOffsets);
     window.addEventListener('orientationchange', updateStickyOffsets);
   </script>
 </body>
