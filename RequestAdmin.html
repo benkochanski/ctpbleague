@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Manager — CPBL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #081f43;
+      --blue: #123a7c;
+      --green: #0b7e39;
+      --gold: #ffd22e;
+      --bg: #f4f6fb;
+      --border: #d8dde7;
+      --muted: #5b6478;
+      --warn: #c96a00;
+      --danger: #a4262c;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); font-family: 'DM Sans', system-ui, sans-serif; color: #14213d; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 22px 18px 60px; }
+
+    .header {
+      background: linear-gradient(135deg, var(--navy), var(--blue) 60%, var(--green));
+      color: #fff; border-radius: 14px; padding: 22px 26px; margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1.2px; margin: 0; }
+    .header p { margin: 4px 0 0; opacity: .9; font-size: 14px; }
+    .header-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 9px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.3);
+      background: rgba(255,255,255,.08); color: #fff; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn:hover { background: rgba(255,255,255,.18); }
+    .btn-gold { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+    .btn-gold:hover { filter: brightness(1.05); }
+
+    /* Login */
+    .login-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 36px; max-width: 440px; margin: 60px auto; box-shadow: 0 1px 3px rgba(8,31,67,.05); }
+    .login-card h2 { margin: 0 0 8px; font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; }
+    .login-card p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+    .login-card input { width: 100%; padding: 12px; font-family: inherit; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; }
+    .login-card input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(18,58,124,.12); }
+    .login-card .submit { width: 100%; margin-top: 12px; background: var(--gold); color: var(--navy); border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .login-err { color: var(--danger); font-size: 13px; margin-top: 8px; min-height: 18px; }
+
+    /* Filters */
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .pill {
+      background: #fff; border: 1px solid var(--border); padding: 7px 13px; border-radius: 99px;
+      font-size: 13px; font-weight: 600; cursor: pointer; color: #455066;
+    }
+    .pill:hover { border-color: var(--blue); }
+    .pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .pill .count { opacity: .7; font-weight: 500; margin-left: 4px; }
+
+    /* List */
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .req-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+      transition: border-color .15s;
+    }
+    .req-card:hover { border-color: #bcc4d6; }
+    .req-type {
+      width: 38px; height: 38px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      flex-shrink: 0;
+    }
+    .req-type.bug { background: #fdecec; }
+    .req-type.enhancement { background: #fff6db; }
+
+    .req-body { min-width: 0; }
+    .req-title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+    .req-meta { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .req-meta .sep { opacity: .4; }
+    .req-desc { margin: 8px 0 0; font-size: 14px; color: #2c3a55; white-space: pre-wrap; word-wrap: break-word; }
+
+    .req-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+    .status-select {
+      padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .status-select.s-new { background: #fff6db; border-color: #f0d77a; color: #6b4d00; }
+    .status-select.s-in_progress { background: #e3edff; border-color: #a8c1f0; color: #0f3678; }
+    .status-select.s-done { background: #e7f5ec; border-color: #b8e0c5; color: #0b5d2a; }
+    .status-select.s-wontfix { background: #f1f1f1; border-color: #c8c8c8; color: #555; }
+
+    .notes-row { grid-column: 1 / -1; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .notes-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+    .notes-input {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      font-family: inherit; font-size: 14px; resize: vertical; min-height: 50px;
+    }
+    .notes-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(18,58,124,.12); }
+    .notes-actions { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+    .save-btn { background: var(--blue); color: #fff; border: none; padding: 7px 14px; border-radius: 7px; font-weight: 600; font-size: 13px; cursor: pointer; }
+    .save-btn:hover { background: var(--navy); }
+    .save-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .saved-flag { font-size: 12px; color: var(--green); font-weight: 600; }
+
+    .id-pill { font-family: monospace; font-size: 11px; background: #f4f6fb; padding: 2px 6px; border-radius: 5px; color: #455066; }
+    .type-pill { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; letter-spacing: .4px; }
+    .type-pill.bug { background: #fdecec; color: var(--danger); }
+    .type-pill.enhancement { background: #fff6db; color: #8a5a00; }
+
+    .empty, .loading {
+      background: #fff; border: 1px dashed var(--border); border-radius: 12px;
+      padding: 40px; text-align: center; color: var(--muted);
+    }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: #fff;
+      padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 14px rgba(0,0,0,.18); opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s; pointer-events: none; z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.err { background: var(--danger); }
+
+    @media (max-width: 640px) {
+      .req-card { grid-template-columns: auto 1fr; }
+      .req-actions { grid-column: 1 / -1; flex-direction: row; justify-content: flex-end; }
+      .header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login" class="login-card">
+    <h2>Admin sign-in</h2>
+    <p>Enter the access code to view feedback &amp; requests.</p>
+    <input type="password" id="passInput" placeholder="••••••" autocomplete="off">
+    <button class="submit" id="passSubmit">Sign in</button>
+    <div class="login-err" id="passErr"></div>
+  </div>
+
+  <div id="app" class="wrap" style="display:none">
+    <div class="header">
+      <div>
+        <h1>Request Manager</h1>
+        <p>Bug reports &amp; enhancement requests submitted from the league site.</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="refreshBtn">↻ Refresh</button>
+        <button class="btn" id="signOutBtn">Sign out</button>
+      </div>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="new">New</button>
+      <button class="pill" data-filter="in_progress">In progress</button>
+      <button class="pill" data-filter="done">Done</button>
+      <button class="pill" data-filter="wontfix">Won't fix</button>
+      <button class="pill" data-filter="bug">Bugs only</button>
+      <button class="pill" data-filter="enhancement">Enhancements only</button>
+    </div>
+
+    <div id="list" class="list">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      var STORAGE_KEY = 'cpbl_req_admin_pass';
+      var loginEl = document.getElementById('login');
+      var appEl = document.getElementById('app');
+      var passInput = document.getElementById('passInput');
+      var passSubmit = document.getElementById('passSubmit');
+      var passErr = document.getElementById('passErr');
+      var listEl = document.getElementById('list');
+      var filtersEl = document.getElementById('filters');
+      var refreshBtn = document.getElementById('refreshBtn');
+      var signOutBtn = document.getElementById('signOutBtn');
+      var toast = document.getElementById('toast');
+
+      var passcode = '';
+      var allRequests = [];
+      var currentFilter = 'all';
+
+      function showToast(msg, isErr) {
+        toast.textContent = msg;
+        toast.className = 'toast show' + (isErr ? ' err' : '');
+        setTimeout(function () { toast.className = 'toast' + (isErr ? ' err' : ''); }, 2200);
+      }
+
+      function escapeHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function tryLoad(pass) {
+        passSubmit.disabled = true;
+        passSubmit.textContent = 'Checking…';
+        passErr.textContent = '';
+        google.script.run
+          .withSuccessHandler(function (res) {
+            passSubmit.disabled = false;
+            passSubmit.textContent = 'Sign in';
+            passcode = pass;
+            try { sessionStorage.setItem(STORAGE_KEY, pass); } catch (e) {}
+            allRequests = (res && res.requests) || [];
+            loginEl.style.display = 'none';
+            appEl.style.display = 'block';
+            render();
+          })
+          .withFailureHandler(function (err) {
+            passSubmit.disabled = false;
+            passSubmit.textContent = 'Sign in';
+            var msg = (err && err.message) || 'Sign-in failed';
+            if (/unauthorized/i.test(msg)) msg = 'Incorrect access code.';
+            passErr.textContent = msg;
+          })
+          .listRequestsV1(pass);
+      }
+
+      passSubmit.addEventListener('click', function () {
+        var v = passInput.value.trim();
+        if (!v) { passErr.textContent = 'Enter the access code.'; return; }
+        tryLoad(v);
+      });
+      passInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') passSubmit.click();
+      });
+
+      signOutBtn.addEventListener('click', function () {
+        passcode = '';
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        appEl.style.display = 'none';
+        loginEl.style.display = 'block';
+        passInput.value = '';
+        passInput.focus();
+      });
+
+      refreshBtn.addEventListener('click', function () {
+        if (!passcode) return;
+        listEl.innerHTML = '<div class="loading">Loading…</div>';
+        google.script.run
+          .withSuccessHandler(function (res) {
+            allRequests = (res && res.requests) || [];
+            render();
+          })
+          .withFailureHandler(function (err) {
+            showToast((err && err.message) || 'Failed to refresh', true);
+          })
+          .listRequestsV1(passcode);
+      });
+
+      filtersEl.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-filter]');
+        if (!btn) return;
+        currentFilter = btn.dataset.filter;
+        Array.prototype.forEach.call(filtersEl.querySelectorAll('.pill'), function (p) {
+          p.classList.toggle('active', p === btn);
+        });
+        render();
+      });
+
+      function applyFilter(rs) {
+        if (currentFilter === 'all') return rs;
+        if (currentFilter === 'bug' || currentFilter === 'enhancement') {
+          return rs.filter(function (r) { return r.type === currentFilter; });
+        }
+        return rs.filter(function (r) { return (r.status || 'new') === currentFilter; });
+      }
+
+      function statusCounts() {
+        var c = { all: allRequests.length, new: 0, in_progress: 0, done: 0, wontfix: 0, bug: 0, enhancement: 0 };
+        allRequests.forEach(function (r) {
+          var s = r.status || 'new';
+          if (c[s] != null) c[s]++;
+          if (c[r.type] != null) c[r.type]++;
+        });
+        return c;
+      }
+
+      function updateFilterCounts() {
+        var c = statusCounts();
+        Array.prototype.forEach.call(filtersEl.querySelectorAll('.pill'), function (p) {
+          var k = p.dataset.filter;
+          var label = p.dataset.label || (p.textContent.replace(/\s*\(\d+\)$/, '').trim());
+          p.dataset.label = label;
+          var n = c[k] != null ? c[k] : 0;
+          p.innerHTML = escapeHtml(label) + ' <span class="count">(' + n + ')</span>';
+        });
+      }
+
+      function render() {
+        updateFilterCounts();
+        var rs = applyFilter(allRequests);
+        if (!rs.length) {
+          listEl.innerHTML = '<div class="empty">No requests in this view.</div>';
+          return;
+        }
+        listEl.innerHTML = rs.map(cardHtml).join('');
+        wireCards();
+      }
+
+      function cardHtml(r) {
+        var emoji = r.type === 'enhancement' ? '✨' : '🐞';
+        var typeLabel = r.type === 'enhancement' ? 'Enhancement' : 'Bug';
+        var who = r.reporter_name || r.reporter_email || 'Anonymous';
+        var contact = r.reporter_email
+          ? ' &lt;<a href="mailto:' + encodeURIComponent(r.reporter_email) + '" style="color:var(--blue);text-decoration:none">' + escapeHtml(r.reporter_email) + '</a>&gt;'
+          : '';
+        var ctx = r.page_context ? '<span class="sep">·</span><span>📍 ' + escapeHtml(r.page_context) + '</span>' : '';
+
+        var status = r.status || 'new';
+        var statusOpts = ['new', 'in_progress', 'done', 'wontfix'].map(function (s) {
+          var label = { new: 'New', in_progress: 'In progress', done: 'Done', wontfix: "Won't fix" }[s];
+          return '<option value="' + s + '"' + (s === status ? ' selected' : '') + '>' + label + '</option>';
+        }).join('');
+
+        return '' +
+          '<div class="req-card" data-id="' + escapeHtml(r.request_id) + '">' +
+            '<div class="req-type ' + escapeHtml(r.type) + '">' + emoji + '</div>' +
+            '<div class="req-body">' +
+              '<div class="req-title">' + escapeHtml(r.title) + '</div>' +
+              '<div class="req-meta">' +
+                '<span class="type-pill ' + escapeHtml(r.type) + '">' + typeLabel + '</span>' +
+                '<span class="id-pill">' + escapeHtml(r.request_id) + '</span>' +
+                '<span class="sep">·</span>' +
+                '<span>' + escapeHtml(who) + contact + '</span>' +
+                '<span class="sep">·</span>' +
+                '<span>' + escapeHtml(r.created_at) + '</span>' +
+                ctx +
+              '</div>' +
+              '<div class="req-desc">' + escapeHtml(r.description) + '</div>' +
+            '</div>' +
+            '<div class="req-actions">' +
+              '<select class="status-select s-' + escapeHtml(status) + '" data-action="status">' + statusOpts + '</select>' +
+            '</div>' +
+            '<div class="notes-row">' +
+              '<div class="notes-label">Admin notes</div>' +
+              '<textarea class="notes-input" data-action="notes" placeholder="Triage notes, links, follow-ups…">' + escapeHtml(r.admin_notes) + '</textarea>' +
+              '<div class="notes-actions">' +
+                '<button class="save-btn" data-action="save-notes">Save notes</button>' +
+                '<span class="saved-flag" data-role="saved" style="display:none">Saved ✓</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      }
+
+      function wireCards() {
+        Array.prototype.forEach.call(listEl.querySelectorAll('.req-card'), function (card) {
+          var id = card.dataset.id;
+          var statusSel = card.querySelector('[data-action="status"]');
+          var notes = card.querySelector('[data-action="notes"]');
+          var saveBtn = card.querySelector('[data-action="save-notes"]');
+          var savedFlag = card.querySelector('[data-role="saved"]');
+
+          statusSel.addEventListener('change', function () {
+            var next = statusSel.value;
+            statusSel.disabled = true;
+            google.script.run
+              .withSuccessHandler(function (res) {
+                statusSel.disabled = false;
+                statusSel.className = 'status-select s-' + next;
+                var local = allRequests.find(function (r) { return r.request_id === id; });
+                if (local) local.status = next;
+                updateFilterCounts();
+                showToast('Status updated');
+              })
+              .withFailureHandler(function (err) {
+                statusSel.disabled = false;
+                showToast((err && err.message) || 'Update failed', true);
+              })
+              .updateRequestV1(passcode, id, { status: next });
+          });
+
+          saveBtn.addEventListener('click', function () {
+            saveBtn.disabled = true;
+            var prevText = saveBtn.textContent;
+            saveBtn.textContent = 'Saving…';
+            google.script.run
+              .withSuccessHandler(function () {
+                saveBtn.disabled = false;
+                saveBtn.textContent = prevText;
+                var local = allRequests.find(function (r) { return r.request_id === id; });
+                if (local) local.admin_notes = notes.value;
+                savedFlag.style.display = 'inline';
+                setTimeout(function () { savedFlag.style.display = 'none'; }, 1800);
+              })
+              .withFailureHandler(function (err) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = prevText;
+                showToast((err && err.message) || 'Save failed', true);
+              })
+              .updateRequestV1(passcode, id, { admin_notes: notes.value });
+          });
+        });
+      }
+
+      // Auto-restore session
+      var saved = '';
+      try { saved = sessionStorage.getItem(STORAGE_KEY) || ''; } catch (e) {}
+      if (saved) {
+        tryLoad(saved);
+      } else {
+        setTimeout(function () { passInput.focus(); }, 50);
+      }
+    })();
+  </script>
+</body>
+</html>

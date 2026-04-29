@@ -18,6 +18,7 @@ const SHEETS = {
   PLAYER_STATS_SUMMARY: 'Player_Stats_Summary',
   PAIRING_STATS_SUMMARY: 'Pairing_Stats_Summary',
   AUDIT_LOG: 'Audit_Log',
+  REQUESTS: 'Requests',
   README: 'README'
 };
 

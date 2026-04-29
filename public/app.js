@@ -21,15 +21,17 @@
     standings:    { kind: 'page', onEnter: renderStandings },
     rules:        { kind: 'page' },
     registration: { kind: 'page' },
+    feedback:     { kind: 'iframe', url: `${GAS_BASE}?page=request` },
 
     seasonstats:  { kind: 'iframe', url: `${GAS_BASE}?page=seasonstats` },
     players:      { kind: 'iframe', url: `${GAS_BASE}?page=players` },
     scoreboard:   { kind: 'iframe', url: `${GAS_BASE}?page=scoreboard` },
     gamereport:   { kind: 'iframe', urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
 
-    captain:      { kind: 'iframe', url: `${GAS_BASE}?page=captain`,   admin: true, withAuth: true },
-    display:      { kind: 'iframe', url: `${GAS_BASE}?page=display`,   admin: true },
-    scorecard:    { kind: 'iframe', url: `${GAS_BASE}?page=scorecard`, admin: true, withAuth: true },
+    captain:      { kind: 'iframe', url: `${GAS_BASE}?page=captain`,      admin: true, withAuth: true },
+    display:      { kind: 'iframe', url: `${GAS_BASE}?page=display`,      admin: true },
+    scorecard:    { kind: 'iframe', url: `${GAS_BASE}?page=scorecard`,    admin: true, withAuth: true },
+    requests:     { kind: 'iframe', url: `${GAS_BASE}?page=requestadmin`, admin: true },
   };
 
   function withAuthParams(url) {

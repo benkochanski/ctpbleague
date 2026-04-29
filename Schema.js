@@ -75,6 +75,11 @@ function getSchemaMap_() {
       'audit_id', 'entity_type', 'entity_id', 'action_type',
       'old_value_json', 'new_value_json', 'changed_by_user_id', 'changed_at', 'reason'
     ],
+    [SHEETS.REQUESTS]: [
+      'request_id', 'type', 'title', 'description',
+      'reporter_name', 'reporter_email', 'page_context',
+      'status', 'admin_notes', 'created_at', 'updated_at'
+    ],
     [SHEETS.README]: [
       'section', 'notes'
     ]
