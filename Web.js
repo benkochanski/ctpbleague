@@ -245,6 +245,18 @@ function doGet(e) {
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
+  if (page === 'request') {
+    return HtmlService.createHtmlOutputFromFile('RequestForm')
+      .setTitle('CPBL Feedback')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'requestadmin') {
+    return HtmlService.createHtmlOutputFromFile('RequestAdmin')
+      .setTitle('CPBL Request Manager')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
   if (page === 'publicdata') {
     return ContentService
       .createTextOutput(JSON.stringify(getPublicSiteData_()))

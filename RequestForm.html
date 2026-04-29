@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback — CPBL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #081f43;
+      --blue: #123a7c;
+      --green: #0b7e39;
+      --gold: #ffd22e;
+      --bg: #f4f6fb;
+      --border: #d8dde7;
+      --muted: #5b6478;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); font-family: 'DM Sans', system-ui, sans-serif; color: #14213d; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: 0 1px 3px rgba(8,31,67,.05); }
+    .header { background: linear-gradient(135deg, var(--navy), var(--blue) 60%, var(--green)); color: #fff; border-radius: 14px; padding: 28px; margin-bottom: 20px; }
+    .header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1.2px; margin: 0 0 6px; }
+    .header p { margin: 0; opacity: .92; font-size: 15px; }
+    .header .accent { color: var(--gold); }
+
+    .field { display: block; margin-bottom: 18px; }
+    .field-label { font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block; color: #14213d; }
+    .field-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .input, .textarea, .select {
+      width: 100%; padding: 11px 13px; font-family: inherit; font-size: 15px;
+      border: 1px solid var(--border); border-radius: 8px; background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .input:focus, .textarea:focus, .select:focus {
+      outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(18,58,124,.12);
+    }
+    .textarea { min-height: 140px; resize: vertical; font-family: inherit; }
+
+    .type-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .type-pick label {
+      display: flex; align-items: center; gap: 10px; padding: 14px;
+      border: 2px solid var(--border); border-radius: 10px; cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .type-pick input[type=radio] { accent-color: var(--blue); margin: 0; }
+    .type-pick label:hover { border-color: var(--blue); }
+    .type-pick input:checked + .type-text { color: var(--navy); }
+    .type-pick label:has(input:checked) { border-color: var(--blue); background: rgba(18,58,124,.05); }
+    .type-emoji { font-size: 22px; }
+    .type-text { font-weight: 600; font-size: 15px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 540px) { .row { grid-template-columns: 1fr; } }
+
+    .submit-btn {
+      background: var(--gold); color: var(--navy); border: none; padding: 14px 24px;
+      border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer;
+      width: 100%; margin-top: 4px; transition: filter .15s, transform .15s;
+    }
+    .submit-btn:hover { filter: brightness(1.05); }
+    .submit-btn:active { transform: translateY(1px); }
+    .submit-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .alert { padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; }
+    .alert.ok { background: #e7f5ec; color: #0b5d2a; border: 1px solid #b8e0c5; }
+    .alert.err { background: #fdecec; color: #a4262c; border: 1px solid #f1c0c0; }
+
+    .success-card { text-align: center; padding: 36px 20px; }
+    .success-card .check { font-size: 44px; margin-bottom: 8px; }
+    .success-card h2 { margin: 4px 0 8px; font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; color: var(--green); }
+    .success-card p { margin: 0; color: var(--muted); }
+    .success-card .id { font-family: monospace; background: #f4f6fb; padding: 4px 8px; border-radius: 6px; }
+    .success-card .again { margin-top: 18px; background: transparent; border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Feedback &amp; <span class="accent">Requests</span></h1>
+      <p>Spotted a bug? Have an idea? Tell us — we read every one.</p>
+    </div>
+
+    <div class="card" id="form-card">
+      <div id="alert" class="alert err" style="display:none"></div>
+
+      <form id="reqForm" autocomplete="off">
+        <div class="field">
+          <span class="field-label">What kind of feedback?</span>
+          <div class="type-pick">
+            <label>
+              <input type="radio" name="type" value="bug" checked>
+              <span class="type-emoji">🐞</span>
+              <span class="type-text">Bug report</span>
+            </label>
+            <label>
+              <input type="radio" name="type" value="enhancement">
+              <span class="type-emoji">✨</span>
+              <span class="type-text">Enhancement</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="title">Title</label>
+          <input id="title" name="title" class="input" maxlength="200" required placeholder="Short summary, e.g. &quot;Standings page won't load&quot;">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="description">Details</label>
+          <textarea id="description" name="description" class="textarea" maxlength="5000" required placeholder="What were you trying to do? What happened? For bugs, include the steps to reproduce."></textarea>
+          <div class="field-hint">More detail = faster fix.</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="field-label" for="reporter_name">Your name <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <input id="reporter_name" name="reporter_name" class="input" maxlength="100">
+          </div>
+          <div class="field">
+            <label class="field-label" for="reporter_email">Your email <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <input id="reporter_email" name="reporter_email" class="input" type="email" maxlength="200" placeholder="So we can follow up">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="page_context">Where did this happen? <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+          <input id="page_context" name="page_context" class="input" maxlength="200" placeholder="e.g. Standings, Captain portal, Live Scoreboard">
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Submit</button>
+      </form>
+    </div>
+
+    <div class="card success-card" id="success-card" style="display:none">
+      <div class="check">✅</div>
+      <h2>Thanks — we got it</h2>
+      <p>Tracking ID: <span class="id" id="successId"></span></p>
+      <button class="again" id="submitAnother">Submit another</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById('reqForm');
+      var btn = document.getElementById('submitBtn');
+      var alertEl = document.getElementById('alert');
+      var formCard = document.getElementById('form-card');
+      var successCard = document.getElementById('success-card');
+      var successId = document.getElementById('successId');
+      var submitAnother = document.getElementById('submitAnother');
+
+      function showError(msg) {
+        alertEl.textContent = msg;
+        alertEl.style.display = 'block';
+      }
+      function clearError() {
+        alertEl.style.display = 'none';
+        alertEl.textContent = '';
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearError();
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        var payload = {
+          type:           form.elements['type'].value,
+          title:          form.elements['title'].value.trim(),
+          description:    form.elements['description'].value.trim(),
+          reporter_name:  form.elements['reporter_name'].value.trim(),
+          reporter_email: form.elements['reporter_email'].value.trim(),
+          page_context:   form.elements['page_context'].value.trim()
+        };
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            successId.textContent = (res && res.request_id) || '';
+            formCard.style.display = 'none';
+            successCard.style.display = 'block';
+          })
+          .withFailureHandler(function (err) {
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            showError((err && err.message) || 'Something went wrong. Try again.');
+          })
+          .submitRequestV1(payload);
+      });
+
+      submitAnother.addEventListener('click', function () {
+        form.reset();
+        clearError();
+        successCard.style.display = 'none';
+        formCard.style.display = 'block';
+        document.getElementById('title').focus();
+      });
+    })();
+  </script>
+</body>
+</html>
