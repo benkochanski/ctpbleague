@@ -14,8 +14,8 @@ A league management website for the Connecticut Pickleball League. Backend is Go
 
 | Thing | Value |
 |---|---|
-| **Live hub URL** | **https://live.ctpbleague.com** ← this is the real entry point |
-| Bare domain (currently redirects to GAS Players) | https://ctpbleague.com |
+| **Live hub URL** | **https://ctpbleague.com** |
+| Alternate hub URL (also bound to the Worker) | https://live.ctpbleague.com |
 | Cloudflare Worker | `morning-wind-da2a` (serves `public/` as static assets via `wrangler.jsonc`) |
 | Worker preview URL | https://morning-wind-da2a.bkochanski.workers.dev |
 | GAS prod deployment ID (what the hub iframes) | `AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD` |
@@ -27,9 +27,9 @@ A league management website for the Connecticut Pickleball League. Backend is Go
 | Local working dir | `/Users/BenKochanski/CPBL` |
 | Active branch | **`main` only** — no worktrees, no feature branches |
 
-### DNS heads-up
+### DNS
 
-The bare `ctpbleague.com` domain still has two `A` records pointing at an external redirect that bounces visitors to GAS Players. The hub lives at **`live.ctpbleague.com`** until those records are deleted and the apex is bound to the Worker. Don't tell users "go to ctpbleague.com" yet — it won't show the hub.
+Both `ctpbleague.com` (apex) and `live.ctpbleague.com` are bound as Custom Domains on the `morning-wind-da2a` Worker — both serve the hub. The apex is the canonical URL; `live.` is kept around so old links don't break.
 
 ---
 
@@ -71,7 +71,7 @@ There are **two systems** that need publishing separately:
 ### Hub changes (anything in `public/` or `wrangler.jsonc`)
 1. Edit files
 2. `git add … && git commit -m "…"`
-3. `git push origin main` — Cloudflare auto-rebuilds the Worker, `live.ctpbleague.com` updates within ~1 min
+3. `git push origin main` — Cloudflare auto-rebuilds the Worker, `ctpbleague.com` updates within ~1 min
 
 ### GAS changes (anything else: `*.js`, `*.html`, `appsscript.json`)
 1. Edit files (or `clasp pull` first if the GAS console was edited directly)
@@ -159,11 +159,11 @@ Tabs include (incomplete):
 
 ## Known issues / current priorities
 
-1. **Bare-domain DNS** — `ctpbleague.com` (apex) still has redirect `A` records sending visitors to a GAS Players URL. Hub only reachable at `live.ctpbleague.com`. Fix: in Cloudflare DNS, delete the two `A` records for `ctpbleague.com` and bind the apex to the `morning-wind-da2a` Worker. (User intends to do this manually in the dashboard.)
+1. **`www` subdomain** — `www.ctpbleague.com` returns 522 because the existing `CNAME www → ctpbleague.com` doesn't route through the Worker the way Custom Domains do. Add `www.ctpbleague.com` as a Custom Domain on the `morning-wind-da2a` Worker to fix.
 2. **Lineup submission auth** — Google Sign-In flow exists; verify it's wired end-to-end on Captain.html.
-3. **Hub buildout** — Standings, Rules (from PDF), Registration (Google Form embed) still to build.
+3. **Hub buildout** — Rules (from PDF) still to build. Standings, Live Scoreboard, Registration removed from nav (routes still exist for hash-based access).
 4. **Iframe blockers** — when adding new GAS routes in `Web.js`, remember to set `.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)` on the `doGet` route, otherwise the page pops out of the hub iframe.
-5. **Stale GAS deployments** — there are 4 deployments listed by `clasp deployments`. Only the one at ID `AKfycbzuzu...` is bound to the hub. The others (`@53`, `@55`, `@HEAD`) are leftovers — safe to delete via Cloudflare/GAS console if you want a single clean target.
+5. **Stale GAS deployments** — there are 4 deployments listed by `clasp deployments`. Only the one at ID `AKfycbzuzu...` is bound to the hub. The others (`@53`, `@55`, `@HEAD`) are leftovers — safe to delete via GAS console if you want a single clean target.
 
 ---
 
