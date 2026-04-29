@@ -4,11 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connecticut Pickleball League</title>
+  <meta name="description" content="The Connecticut Pickleball League — schedules, scores, standings, season stats, and live match coverage.">
+  <meta name="theme-color" content="#081f43">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/logo.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/logo.png">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <meta property="og:title" content="Connecticut Pickleball League">
+  <meta property="og:description" content="Schedules, scores, standings, and live match coverage for the CT Pickleball League.">
+  <meta property="og:image" content="assets/logo.png">
+  <meta property="og:url" content="https://ctpbleague.com">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -25,21 +38,16 @@
     </button>
 
     <div class="brand">
-      <div class="brand-logo" id="brandLogo">CPL</div>
+      <div class="brand-logo" id="brandLogo">
+        <img src="assets/logo.png" alt="CT Pickleball League">
+      </div>
       <div class="brand-text">
         <div class="brand-title">Connecticut Pickleball League</div>
-        <div class="brand-sub">ctpbleague.com</div>
+        <div class="brand-sub" id="brandSub">ctpbleague.com</div>
       </div>
     </div>
 
-    <div class="header-actions">
-      <div id="googleSignInSlot"></div>
-      <div id="googleSignedInBadge" style="display:none; align-items:center; gap:8px; color:#fff; font-size:13px;">
-        <span>Signed in as <strong id="googleUserEmail"></strong></span>
-        <button class="header-btn" type="button" id="googleSignOutBtn">Sign out</button>
-      </div>
-      <button class="header-btn gold" id="adminLoginBtn">Sign in</button>
-    </div>
+    <div class="header-actions"></div>
   </header>
 
   <!-- Sidebar -->
@@ -56,7 +64,7 @@
         <span class="nav-label">Home</span>
       </button>
 
-      <button class="nav-item" data-route="schedule" data-tip="Schedule">
+      <button class="nav-item" data-route="matches" data-tip="Matches">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="17" rx="2"/>
@@ -65,16 +73,7 @@
             <line x1="16" y1="2" x2="16" y2="6"/>
           </svg>
         </span>
-        <span class="nav-label">Schedule</span>
-      </button>
-
-      <button class="nav-item" data-route="scores" data-tip="Scores">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 12h5l3-9 4 18 3-9h5"/>
-          </svg>
-        </span>
-        <span class="nav-label">Scores</span>
+        <span class="nav-label">Matches</span>
       </button>
 
       <button class="nav-item" data-route="standings" data-tip="Standings">
@@ -156,71 +155,49 @@
       </button>
     </div>
 
-    <div class="nav-group" id="adminGroup">
-      <div class="nav-group-label">
-        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="11" width="16" height="10" rx="2"/>
-          <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-        </svg>
-        League Ops
-      </div>
+    <div class="nav-group">
+      <div class="nav-group-label">League Ops</div>
 
-      <button class="nav-item admin-toggle" id="adminToggle">
+      <button class="nav-item" data-route="captain" data-tip="Captain Portal">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
           </svg>
         </span>
-        <span class="nav-label">Admin Tools</span>
-        <span class="nav-lock" id="adminLockLabel">LOCKED</span>
-        <svg class="chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
+        <span class="nav-label">Captain / Lineups</span>
       </button>
 
-      <div class="admin-children" id="adminChildren">
-        <button class="nav-item" data-route="captain" data-admin="1" data-tip="Captain Portal">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
-          </span>
-          <span class="nav-label">Captain / Lineups</span>
-        </button>
+      <button class="nav-item" data-route="display" data-tip="Match Display">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </span>
+        <span class="nav-label">Match Display</span>
+      </button>
 
-        <button class="nav-item" data-route="display" data-admin="1" data-tip="Match Display">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/>
-              <line x1="8" y1="21" x2="16" y2="21"/>
-              <line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-          </span>
-          <span class="nav-label">Match Display</span>
-        </button>
+      <button class="nav-item" data-route="scorecard" data-tip="Scorekeeping">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </span>
+        <span class="nav-label">Scorekeeping</span>
+      </button>
 
-        <button class="nav-item" data-route="scorecard" data-admin="1" data-tip="Scorekeeping">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-          </span>
-          <span class="nav-label">Scorekeeping</span>
-        </button>
-
-        <button class="nav-item" data-route="requests" data-admin="1" data-tip="Request Manager">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              <circle cx="6" cy="18" r="1"/>
-            </svg>
-          </span>
-          <span class="nav-label">Requests</span>
-        </button>
-      </div>
+      <button class="nav-item" data-route="requests" data-tip="Request Manager">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </span>
+        <span class="nav-label">Requests</span>
+      </button>
     </div>
   </aside>
 
@@ -237,28 +214,38 @@
           <p>Live scores, season stats, and team rosters — all in one place. Captains and scorekeepers, sign in to access match tools.</p>
         </div>
 
+        <div class="home-split">
+          <section class="home-section">
+            <header class="home-section-head">
+              <h2>This Week</h2>
+              <button class="home-link" data-route="matches">View all matches
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </header>
+            <div class="home-section-body" id="home-upcoming">
+              <div class="loading-card">Loading upcoming matches…</div>
+            </div>
+          </section>
+
+          <section class="home-section">
+            <header class="home-section-head">
+              <h2>Latest Scores</h2>
+              <button class="home-link" data-route="matches">All matches
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </header>
+            <div class="home-section-body" id="home-recent">
+              <div class="loading-card">Loading recent scores…</div>
+            </div>
+          </section>
+        </div>
+
+        <h2 class="home-section-title">Explore the league</h2>
         <div class="home-grid">
-          <button class="home-card" data-route="schedule">
-            <div class="home-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
-                <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
-              </svg>
-            </div>
-            <h3>Schedule</h3>
-            <p>Upcoming matches, by week or division.</p>
-          </button>
-
-          <button class="home-card" data-route="scores">
-            <div class="home-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12h5l3-9 4 18 3-9h5"/>
-              </svg>
-            </div>
-            <h3>Scores</h3>
-            <p>Completed match results and game reports.</p>
-          </button>
-
           <button class="home-card" data-route="standings">
             <div class="home-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -329,44 +316,24 @@
       </div>
     </div>
 
-    <!-- Schedule -->
-    <div class="page" id="page-schedule" style="display:none">
+    <!-- Matches (combined schedule + results) -->
+    <div class="page" id="page-matches" style="display:none">
       <div class="page-inner">
         <div class="page-header page-header-row">
           <div>
-            <h1>Schedule</h1>
-            <p class="page-subtitle">Upcoming matches across all divisions.</p>
+            <h1>Matches</h1>
+            <p class="page-subtitle">Schedule and results across all divisions. Group by week or division.</p>
           </div>
           <div class="page-controls">
-            <label class="select-field">
-              <span>Division</span>
-              <select data-filter="schedule-division"><option value="">All divisions</option></select>
-            </label>
+            <div class="group-toggle" role="tablist" aria-label="Group matches by">
+              <span class="group-toggle-label">Group by</span>
+              <button type="button" class="group-toggle-btn is-active" data-group="week" role="tab" aria-selected="true">Week</button>
+              <button type="button" class="group-toggle-btn" data-group="division" role="tab" aria-selected="false">Division</button>
+            </div>
           </div>
         </div>
-        <div class="data-body" id="schedule-body">
-          <div class="loading-card">Loading schedule…</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scores -->
-    <div class="page" id="page-scores" style="display:none">
-      <div class="page-inner">
-        <div class="page-header page-header-row">
-          <div>
-            <h1>Scores</h1>
-            <p class="page-subtitle">Completed matches — click any match for the full game report.</p>
-          </div>
-          <div class="page-controls">
-            <label class="select-field">
-              <span>Division</span>
-              <select data-filter="scores-division"><option value="">All divisions</option></select>
-            </label>
-          </div>
-        </div>
-        <div class="data-body" id="scores-body">
-          <div class="loading-card">Loading scores…</div>
+        <div class="data-body" id="matches-body">
+          <div class="loading-card">Loading matches…</div>
         </div>
       </div>
     </div>
@@ -449,31 +416,31 @@
       </div>
     </div>
 
+    <!-- 404 / unknown route -->
+    <div class="page" id="page-notfound" style="display:none">
+      <div class="page-inner">
+        <div class="notfound-card">
+          <div class="notfound-mark">404</div>
+          <h1>Page not found</h1>
+          <p>The page you were looking for doesn't exist, or may have moved. Use the navigation on the left, or head back to the home page.</p>
+          <div class="page-actions">
+            <button class="btn-gold" data-route="home">Go to Home</button>
+            <button class="btn-ghost" data-route="matches">View Matches</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Iframe view (for GAS-hosted apps) -->
     <iframe class="app-frame" id="appFrame" style="display:none" title="CPBL App"></iframe>
+    <div class="iframe-loader" id="iframeLoader" aria-hidden="true">
+      <div class="iframe-spinner"></div>
+      <div class="iframe-loader-text">Loading…</div>
+    </div>
   </main>
 </div>
 
 <!-- Auth modal -->
-<div class="auth-backdrop" id="authBackdrop">
-  <div class="auth-modal">
-    <div class="auth-lock">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="4" y="11" width="16" height="10" rx="2"/>
-        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-      </svg>
-    </div>
-    <h2>League Ops Sign-in</h2>
-    <p>Enter the access code to unlock captain, display, and scoring tools.</p>
-    <input type="password" class="auth-input" id="authInput" placeholder="••••••" autocomplete="off">
-    <div class="auth-error" id="authError"></div>
-    <div class="auth-actions">
-      <button class="auth-cancel" id="authCancel">Cancel</button>
-      <button class="auth-submit" id="authSubmit">Sign in</button>
-    </div>
-  </div>
-</div>
-
 <script src="app.js"></script>
 </body>
 </html>

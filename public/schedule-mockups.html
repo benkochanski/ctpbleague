@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Layout Options — Divisional Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #081f43; --blue: #123a7c; --green: #0b7e39; --gold: #ffd22e;
+    --bg:   #e8eef7; --panel: #fff; --soft: #f2f6fc; --border: #ccd6e8; --border-s: #dde5f3;
+    --text: #0d1f3c; --muted: #5a6e8a; --inv: #f8fbff;
+    --ok:   #0b7e39; --warn: #c96a00; --danger: #c8231c;
+    --r: 12px; --r-lg: 18px; --sh: 0 6px 24px rgba(8,30,67,.09);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 32px 20px 80px; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .intro { background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); padding: 22px 26px; box-shadow: var(--sh); margin-bottom: 28px; }
+  .intro h1 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1.6px; color: var(--navy); margin-bottom: 8px; }
+  .intro p { color: var(--muted); line-height: 1.5; font-size: 14px; }
+  .opt { margin-bottom: 38px; }
+  .opt-head { padding: 0 4px 12px; }
+  .opt-num { display: inline-block; background: var(--navy); color: var(--gold); font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.2px; padding: 4px 12px; border-radius: 999px; margin-right: 10px; }
+  .opt-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1.4px; color: var(--navy); display: inline; }
+  .opt-desc { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.5; }
+
+  /* ── Series panel base (mirrors SeasonStats.html) ───────────────── */
+  .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
+  .series-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+  .sh-team { display: flex; justify-content: center; }
+  .sh-logo-big { height: 132px; width: 132px; border-radius: 22px; background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.32); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1.4px; }
+  .sh-logo-big.dill { color: #d97706; background: #1f2937; }
+  .sh-logo-big.camp { color: #fff; background: #1e3a8a; }
+  .sh-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .sh-series-lbl { font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); }
+  .sh-score { font-family: 'Bebas Neue', sans-serif; font-size: 84px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
+  .sh-leader { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin-top: 4px; }
+
+  /* gt-tiles */
+  .gt-tiles { display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--border-s); }
+  .gt-tile { padding: 10px 30px; border-right: 1px solid var(--border-s); }
+  .gt-tile:last-child { border-right: none; }
+  .gt-mini-banner { display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; gap: 6px; }
+  .gt-mini-logo { width: 72px; height: 64px; border-radius: 14px; border: 1.5px solid var(--border-s); background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+  .gt-mini-logo.dill { color: #d97706; background: #1f2937; }
+  .gt-mini-logo.camp { color: #fff; background: #1e3a8a; }
+  .gt-score-col { position: relative; height: 64px; display: flex; align-items: center; justify-content: center; }
+  .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; color: var(--navy); }
+  .gt-score-nums { display: flex; align-items: flex-start; gap: 6px; }
+  .gt-score-side { display: flex; flex-direction: column; align-items: center; min-width: 48px; }
+  .gt-snum-wrap { height: 64px; display: flex; align-items: center; justify-content: center; min-width: 48px; }
+  .gt-sdash-wrap { height: 64px; display: flex; align-items: center; }
+  .gt-snum { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 900; line-height: 1; color: var(--muted); }
+  .gt-snum.leader { color: var(--ok); }
+  .gt-sdash { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; color: var(--border); }
+  .gt-diff { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; color: var(--ok); }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 1 — Horizontal strip of cards below gt-tiles
+  ════════════════════════════════════════════════════════════════ */
+  .opt1-strip { background: #f7faff; border-top: 1px solid var(--border-s); padding: 14px 16px; display: flex; gap: 10px; overflow-x: auto; }
+  .opt1-strip-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.4px; color: var(--navy); padding: 6px 4px 0 6px; flex-shrink: 0; align-self: flex-start; }
+  .opt1-card { background: #fff; border: 1px solid var(--border-s); border-radius: 10px; padding: 10px 14px; min-width: 170px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(8,30,67,.06); }
+  .opt1-card.is-completed { border-color: var(--border); }
+  .opt1-card-date { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .8px; color: var(--navy); }
+  .opt1-card-date small { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+  .opt1-card-teams { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 6px; line-height: 1.3; }
+  .opt1-card-teams .winner { color: var(--navy); font-weight: 700; }
+  .opt1-card-teams .winner::after { content: ' ★'; color: var(--gold); font-size: 10px; }
+  .opt1-card-score { display: inline-flex; align-items: baseline; gap: 4px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); margin-top: 2px; }
+  .opt1-card-score .winner { color: var(--navy); }
+  .opt1-card-status { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .opt1-card-status.is-final { color: var(--ok); }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 2 — Vertical list inside top panel, right side
+  ════════════════════════════════════════════════════════════════ */
+  .opt2-grid { display: grid; grid-template-columns: 1fr 320px; }
+  .opt2-grid > .opt2-left { border-right: 1px solid rgba(255,255,255,.12); }
+  .opt2-right { background: rgba(255,255,255,.04); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+  .opt2-right-hd { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.4px; color: var(--gold); padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.16); }
+  .opt2-row { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 8px; padding: 6px 4px; }
+  .opt2-row + .opt2-row { border-top: 1px solid rgba(255,255,255,.08); }
+  .opt2-date { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .6px; color: #fff; line-height: 1; }
+  .opt2-date small { display: block; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.55); margin-top: 2px; letter-spacing: 0; }
+  .opt2-mu { font-size: 12px; color: rgba(255,255,255,.85); font-weight: 600; line-height: 1.2; }
+  .opt2-mu .vs { color: rgba(255,255,255,.4); font-size: 9px; letter-spacing: 1px; padding: 0 3px; }
+  .opt2-score { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: rgba(255,255,255,.85); }
+  .opt2-score .winner { color: var(--gold); }
+  .opt2-up { font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.5); }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 3 — Toggle tabs inside the top panel
+  ════════════════════════════════════════════════════════════════ */
+  .opt3-tabs { position: absolute; top: 14px; right: 14px; display: flex; gap: 4px; background: rgba(0,0,0,.22); border-radius: 999px; padding: 3px; z-index: 5; }
+  .opt3-tab { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: rgba(255,255,255,.7); padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+  .opt3-tab.is-active { background: var(--gold); color: var(--navy); }
+  .opt3-panel { position: relative; }
+  .opt3-list { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 26px 32px; min-height: 280px; display: flex; flex-direction: column; gap: 0; }
+  .opt3-list-hd { color: rgba(255,255,255,.55); font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.18); margin-bottom: 6px; }
+  .opt3-row { display: grid; grid-template-columns: 90px 1fr auto auto; gap: 16px; align-items: center; padding: 10px 4px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .opt3-row:last-child { border-bottom: none; }
+  .opt3-date { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: .8px; color: #fff; line-height: 1; }
+  .opt3-date small { display: block; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.6); margin-top: 3px; letter-spacing: 0; }
+  .opt3-mu { font-size: 14px; color: rgba(255,255,255,.92); font-weight: 600; }
+  .opt3-mu .vs { color: rgba(255,255,255,.4); font-size: 10px; letter-spacing: 1.2px; padding: 0 6px; text-transform: uppercase; }
+  .opt3-score { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: rgba(255,255,255,.85); }
+  .opt3-score .winner { color: var(--gold); }
+  .opt3-status { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .opt3-status.is-final { color: #6ee7b7; }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 4 — New full-width panel below
+  ════════════════════════════════════════════════════════════════ */
+  .opt4-panel { margin-top: 12px; }
+  .opt4-head { padding: 10px 18px; background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%); display: flex; align-items: center; gap: 10px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .opt4-badge { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--navy); }
+  .opt4-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: #fff; }
+  .opt4-list { padding: 6px 0; }
+  .opt4-row { display: grid; grid-template-columns: 110px 1fr auto auto; gap: 16px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border-s); }
+  .opt4-row:last-child { border-bottom: none; }
+  .opt4-date { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: .8px; color: var(--navy); line-height: 1.05; }
+  .opt4-date small { display: block; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 3px; letter-spacing: 0; }
+  .opt4-teams { font-size: 14px; font-weight: 600; }
+  .opt4-teams .winner { color: var(--navy); font-weight: 700; }
+  .opt4-teams .winner::after { content: ' ★'; color: var(--gold); font-size: 11px; }
+  .opt4-teams .vs { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; padding: 0 6px; }
+  .opt4-score { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--muted); }
+  .opt4-score .winner { color: var(--navy); }
+  .opt4-status { font-size: 11px; font-weight: 700; letter-spacing: .8px; color: var(--muted); text-transform: uppercase; }
+  .opt4-status.is-final { color: var(--ok); }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 5 — Mini timeline ribbon between hero and tiles
+  ════════════════════════════════════════════════════════════════ */
+  .opt5-ribbon { background: rgba(0,0,0,.22); padding: 10px 24px; display: flex; align-items: center; gap: 14px; }
+  .opt5-ribbon-lbl { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1.4px; color: rgba(255,255,255,.55); white-space: nowrap; }
+  .opt5-track { flex: 1; display: flex; align-items: center; gap: 4px; position: relative; height: 36px; }
+  .opt5-track::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: rgba(255,255,255,.1); transform: translateY(-50%); }
+  .opt5-dot { position: relative; flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  .opt5-dot::after { content: ''; width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.16); border: 2px solid rgba(255,255,255,.35); }
+  .opt5-dot.is-final::after { background: var(--gold); border-color: var(--gold); }
+  .opt5-dot-cap { font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .6px; color: rgba(255,255,255,.6); margin-top: 4px; text-transform: uppercase; }
+  .opt5-dot-score { font-family: 'Bebas Neue', sans-serif; font-size: 11px; color: var(--gold); margin-top: 2px; letter-spacing: .4px; }
+
+  /* ════════════════════════════════════════════════════════════════
+     OPT 6 — Replace gt-tiles with chronological match cards
+  ════════════════════════════════════════════════════════════════ */
+  .opt6-cards { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border-s); }
+  .opt6-card { padding: 14px 18px; border-right: 1px solid var(--border-s); display: flex; flex-direction: column; gap: 6px; }
+  .opt6-card:last-child { border-right: none; }
+  .opt6-card-date { font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: .8px; color: var(--navy); }
+  .opt6-card-date small { font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 10px; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+  .opt6-card-mu { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+  .opt6-card-mu .vs { color: var(--muted); font-size: 10px; }
+  .opt6-card-score { display: flex; align-items: baseline; gap: 4px; font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 900; color: var(--muted); margin-top: 2px; }
+  .opt6-card-score .winner { color: var(--ok); }
+  .opt6-card-score .sep { font-size: 18px; color: var(--border); }
+  .opt6-card-status { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .opt6-card-status.is-final { color: var(--ok); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="intro">
+  <h1>Schedule &amp; Results — Final 3</h1>
+  <p>Three remaining concepts for the match list. Mock data: 4 matches between Team Dill and Team Camp (2 played, 2 upcoming).</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     OPT 2: Vertical list right side of top panel
+═══════════════════════════════════════════════════ -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-num">2</span><h2 class="opt-title">Vertical list on right of top panel</h2>
+    <p class="opt-desc">Splits the top panel into hero+tiles on the left and a chronological match list on the right. Series score gets less width but everything stays in one block.</p>
+  </div>
+  <div class="side-panel">
+    <div class="opt2-grid">
+      <div class="opt2-left">
+        <div class="series-hero" style="grid-template-columns: 1fr auto 1fr;">
+          <div class="sh-team"><div class="sh-logo-big dill" style="height:104px;width:104px;font-size:28px;">DILL</div></div>
+          <div class="sh-center">
+            <span class="sh-series-lbl">Season Series</span>
+            <span class="sh-score" style="font-size:62px;">1–1</span>
+            <span class="sh-leader">Series Tied</span>
+          </div>
+          <div class="sh-team"><div class="sh-logo-big camp" style="height:104px;width:104px;font-size:28px;">CAMP</div></div>
+        </div>
+        <div class="gt-tiles" style="grid-template-columns: repeat(2,1fr);">
+          <div class="gt-tile"><div class="gt-mini-banner" style="grid-template-columns:48px 1fr 48px;"><div class="gt-mini-logo dill" style="width:48px;height:42px;font-size:14px;">D</div><div class="gt-score-col" style="height:42px;"><span class="gt-type-lbl">All Games</span><div class="gt-score-nums" style="margin-top:8px;"><span class="gt-snum leader" style="font-size:22px;">33</span><span class="gt-sdash">–</span><span class="gt-snum" style="font-size:22px;">31</span></div></div><div class="gt-mini-logo camp" style="width:48px;height:42px;font-size:14px;">C</div></div></div>
+          <div class="gt-tile"><div class="gt-mini-banner" style="grid-template-columns:48px 1fr 48px;"><div class="gt-mini-logo dill" style="width:48px;height:42px;font-size:14px;">D</div><div class="gt-score-col" style="height:42px;"><span class="gt-type-lbl">Women's</span><div class="gt-score-nums" style="margin-top:8px;"><span class="gt-snum leader" style="font-size:22px;">15</span><span class="gt-sdash">–</span><span class="gt-snum" style="font-size:22px;">1</span></div></div><div class="gt-mini-logo camp" style="width:48px;height:42px;font-size:14px;">C</div></div></div>
+          <div class="gt-tile"><div class="gt-mini-banner" style="grid-template-columns:48px 1fr 48px;"><div class="gt-mini-logo dill" style="width:48px;height:42px;font-size:14px;">D</div><div class="gt-score-col" style="height:42px;"><span class="gt-type-lbl">Coed</span><div class="gt-score-nums" style="margin-top:8px;"><span class="gt-snum" style="font-size:22px;">12</span><span class="gt-sdash">–</span><span class="gt-snum leader" style="font-size:22px;">17</span></div></div><div class="gt-mini-logo camp" style="width:48px;height:42px;font-size:14px;">C</div></div></div>
+          <div class="gt-tile"><div class="gt-mini-banner" style="grid-template-columns:48px 1fr 48px;"><div class="gt-mini-logo dill" style="width:48px;height:42px;font-size:14px;">D</div><div class="gt-score-col" style="height:42px;"><span class="gt-type-lbl">Mixed</span><div class="gt-score-nums" style="margin-top:8px;"><span class="gt-snum leader" style="font-size:22px;">6</span><span class="gt-sdash">–</span><span class="gt-snum" style="font-size:22px;">2</span></div></div><div class="gt-mini-logo camp" style="width:48px;height:42px;font-size:14px;">C</div></div></div>
+        </div>
+      </div>
+      <div class="opt2-right" style="background:linear-gradient(180deg, var(--navy), #0d5229);">
+        <div class="opt2-right-hd">Schedule &amp; Results</div>
+        <div class="opt2-row"><div class="opt2-date">Apr 5<small>Sat</small></div><div class="opt2-mu">Camp <span class="vs">vs</span> Dill</div><div class="opt2-score">14<span style="color:rgba(255,255,255,.3)">–</span><span class="winner">17</span></div></div>
+        <div class="opt2-row"><div class="opt2-date">Apr 12<small>Sat</small></div><div class="opt2-mu">Camp <span class="vs">vs</span> Dill</div><div class="opt2-score">11<span style="color:rgba(255,255,255,.3)">–</span><span class="winner">19</span></div></div>
+        <div class="opt2-row"><div class="opt2-date">Apr 19<small>7 PM</small></div><div class="opt2-mu">Dill <span class="vs">vs</span> Camp</div><div class="opt2-up">Up</div></div>
+        <div class="opt2-row"><div class="opt2-date">Apr 26<small>7 PM</small></div><div class="opt2-mu">Camp <span class="vs">vs</span> Dill</div><div class="opt2-up">Up</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     OPT 3: Toggle tabs in top panel
+═══════════════════════════════════════════════════ -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-num">3</span><h2 class="opt-title">Toggle tabs in top panel</h2>
+    <p class="opt-desc">Small tab control in the corner toggles the panel between Summary (current view) and Schedule (full match list). One view at a time, no extra page height. Two preview states shown — currently showing the Schedule tab active.</p>
+  </div>
+  <div class="side-panel opt3-panel">
+    <div class="opt3-tabs">
+      <span class="opt3-tab">Summary</span>
+      <span class="opt3-tab is-active">Schedule</span>
+    </div>
+    <div class="opt3-list">
+      <div class="opt3-list-hd">Schedule &amp; Results — Division 1</div>
+      <div class="opt3-row">
+        <div class="opt3-date">Sat Apr 5</div>
+        <div class="opt3-mu">Camp Div 1 <span class="vs">vs</span> Dill Div 1</div>
+        <div class="opt3-score">14 <span style="color:rgba(255,255,255,.3)">–</span> <span class="winner">17</span></div>
+        <div class="opt3-status is-final">Final · Dill</div>
+      </div>
+      <div class="opt3-row">
+        <div class="opt3-date">Sat Apr 12</div>
+        <div class="opt3-mu">Camp Div 1 <span class="vs">vs</span> Dill Div 1</div>
+        <div class="opt3-score">11 <span style="color:rgba(255,255,255,.3)">–</span> <span class="winner">19</span></div>
+        <div class="opt3-status is-final">Final · Dill</div>
+      </div>
+      <div class="opt3-row">
+        <div class="opt3-date">Sat Apr 19<small>7:00 PM</small></div>
+        <div class="opt3-mu">Dill Div 1 <span class="vs">vs</span> Camp Div 1</div>
+        <div class="opt3-score" style="color:rgba(255,255,255,.4);">—</div>
+        <div class="opt3-status">Upcoming · Camp</div>
+      </div>
+      <div class="opt3-row">
+        <div class="opt3-date">Sat Apr 26<small>7:00 PM</small></div>
+        <div class="opt3-mu">Camp Div 1 <span class="vs">vs</span> Dill Div 1</div>
+        <div class="opt3-score" style="color:rgba(255,255,255,.4);">—</div>
+        <div class="opt3-status">Upcoming · Dill</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     OPT 5: Mini timeline ribbon between hero and tiles
+═══════════════════════════════════════════════════ -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-num">5</span><h2 class="opt-title">Mini timeline ribbon</h2>
+    <p class="opt-desc">Thin horizontal strip between hero and tiles. One dot per match: filled gold when complete (with score), outlined when upcoming. Hover or click for details. Whole season at a glance, low information density.</p>
+  </div>
+  <div class="side-panel">
+    <div class="series-hero">
+      <div class="sh-team"><div class="sh-logo-big dill">DILL</div></div>
+      <div class="sh-center">
+        <span class="sh-series-lbl">Season Series</span>
+        <span class="sh-score">1–1</span>
+        <span class="sh-leader">Series Tied</span>
+      </div>
+      <div class="sh-team"><div class="sh-logo-big camp">CAMP</div></div>
+    </div>
+    <div class="opt5-ribbon">
+      <span class="opt5-ribbon-lbl">Season</span>
+      <div class="opt5-track">
+        <div class="opt5-dot is-final"><span class="opt5-dot-cap">Apr 5</span><span class="opt5-dot-score">14–17</span></div>
+        <div class="opt5-dot is-final"><span class="opt5-dot-cap">Apr 12</span><span class="opt5-dot-score">11–19</span></div>
+        <div class="opt5-dot"><span class="opt5-dot-cap">Apr 19</span></div>
+        <div class="opt5-dot"><span class="opt5-dot-cap">Apr 26</span></div>
+        <div class="opt5-dot"><span class="opt5-dot-cap">May 3</span></div>
+        <div class="opt5-dot"><span class="opt5-dot-cap">May 10</span></div>
+      </div>
+    </div>
+    <div class="gt-tiles">
+      <div class="gt-tile"><div class="gt-mini-banner"><div class="gt-mini-logo dill">D</div><div class="gt-score-col"><span class="gt-type-lbl">All Games</span><div class="gt-score-nums"><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum leader">33</span></div></div><div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum">31</span></div></div></div></div><div class="gt-mini-logo camp">C</div></div></div>
+      <div class="gt-tile"><div class="gt-mini-banner"><div class="gt-mini-logo dill">D</div><div class="gt-score-col"><span class="gt-type-lbl">Women's</span><div class="gt-score-nums"><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum leader">15</span></div></div><div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum">1</span></div></div></div></div><div class="gt-mini-logo camp">C</div></div></div>
+      <div class="gt-tile"><div class="gt-mini-banner"><div class="gt-mini-logo dill">D</div><div class="gt-score-col"><span class="gt-type-lbl">Coed</span><div class="gt-score-nums"><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum">12</span></div></div><div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum leader">17</span></div></div></div></div><div class="gt-mini-logo camp">C</div></div></div>
+      <div class="gt-tile"><div class="gt-mini-banner"><div class="gt-mini-logo dill">D</div><div class="gt-score-col"><span class="gt-type-lbl">Mixed</span><div class="gt-score-nums"><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum leader">6</span></div></div><div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div><div class="gt-score-side"><div class="gt-snum-wrap"><span class="gt-snum">2</span></div></div></div></div><div class="gt-mini-logo camp">C</div></div></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+</body>
+</html>

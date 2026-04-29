@@ -1,122 +1,48 @@
 (() => {
   'use strict';
 
-  // GAS web app base — serves Captain, Scorecard, SeasonStats, PlayersDirectory,
-  // MatchDisplay, PublicScoreboard, PlayerPage, GameReport, publicdata JSON.
-  // See Web.js doGet().
+  // GAS web app — single deployment, anonymous access. Captain/Scorecard
+  // pages identify the user via Google Identity Services (client-side sign-in)
+  // and pass a verified ID token to the backend. See Auth.js.
   const GAS_BASE = 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
 
-  const ADMIN_PASSCODE = 'cpbl2026';
-  const ADMIN_STORAGE_KEY = 'cpbl_admin_unlocked';
-
-  const GOOGLE_CLIENT_ID = '250461385382-o1jcqvvkom51s3l8qim8te5frr3ju52h.apps.googleusercontent.com';
-  const GOOGLE_TOKEN_KEY = 'cpbl_google_id_token';
-  const GOOGLE_EMAIL_KEY = 'cpbl_google_email';
-  const GOOGLE_EXP_KEY   = 'cpbl_google_exp';
-
   const ROUTES = {
-    home:         { kind: 'page' },
-    schedule:     { kind: 'page', onEnter: renderSchedule },
-    scores:       { kind: 'page', onEnter: renderScores },
-    standings:    { kind: 'page', onEnter: renderStandings },
-    rules:        { kind: 'page' },
-    registration: { kind: 'page' },
-    feedback:     { kind: 'iframe', url: `${GAS_BASE}?page=request` },
+    home:         { kind: 'page', label: 'ctpbleague.com',    onEnter: renderHome },
+    matches:      { kind: 'page', label: 'Matches',           onEnter: renderMatches },
+    standings:    { kind: 'page', label: 'Standings',         onEnter: renderStandings },
+    rules:        { kind: 'page', label: 'Rules & Handbook' },
+    registration: { kind: 'page', label: 'Registration' },
+    feedback:     { kind: 'iframe', label: 'Feedback',        url: `${GAS_BASE}?page=request` },
+    requests:     { kind: 'iframe', label: 'Request Manager', url: `${GAS_BASE}?page=requestadmin` },
+    notfound:     { kind: 'page', label: 'Page Not Found',    hidden: true },
 
-    seasonstats:  { kind: 'iframe', url: `${GAS_BASE}?page=seasonstats` },
-    players:      { kind: 'iframe', url: `${GAS_BASE}?page=players` },
-    scoreboard:   { kind: 'iframe', url: `${GAS_BASE}?page=scoreboard` },
-    gamereport:   { kind: 'iframe', urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
+    seasonstats:  { kind: 'iframe', label: 'Season Stats',
+                    url: `${GAS_BASE}?page=seasonstats`,
+                    urlFn: divId => `${GAS_BASE}?page=seasonstats${divId ? `&division=${encodeURIComponent(divId)}` : ''}` },
+    players:      { kind: 'iframe', label: 'Players',         url: `${GAS_BASE}?page=players` },
+    scoreboard:   { kind: 'iframe', label: 'Live Scoreboard', url: `${GAS_BASE}?page=scoreboard` },
+    gamereport:   { kind: 'iframe', label: 'Game Report',     urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
+    player:       { kind: 'iframe', label: 'Player Profile',  urlFn: name => `${GAS_BASE}?page=player&playerName=${encodeURIComponent(name || '')}`, hidden: true },
 
-    captain:      { kind: 'iframe', url: `${GAS_BASE}?page=captain`,      admin: true, withAuth: true },
-    display:      { kind: 'iframe', url: `${GAS_BASE}?page=display`,      admin: true },
-    scorecard:    { kind: 'iframe', url: `${GAS_BASE}?page=scorecard`,    admin: true, withAuth: true },
-    requests:     { kind: 'iframe', url: `${GAS_BASE}?page=requestadmin`, admin: true },
+    // Captain + Scorecard run a Google Identity Services sign-in inside the
+    // page itself; no deployment-level auth is needed, so they can stay iframed.
+    captain:      { kind: 'iframe', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`   },
+    display:      { kind: 'iframe', label: 'Match Display',     url: `${GAS_BASE}?page=display`   },
+    scorecard:    { kind: 'iframe', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard` },
   };
-
-  function withAuthParams(url) {
-    const tok = sessionStorage.getItem(GOOGLE_TOKEN_KEY);
-    const eml = sessionStorage.getItem(GOOGLE_EMAIL_KEY);
-    if (!tok) return url;
-    const sep = url.includes('?') ? '&' : '?';
-    return `${url}${sep}idToken=${encodeURIComponent(tok)}${eml ? `&userEmail=${encodeURIComponent(eml)}` : ''}`;
-  }
 
   const app          = document.getElementById('app');
   const toggleBtn    = document.getElementById('toggleSidebar');
   const backdrop     = document.getElementById('backdrop');
   const iframe       = document.getElementById('appFrame');
-  const adminToggle  = document.getElementById('adminToggle');
-  const adminLockLbl = document.getElementById('adminLockLabel');
-  const adminChildren= document.getElementById('adminChildren');
-  const adminLoginBtn= document.getElementById('adminLoginBtn');
-  const authBackdrop = document.getElementById('authBackdrop');
-  const authInput    = document.getElementById('authInput');
-  const authError    = document.getElementById('authError');
-  const authSubmit   = document.getElementById('authSubmit');
-  const authCancel   = document.getElementById('authCancel');
+  const iframeLoader = document.getElementById('iframeLoader');
+  const brandSub     = document.getElementById('brandSub');
 
   const pages = Array.from(document.querySelectorAll('.page'));
-  const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
 
-  // ---------- Sidebar ----------
-  toggleBtn.addEventListener('click', () => {
-    if (isMobile()) app.classList.toggle('is-mobile-open');
-    else app.classList.toggle('is-collapsed');
-  });
-  backdrop.addEventListener('click', () => app.classList.remove('is-mobile-open'));
-
-  // ---------- Admin unlock ----------
-  const isUnlocked = () => sessionStorage.getItem(ADMIN_STORAGE_KEY) === '1';
-
-  function applyUnlockUI() {
-    const unlocked = isUnlocked();
-    adminLockLbl.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
-    adminLockLbl.style.background = unlocked ? 'rgba(11,126,57,.14)' : 'rgba(201,106,0,.14)';
-    adminLockLbl.style.color = unlocked ? 'var(--ok)' : 'var(--warn)';
-    adminLoginBtn.textContent = unlocked ? 'Sign out' : 'Sign in';
-  }
-  function openAdminChildren()  { adminToggle.classList.add('is-open');    adminChildren.classList.add('is-open'); }
-  function closeAdminChildren() { adminToggle.classList.remove('is-open'); adminChildren.classList.remove('is-open'); }
-
-  adminToggle.addEventListener('click', () => {
-    if (!isUnlocked()) return openAuthModal();
-    adminChildren.classList.contains('is-open') ? closeAdminChildren() : openAdminChildren();
-  });
-
-  adminLoginBtn.addEventListener('click', () => {
-    if (isUnlocked()) {
-      sessionStorage.removeItem(ADMIN_STORAGE_KEY);
-      closeAdminChildren();
-      applyUnlockUI();
-      const active = document.querySelector('.nav-item.is-active');
-      if (active && active.dataset.admin === '1') navigate('home');
-    } else openAuthModal();
-  });
-
-  function openAuthModal() {
-    authBackdrop.classList.add('is-open');
-    authInput.value = '';
-    authError.textContent = '';
-    setTimeout(() => authInput.focus(), 50);
-  }
-  function closeAuthModal() { authBackdrop.classList.remove('is-open'); }
-  function submitAuth() {
-    if (authInput.value === ADMIN_PASSCODE) {
-      sessionStorage.setItem(ADMIN_STORAGE_KEY, '1');
-      applyUnlockUI();
-      openAdminChildren();
-      closeAuthModal();
-    } else {
-      authError.textContent = 'Incorrect code.';
-      authInput.focus();
-      authInput.select();
-    }
-  }
-  authSubmit.addEventListener('click', submitAuth);
-  authCancel.addEventListener('click', closeAuthModal);
-  authInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); });
-  authBackdrop.addEventListener('click', e => { if (e.target === authBackdrop) closeAuthModal(); });
+  // ---------- Sidebar (drawer) ----------
+  toggleBtn.addEventListener('click', () => app.classList.toggle('is-expanded'));
+  backdrop.addEventListener('click', () => app.classList.remove('is-expanded'));
 
   // ---------- Navigation ----------
   function setActive(routeKey) {
@@ -127,31 +53,44 @@
   function showPage(routeKey) {
     pages.forEach(p => { p.style.display = (p.id === `page-${routeKey}`) ? '' : 'none'; });
     iframe.style.display = 'none';
+    iframeLoader.classList.remove('is-visible');
     if (iframe.src && iframe.src !== 'about:blank') iframe.src = 'about:blank';
   }
   function showIframe(url) {
     pages.forEach(p => { p.style.display = 'none'; });
     iframe.style.display = 'block';
-    if (iframe.src !== url) iframe.src = url;
+    if (iframe.src !== url) {
+      iframeLoader.classList.add('is-visible');
+      iframe.src = url;
+    }
   }
+  iframe.addEventListener('load', () => {
+    if (iframe.src && iframe.src !== 'about:blank') iframeLoader.classList.remove('is-visible');
+  });
 
   function navigate(routeKey, param) {
     const route = ROUTES[routeKey];
-    if (!route) return navigate('home');
-    if (route.admin && !isUnlocked()) return openAuthModal();
+    if (!route) return navigate('notfound');
 
     if (!route.hidden) setActive(routeKey);
+    else if (routeKey === 'notfound') document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('is-active'));
+
+    if (brandSub && route.label) brandSub.textContent = route.label;
 
     if (route.kind === 'page') {
       showPage(routeKey);
       if (route.onEnter) route.onEnter();
     } else if (route.kind === 'iframe') {
-      let url = route.urlFn ? route.urlFn(param) : route.url;
-      if (route.withAuth) url = withAuthParams(url);
+      const url = route.urlFn ? route.urlFn(param) : route.url;
       showIframe(url);
+    } else if (route.kind === 'newtab') {
+      const url = route.urlFn ? route.urlFn(param) : route.url;
+      window.open(url, '_blank', 'noopener');
+      // Don't update the iframe — keep the user on whatever page they were on.
+      // But still close the drawer.
     }
 
-    if (isMobile()) app.classList.remove('is-mobile-open');
+    app.classList.remove('is-expanded');
 
     const hashTarget = param ? `#${routeKey}/${param}` : `#${routeKey}`;
     if (location.hash !== hashTarget) history.replaceState(null, '', hashTarget);
@@ -169,88 +108,14 @@
     if (ROUTES[key]) navigate(key, param);
   });
 
-  // ---------- Google Sign-In ----------
-  // Captures a Google ID token at the workers.dev origin (where it's
-  // registerable, unlike googleusercontent iframes) and forwards it into the
-  // Captain/Scorecard iframe URLs as ?idToken=. Backend verifies via Auth.js.
-  const gsiSlot         = document.getElementById('googleSignInSlot');
-  const gsiBadge        = document.getElementById('googleSignedInBadge');
-  const gsiEmailEl      = document.getElementById('googleUserEmail');
-  const gsiSignOutBtn   = document.getElementById('googleSignOutBtn');
-
-  function isTokenValid() {
-    const tok = sessionStorage.getItem(GOOGLE_TOKEN_KEY);
-    const exp = Number(sessionStorage.getItem(GOOGLE_EXP_KEY) || 0);
-    return !!tok && exp > Math.floor(Date.now() / 1000) + 30;
-  }
-
-  function applyGsiUI() {
-    const valid = isTokenValid();
-    if (valid) {
-      gsiEmailEl.textContent = sessionStorage.getItem(GOOGLE_EMAIL_KEY) || '';
-      gsiBadge.style.display = 'flex';
-      gsiSlot.style.display = 'none';
-    } else {
-      gsiBadge.style.display = 'none';
-      gsiSlot.style.display = '';
-      sessionStorage.removeItem(GOOGLE_TOKEN_KEY);
-      sessionStorage.removeItem(GOOGLE_EMAIL_KEY);
-      sessionStorage.removeItem(GOOGLE_EXP_KEY);
-    }
-  }
-
-  function decodeJwtPayload(jwt) {
-    try {
-      const b64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const padded = b64 + '==='.slice((b64.length + 3) % 4);
-      return JSON.parse(decodeURIComponent(escape(atob(padded))));
-    } catch { return {}; }
-  }
-
-  function onGoogleCredential(response) {
-    if (!response || !response.credential) return;
-    const payload = decodeJwtPayload(response.credential);
-    sessionStorage.setItem(GOOGLE_TOKEN_KEY, response.credential);
-    sessionStorage.setItem(GOOGLE_EMAIL_KEY, payload.email || '');
-    sessionStorage.setItem(GOOGLE_EXP_KEY, String(payload.exp || 0));
-    applyGsiUI();
-    // If the user is already on an admin page, reload the iframe with the token.
-    const active = document.querySelector('.nav-item.is-active');
-    const routeKey = active && active.dataset.route;
-    if (routeKey && ROUTES[routeKey] && ROUTES[routeKey].withAuth) navigate(routeKey);
-  }
-
-  function initGoogleSignIn() {
-    if (!window.google || !google.accounts || !google.accounts.id) {
-      return setTimeout(initGoogleSignIn, 200);
-    }
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: onGoogleCredential,
-      auto_select: true,
-    });
-    google.accounts.id.renderButton(gsiSlot, {
-      type: 'standard', theme: 'filled_blue', size: 'medium',
-      text: 'signin_with', shape: 'pill',
-    });
-    if (!isTokenValid()) google.accounts.id.prompt();
-  }
-
-  if (gsiSignOutBtn) gsiSignOutBtn.addEventListener('click', () => {
-    if (window.google && google.accounts && google.accounts.id) {
-      try { google.accounts.id.disableAutoSelect(); } catch {}
-    }
-    sessionStorage.removeItem(GOOGLE_TOKEN_KEY);
-    sessionStorage.removeItem(GOOGLE_EMAIL_KEY);
-    sessionStorage.removeItem(GOOGLE_EXP_KEY);
-    applyGsiUI();
-    const active = document.querySelector('.nav-item.is-active');
-    const routeKey = active && active.dataset.route;
-    if (routeKey && ROUTES[routeKey] && ROUTES[routeKey].withAuth) navigate(routeKey);
+  // Cross-origin nav from iframed GAS pages (e.g., clicking a player name in
+  // Season Stats opens the Player Profile inside the hub instead of a new tab).
+  window.addEventListener('message', e => {
+    const data = e.data;
+    if (!data || data.type !== 'cpbl-nav' || !data.route) return;
+    if (!ROUTES[data.route]) return;
+    navigate(data.route, data.param);
   });
-
-  applyGsiUI();
-  initGoogleSignIn();
 
   // ==========================================================================
   //                           DATA + RENDERERS
@@ -292,22 +157,35 @@
     return (d && d.division_name) || id || '';
   }
 
-  function isCompleted(status) {
-    return status === 'completed' || status === 'finalized';
+  function isCompleted(m) {
+    if (typeof m === 'string') return m === 'completed' || m === 'finalized' || m === 'final';
+    if (m && typeof m === 'object') {
+      if (m.status === 'completed' || m.status === 'finalized' || m.status === 'final') return true;
+      if (m.winning_team_id) return true;
+      if ((Number(m.home_games_won) || 0) + (Number(m.away_games_won) || 0) > 0) return true;
+    }
+    return false;
   }
 
   function parseMatchDate(m) {
-    // match_date may be "2026-04-21" or "4/21/2026"; start_time may be "7:00 PM"
+    // match_date may be ISO ("2026-04-21"), MM/DD/YYYY, or a stringified Date
+    // ("Fri Apr 10 2026 …"). Fall back on direct Date parsing for the latter.
     const d = (m.match_date || '').trim();
     if (!d) return null;
-    let iso = d;
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+      const t = (m.start_time || '').trim();
+      const dt = new Date(`${d.slice(0,10)}${t ? `T${to24h(t)}` : 'T00:00:00'}`);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
     if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(d)) {
       const [mo, da, yr] = d.split('/');
       const y = yr.length === 2 ? `20${yr}` : yr;
-      iso = `${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
+      const t = (m.start_time || '').trim();
+      const dt = new Date(`${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}${t ? `T${to24h(t)}` : 'T00:00:00'}`);
+      return isNaN(dt.getTime()) ? null : dt;
     }
-    const t = (m.start_time || '').trim();
-    return new Date(`${iso}${t ? `T${to24h(t)}` : 'T00:00:00'}`);
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? null : dt;
   }
 
   function to24h(s) {
@@ -386,172 +264,479 @@
   }
 
   // ==========================================================================
-  // SCHEDULE
+  // HOME (upcoming + recent previews)
   // ==========================================================================
 
-  async function renderSchedule() {
-    const body = document.getElementById('schedule-body');
-    if (body.dataset.loaded !== '1') body.innerHTML = '<div class="loading-card">Loading schedule…</div>';
+  async function renderHome() {
+    const upcomingEl = document.getElementById('home-upcoming');
+    const recentEl   = document.getElementById('home-recent');
+    if (upcomingEl.dataset.loaded === '1' && recentEl.dataset.loaded === '1') return;
 
     let data;
     try {
       data = await fetchPublicData();
     } catch (err) {
-      body.innerHTML = errorCard(err.message);
-      body.querySelector('[data-retry]').addEventListener('click', () => { body.dataset.loaded = ''; renderSchedule(); });
+      const msg = `<div class="empty-card">Couldn't load match data.</div>`;
+      upcomingEl.innerHTML = msg;
+      recentEl.innerHTML = msg;
       return;
-    }
-
-    const filter = document.querySelector('[data-filter="schedule-division"]');
-    if (filter.options.length <= 1) {
-      populateDivisionFilter(filter, data.divisions);
-      filter.addEventListener('change', renderSchedule);
     }
 
     const teamsById = indexBy(data.teams, 'team_id');
     const divsById  = indexBy(data.divisions, 'division_id');
+    const clubsById = indexBy(data.clubs || [], 'club_id');
+    const teamLogo  = id => {
+      const team = teamsById[id];
+      if (!team) return '';
+      const club = clubsById[team.club_id];
+      return club?.logo_url || '';
+    };
+    // Override displayed date + time per league rules:
+    //   D1–D4 play Saturdays; D5 plays Sundays.
+    //   D1, D2, D5 start at 12 PM; D3, D4 start at 3 PM.
+    // Snap each match to its week's Saturday/Sunday based on the Monday of week.
+    const monOfHome = x => {
+      const t = new Date(x); const day = t.getDay();
+      t.setDate(t.getDate() + (day === 0 ? -6 : 1 - day));
+      t.setHours(0,0,0,0);
+      return t;
+    };
+    const enriched  = data.matches.map(m => {
+      const _date = parseMatchDate(m);
+      let _displayDate = null;
+      if (_date) {
+        const divName = divisionName(divsById, m.division_id);
+        const divNum = (divName.match(/\d+/) || [''])[0];
+        const dayOffset = divNum === '5' ? 6 : 5; // Sat = Mon + 5, Sun = Mon + 6
+        const hour = (divNum === '3' || divNum === '4') ? 15 : 12;
+        _displayDate = monOfHome(_date);
+        _displayDate.setDate(_displayDate.getDate() + dayOffset);
+        _displayDate.setHours(hour, 0, 0, 0);
+      }
+      return { ...m, _date, _displayDate };
+    });
 
-    const divisionFilter = filter.value;
-    const upcoming = data.matches
-      .filter(m => !isCompleted(m.status))
-      .filter(m => !divisionFilter || m.division_id === divisionFilter)
-      .map(m => ({ ...m, _date: parseMatchDate(m) }))
+    const renderHomeTable = (rows) => `
+      <div class="matches-table-wrap is-compact">
+        <table class="matches-table is-compact">
+          <tbody>${rows.map(m => homeMatchRowHtml(m, teamsById, divsById, teamLogo)).join('')}</tbody>
+        </table>
+      </div>`;
+
+    // Upcoming: nearest 4 not-yet-completed, sorted ascending
+    const upcoming = enriched
+      .filter(m => !isCompleted(m))
       .sort((a,b) => {
         if (!a._date && !b._date) return 0;
         if (!a._date) return 1;
         if (!b._date) return -1;
         return a._date - b._date;
-      });
+      })
+      .slice(0, 4);
 
-    if (!upcoming.length) {
-      body.innerHTML = '<div class="empty-card">No upcoming matches.</div>';
-      body.dataset.loaded = '1';
-      return;
+    upcomingEl.innerHTML = upcoming.length
+      ? renderHomeTable(upcoming)
+      : `<div class="empty-card">No upcoming matches.</div>`;
+    upcomingEl.dataset.loaded = '1';
+
+    // Recent: most recent 4 completed, sorted descending
+    const recent = enriched
+      .filter(m => isCompleted(m))
+      .sort((a,b) => {
+        if (!a._date && !b._date) return 0;
+        if (!a._date) return 1;
+        if (!b._date) return -1;
+        return b._date - a._date;
+      })
+      .slice(0, 4);
+
+    recentEl.innerHTML = recent.length
+      ? renderHomeTable(recent)
+      : `<div class="empty-card">No completed matches yet.</div>`;
+    recentEl.dataset.loaded = '1';
+  }
+
+  // Compact home-page row — same match-cell styling as the Matches page,
+  // but only Date + Match columns (no leading week/division, no status pill).
+  function homeMatchRowHtml(m, teamsById, divsById, teamLogo) {
+    const home     = teamName(teamsById, m.home_team_id);
+    const away     = teamName(teamsById, m.away_team_id);
+    const homeLogo = teamLogo(m.home_team_id);
+    const awayLogo = teamLogo(m.away_team_id);
+    const isDone   = isCompleted(m);
+
+    const displayDate = m._displayDate || m._date;
+    const dateBlock = displayDate
+      ? `<div class="date-stack"><span class="date-dow">${DOW[displayDate.getDay()]}</span><span class="date-md">${MON[displayDate.getMonth()]} ${displayDate.getDate()}</span></div>`
+      : `<div class="date-stack"><span class="date-md is-tbd">TBD</span></div>`;
+
+    let matchCell;
+    if (isDone) {
+      const winnerIsHome = m.winning_team_id
+        ? m.winning_team_id === m.home_team_id
+        : (m.home_games_won || 0) > (m.away_games_won || 0);
+      matchCell = `
+        <button class="match-cell is-final is-compact" data-route="gamereport" data-param="${escapeHtml(m.match_id)}" title="View game report">
+          <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-score">
+            <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
+            <span class="m-score-sep">–</span>
+            <span class="m-score-num ${!winnerIsHome ? 'is-win' : ''}">${m.away_games_won || 0}</span>
+          </span>
+          <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
+        </button>`;
+    } else {
+      matchCell = `
+        <div class="match-cell is-upcoming is-compact">
+          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-vs">vs</span>
+          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+        </div>`;
     }
 
-    const groups = {};
-    upcoming.forEach(m => {
-      const k = weekKey(m._date);
-      (groups[k] = groups[k] || []).push(m);
-    });
-
-    const sortedKeys = Object.keys(groups).sort((a,b) => {
-      if (a === 'unknown') return 1;
-      if (b === 'unknown') return -1;
-      return a.localeCompare(b);
-    });
-
-    body.innerHTML = sortedKeys.map(k => `
-      <section class="data-group">
-        <h2 class="data-group-title">${weekLabel(k)}</h2>
-        <div class="match-list">
-          ${groups[k].map(m => matchCardHtml(m, teamsById, divsById, false)).join('')}
-        </div>
-      </section>
-    `).join('');
-    body.dataset.loaded = '1';
-  }
-
-  function matchCardHtml(m, teamsById, divsById, withScores) {
-    const home = teamName(teamsById, m.home_team_id);
-    const away = teamName(teamsById, m.away_team_id);
-    const div  = divisionName(divsById, m.division_id);
-
-    const dateStr = m._date ? fmtDate(m._date) : 'Date TBD';
-    const timeStr = m._date && m.start_time ? fmtTime(m._date) : '';
-    const homeWon = m.winning_team_id && m.winning_team_id === m.home_team_id;
-    const awayWon = m.winning_team_id && m.winning_team_id === m.away_team_id;
-
-    const scores = withScores
-      ? `<div class="match-scores">
-           <span class="score ${homeWon ? 'is-winner' : ''}">${m.home_games_won ?? ''}</span>
-           <span class="score-sep">—</span>
-           <span class="score ${awayWon ? 'is-winner' : ''}">${m.away_games_won ?? ''}</span>
-         </div>`
-      : '';
-
-    const action = withScores
-      ? `<div class="match-actions">
-           <button class="btn-ghost btn-sm" data-route="gamereport" data-param="${escapeHtml(m.match_id)}">
-             View Game Report
-             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-               <polyline points="9 18 15 12 9 6"/>
-             </svg>
-           </button>
-         </div>`
-      : '';
-
     return `
-      <article class="match-card ${withScores ? 'is-result' : ''}">
-        <div class="match-meta">
-          <div class="match-date">
-            <div class="match-date-day">${escapeHtml(dateStr)}</div>
-            ${timeStr ? `<div class="match-date-time">${escapeHtml(timeStr)}</div>` : ''}
-          </div>
-          ${div ? `<span class="division-pill">${escapeHtml(div)}</span>` : ''}
-        </div>
-        <div class="match-main">
-          <div class="match-teams">
-            <div class="match-team ${homeWon ? 'is-winner' : ''}">${escapeHtml(home)}</div>
-            <div class="match-vs">vs</div>
-            <div class="match-team ${awayWon ? 'is-winner' : ''}">${escapeHtml(away)}</div>
-          </div>
-          ${scores}
-        </div>
-        ${m.venue ? `<div class="match-venue">${escapeHtml(m.venue)}</div>` : ''}
-        ${action}
-      </article>`;
+      <tr class="match-row ${isDone ? 'is-done' : 'is-upcoming'}">
+        <td class="col-date">${dateBlock}</td>
+        <td class="col-match">${matchCell}</td>
+      </tr>`;
   }
 
   // ==========================================================================
-  // SCORES
+  // MATCHES (combined schedule + results)
   // ==========================================================================
 
-  async function renderScores() {
-    const body = document.getElementById('scores-body');
-    if (body.dataset.loaded !== '1') body.innerHTML = '<div class="loading-card">Loading scores…</div>';
+  // Persistent state across re-renders
+  const matchesState = {
+    groupBy: 'week', // 'week' | 'division'
+  };
+
+  async function renderMatches() {
+    const body = document.getElementById('matches-body');
+    if (body.dataset.loaded !== '1') body.innerHTML = '<div class="loading-card">Loading matches…</div>';
 
     let data;
     try {
       data = await fetchPublicData();
     } catch (err) {
       body.innerHTML = errorCard(err.message);
-      body.querySelector('[data-retry]').addEventListener('click', () => { body.dataset.loaded = ''; renderScores(); });
+      body.querySelector('[data-retry]').addEventListener('click', () => { body.dataset.loaded = ''; renderMatches(); });
       return;
-    }
-
-    const filter = document.querySelector('[data-filter="scores-division"]');
-    if (filter.options.length <= 1) {
-      populateDivisionFilter(filter, data.divisions);
-      filter.addEventListener('change', renderScores);
     }
 
     const teamsById = indexBy(data.teams, 'team_id');
     const divsById  = indexBy(data.divisions, 'division_id');
+    const clubsById = indexBy(data.clubs || [], 'club_id');
 
-    const divisionFilter = filter.value;
-    const completed = data.matches
-      .filter(m => isCompleted(m.status))
-      .filter(m => !divisionFilter || m.division_id === divisionFilter)
+    // Map team_id → logo URL via club association
+    const teamLogo = id => {
+      const team = teamsById[id];
+      if (!team) return '';
+      const club = clubsById[team.club_id];
+      return club?.logo_url || '';
+    };
+
+    // Sequential league-week numbering. Bucket each match by its Monday-of-week,
+    // collect distinct buckets in chronological order, and assign 1, 2, 3...
+    // This way Week N+1 always immediately follows Week N even if no matches
+    // were played in the calendar week between them.
+    const monOf = x => {
+      const t = new Date(x); const day = t.getDay();
+      t.setDate(t.getDate() + (day === 0 ? -6 : 1 - day));
+      t.setHours(0,0,0,0);
+      return t;
+    };
+
+    const enriched = data.matches
       .map(m => ({ ...m, _date: parseMatchDate(m) }))
-      .sort((a,b) => {
-        if (!a._date && !b._date) return 0;
-        if (!a._date) return 1;
-        if (!b._date) return -1;
-        return b._date - a._date;
-      });
+      .filter(m => m._date);
 
-    if (!completed.length) {
-      body.innerHTML = '<div class="empty-card">No completed matches yet.</div>';
+    const weekKeysSorted = [...new Set(enriched.map(m => monOf(m._date).getTime()))]
+      .sort((a, b) => a - b);
+    const weekIndex = Object.fromEntries(weekKeysSorted.map((k, i) => [k, i + 1]));
+    const weekOf = d => d ? (weekIndex[monOf(d).getTime()] || null) : null;
+
+    // Override displayed date + time per league rules:
+    //   D1–D4 play Saturdays starting 2026-04-11; D5 plays Sundays.
+    //   D1, D2, D5 start at 12 PM; D3, D4 start at 3 PM.
+    const SEASON_START = new Date(2026, 3, 11); // Sat Apr 11, 2026
+    const allMatches = enriched.map(m => {
+      const week = weekOf(m._date);
+      const divName = divisionName(divsById, m.division_id);
+      const divNum = (divName.match(/\d+/) || [''])[0];
+      let dispDate = null;
+      if (week) {
+        const dayOffset = divNum === '5' ? 1 : 0;
+        const hour = (divNum === '3' || divNum === '4') ? 15 : 12;
+        dispDate = new Date(SEASON_START);
+        dispDate.setDate(SEASON_START.getDate() + (week - 1) * 7 + dayOffset);
+        dispDate.setHours(hour, 0, 0, 0);
+      }
+      return { ...m, _week: week, _displayDate: dispDate };
+    });
+
+    // Wire up the group-by toggle once
+    const groupToggleEl = document.querySelector('.group-toggle');
+    if (groupToggleEl && !groupToggleEl.dataset.bound) {
+      groupToggleEl.dataset.bound = '1';
+      groupToggleEl.addEventListener('click', e => {
+        const btn = e.target.closest('.group-toggle-btn[data-group]');
+        if (!btn) return;
+        const next = btn.dataset.group;
+        if (matchesState.groupBy === next) return;
+        matchesState.groupBy = next;
+        groupToggleEl.querySelectorAll('.group-toggle-btn').forEach(b => {
+          const active = b.dataset.group === next;
+          b.classList.toggle('is-active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
+        renderMatches();
+      });
+    }
+    if (groupToggleEl) {
+      groupToggleEl.querySelectorAll('.group-toggle-btn').forEach(b => {
+        const active = b.dataset.group === matchesState.groupBy;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-selected', String(active));
+      });
+    }
+
+    const filteredRows = allMatches;
+
+    if (!filteredRows.length) {
+      body.innerHTML = '<div class="empty-card">No matches found.</div>';
       body.dataset.loaded = '1';
       return;
     }
 
-    body.innerHTML = `
-      <div class="match-list">
-        ${completed.map(m => matchCardHtml(m, teamsById, divsById, true)).join('')}
-      </div>`;
+    // Group rows
+    const groupBy = matchesState.groupBy;
+    const groupMap = new Map();
+
+    if (groupBy === 'week') {
+      // Group by week, secondary sort: division then date
+      filteredRows.forEach(m => {
+        const k = m._week ?? 9999;
+        if (!groupMap.has(k)) groupMap.set(k, []);
+        groupMap.get(k).push(m);
+      });
+      // Sort group keys ascending
+      const sortedGroups = [...groupMap.entries()].sort((a,b) => a[0] - b[0]);
+      groupMap.clear();
+      sortedGroups.forEach(([k, list]) => {
+        list.sort((a,b) =>
+          divisionName(divsById, a.division_id).localeCompare(divisionName(divsById, b.division_id))
+          || (a._date - b._date)
+        );
+        groupMap.set(k, list);
+      });
+    } else {
+      // Group by division, secondary sort: week then date
+      filteredRows.forEach(m => {
+        const k = m.division_id || '_unknown';
+        if (!groupMap.has(k)) groupMap.set(k, []);
+        groupMap.get(k).push(m);
+      });
+      const order = (data.divisions || []).map(d => d.division_id);
+      const sortedGroups = [...groupMap.entries()].sort((a,b) => {
+        const ai = order.indexOf(a[0]); const bi = order.indexOf(b[0]);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return String(a[0]).localeCompare(String(b[0]));
+      });
+      groupMap.clear();
+      sortedGroups.forEach(([k, list]) => {
+        list.sort((a,b) => ((a._week ?? 9999) - (b._week ?? 9999)) || (a._date - b._date));
+        groupMap.set(k, list);
+      });
+    }
+
+    // Compact date range from the actual match dates in the group.
+    // Examples: "Apr 11", "Apr 11–12", "Apr 30 – May 2"
+    const dateRangeFromList = (list) => {
+      const dates = list.map(m => m._displayDate || m._date).filter(Boolean).sort((a,b) => a - b);
+      if (!dates.length) return '';
+      const first = dates[0], last = dates[dates.length - 1];
+      const sameDay = first.getMonth() === last.getMonth() && first.getDate() === last.getDate();
+      if (sameDay) return `${MON[first.getMonth()]} ${first.getDate()}`;
+      if (first.getMonth() === last.getMonth()) {
+        return `${MON[first.getMonth()]} ${first.getDate()}–${last.getDate()}`;
+      }
+      return `${MON[first.getMonth()]} ${first.getDate()} – ${MON[last.getMonth()]} ${last.getDate()}`;
+    };
+
+    // Tally wins per team brand (first word of stripped team_name) within a group.
+    // Returns a sorted array of { brand, wins, logo } in the order the brands
+    // appear among the home teams of the group.
+    const groupTeamWins = (list) => {
+      const order = [];
+      const wins  = {};
+      const logos = {};
+      list.forEach(m => {
+        [m.home_team_id, m.away_team_id].forEach(id => {
+          const name  = teamName(teamsById, id);
+          const brand = String(name || '').split(/\s+/)[0] || '—';
+          if (!(brand in wins)) {
+            wins[brand]  = 0;
+            logos[brand] = teamLogo(id);
+            order.push(brand);
+          }
+        });
+        const isDone = isCompleted(m);
+        if (!isDone) return;
+        const winnerIsHome = m.winning_team_id
+          ? m.winning_team_id === m.home_team_id
+          : (m.home_games_won || 0) > (m.away_games_won || 0);
+        const winnerId   = winnerIsHome ? m.home_team_id : m.away_team_id;
+        const winnerName = teamName(teamsById, winnerId);
+        const winnerBrand = String(winnerName || '').split(/\s+/)[0] || '—';
+        wins[winnerBrand] = (wins[winnerBrand] || 0) + 1;
+      });
+      return order.map(brand => ({ brand, wins: wins[brand] || 0, logo: logos[brand] || '' }));
+    };
+
+    const winsSummaryHtml = (list) => {
+      const tallies = groupTeamWins(list);
+      if (!tallies.length) return '';
+      // Show top 2 brands as "Camp 3 – 2 Dill" for readability.
+      const top = tallies.slice(0, 2);
+      if (top.length === 2) {
+        const [a, b] = top;
+        const aWin = a.wins > b.wins, bWin = b.wins > a.wins;
+        return `
+          <div class="group-summary">
+            <span class="gs-team ${aWin ? 'is-winner' : ''}">${a.logo ? `<span class="gs-logo"><img src="${escapeHtml(a.logo)}" alt=""></span>` : ''}<span class="gs-name">${escapeHtml(a.brand)}</span></span>
+            <span class="gs-score"><span class="${aWin ? 'is-win' : ''}">${a.wins}</span><span class="gs-sep">–</span><span class="${bWin ? 'is-win' : ''}">${b.wins}</span></span>
+            <span class="gs-team ${bWin ? 'is-winner' : ''}">${b.logo ? `<span class="gs-logo"><img src="${escapeHtml(b.logo)}" alt=""></span>` : ''}<span class="gs-name">${escapeHtml(b.brand)}</span></span>
+          </div>`;
+      }
+      // Fallback when only one brand (rare): show count list
+      return `<div class="group-summary">${tallies.map(t => `<span class="gs-tally"><strong>${escapeHtml(t.brand)}</strong> ${t.wins}</span>`).join('')}</div>`;
+    };
+
+    // Render grouped sections
+    const sectionsHtml = [...groupMap.entries()].map(([key, list]) => {
+      let titleHtml, metaHtml;
+      if (groupBy === 'week') {
+        titleHtml = key === 9999 ? 'Date TBD' : (key === 7 ? 'Championship' : `Week ${key}`);
+        metaHtml  = key === 9999 ? '' : escapeHtml(dateRangeFromList(list));
+      } else {
+        titleHtml = escapeHtml(divisionName(divsById, key) || 'Division');
+        metaHtml  = `${list.length} match${list.length === 1 ? '' : 'es'}`;
+      }
+
+      const detailsLink = groupBy === 'division'
+        ? `<a class="group-details-link" href="#seasonstats" data-route="seasonstats" data-param="${escapeHtml(key)}" title="Open ${escapeHtml(divisionName(divsById, key) || 'Division')} details">
+             View details
+             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+               <polyline points="9 18 15 12 9 6"/>
+             </svg>
+           </a>`
+        : '';
+
+      return `
+        <section class="match-group">
+          <header class="match-group-head">
+            <div class="match-group-headline">
+              <h2 class="match-group-title">${titleHtml}</h2>
+              ${metaHtml ? `<span class="match-group-meta">${metaHtml}</span>` : ''}
+            </div>
+            <div class="match-group-summary">
+              ${winsSummaryHtml(list)}
+              ${detailsLink}
+            </div>
+          </header>
+          <div class="matches-table-wrap">
+            <table class="matches-table">
+              <thead>
+                <tr>
+                  ${groupBy === 'week'
+                    ? `<th class="col-division">Division</th><th class="col-date">Date</th>`
+                    : `<th class="col-week">Week</th><th class="col-date">Date</th>`}
+                  <th class="col-match">Match</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map(m => matchRowHtml(m, teamsById, divsById, teamLogo, groupBy)).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>`;
+    }).join('');
+
+    body.innerHTML = `<div class="match-groups">${sectionsHtml}</div>`;
+
     body.dataset.loaded = '1';
+  }
+
+  function teamBadgeHtml(name, logoUrl) {
+    const initials = String(name || '?').split(/\s+/).filter(Boolean).slice(0,2).map(x => x[0]).join('').toUpperCase();
+    const logo = logoUrl
+      ? `<img src="${escapeHtml(logoUrl)}" alt="" loading="lazy">`
+      : `<span class="m-team-fallback">${escapeHtml(initials)}</span>`;
+    return `<span class="m-team-logo">${logo}</span><span class="m-team-name">${escapeHtml(name || 'TBD')}</span>`;
+  }
+
+  function matchRowHtml(m, teamsById, divsById, teamLogo, groupBy) {
+    const home = teamName(teamsById, m.home_team_id);
+    const away = teamName(teamsById, m.away_team_id);
+    const div  = divisionName(divsById, m.division_id);
+    const homeLogo = teamLogo(m.home_team_id);
+    const awayLogo = teamLogo(m.away_team_id);
+    const isDone   = isCompleted(m);
+
+    const divNum = (div.match(/\d+/) || [''])[0];
+    const divPill = `<span class="div-pill div-${divNum || 'na'}">${escapeHtml(div)}</span>`;
+    const weekPill = m._week != null
+      ? `<span class="week-pill">${m._week === 7 ? 'Championship' : `Week ${m._week}`}</span>`
+      : `<span class="week-pill is-tbd">—</span>`;
+    // The grouping section header already shows week (or division), so drop
+    // that column from the row to avoid repeating the same value 5+ times.
+    const leadingCell = groupBy === 'week'
+      ? `<td class="col-division">${divPill}</td>`
+      : `<td class="col-week">${weekPill}</td>`;
+
+    const displayDate = m._displayDate || m._date;
+    const dateBlock = displayDate
+      ? `<div class="date-stack"><span class="date-dow">${DOW[displayDate.getDay()]}</span><span class="date-md">${MON[displayDate.getMonth()]} ${displayDate.getDate()}</span></div>`
+      : `<div class="date-stack"><span class="date-md is-tbd">TBD</span></div>`;
+
+    let matchCell;
+    if (isDone) {
+      const winnerIsHome = m.winning_team_id
+        ? m.winning_team_id === m.home_team_id
+        : (m.home_games_won || 0) > (m.away_games_won || 0);
+
+      matchCell = `
+        <button class="match-cell is-final" data-route="gamereport" data-param="${escapeHtml(m.match_id)}" title="View game report">
+          <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-score">
+            <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
+            <span class="m-score-sep">–</span>
+            <span class="m-score-num ${!winnerIsHome ? 'is-win' : ''}">${m.away_games_won || 0}</span>
+          </span>
+          <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
+          <span class="m-status m-status-final">Final</span>
+        </button>`;
+    } else {
+      const timeStr = displayDate ? fmtTime(displayDate) : '';
+      const venue   = (m.venue || '').split(/\s+/)[0]; // first word: "Camp" or "Dill"
+      const meta    = [timeStr, venue].filter(Boolean).join(' · ');
+      matchCell = `
+        <div class="match-cell is-upcoming">
+          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-vs">vs</span>
+          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+          ${meta ? `<span class="m-status m-status-upcoming">${escapeHtml(meta)}</span>` : ''}
+        </div>`;
+    }
+
+    return `
+      <tr class="match-row ${isDone ? 'is-done' : 'is-upcoming'}">
+        ${leadingCell}
+        <td class="col-date">${dateBlock}</td>
+        <td class="col-match">${matchCell}</td>
+      </tr>`;
   }
 
   // ==========================================================================
@@ -636,7 +821,6 @@
   }
 
   // ---------- Init ----------
-  applyUnlockUI();
   const [initialKey, initialParam] = (location.hash || '#home').slice(1).split('/');
-  navigate(ROUTES[initialKey] ? initialKey : 'home', initialParam);
+  navigate(initialKey || 'home', initialParam);
 })();
