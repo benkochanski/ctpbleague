@@ -144,6 +144,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.brand-title-full { display: inline; }
+.brand-title-short { display: none; }
 .brand-sub {
   color: #d8e5fb;
   font-size: 12px;
@@ -1055,14 +1057,48 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .matches-table .col-week     { width: 70px; }
   .matches-table .col-division { width: auto; }
   .matches-table .col-date     { width: 80px; }
-  .match-cell { grid-template-columns: 1fr 80px 1fr 90px; gap: 8px; }
+  /* Drop the status column on mobile — the score / "vs" already conveys
+     final-vs-upcoming, and the 140px-wide pill was overflowing into the
+     away-team name at narrow widths. */
+  .match-cell { grid-template-columns: 1fr 80px 1fr; gap: 8px; }
+  .match-cell .m-status { display: none; }
   .week-pill { font-size: 13px; padding: 4px 9px; }
   .div-pill  { font-size: 11px; padding: 3px 8px; }
   .date-md   { font-size: 16px; }
   .date-dow  { font-size: 9px; }
   .m-team-logo { width: 26px; height: 26px; border-radius: 6px; }
   .m-score-num { font-size: 22px; }
-  .m-status-upcoming { display: none; }
+}
+
+/* Tight phones: stack each match row so the leading pill + date sit on top
+   and the match (teams + score) gets the full row width below. */
+@media (max-width: 600px) {
+  .matches-table thead { display: none; }
+  .matches-table,
+  .matches-table tbody,
+  .matches-table tr { display: block; width: 100%; }
+  .matches-table tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-s);
+  }
+  .matches-table tbody tr:last-child { border-bottom: none; }
+  .matches-table td { display: block; padding: 0; border: none; }
+  .matches-table .col-week,
+  .matches-table .col-division { grid-column: 1; grid-row: 1; width: auto; }
+  .matches-table .col-date     { grid-column: 2; grid-row: 1; width: auto; justify-self: end; }
+  .matches-table .col-match    { grid-column: 1 / -1; grid-row: 2; }
+  .matches-table .col-date .date-stack {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .match-cell,
+  .match-cell.is-final { grid-template-columns: 1fr 70px 1fr; gap: 8px; }
 }
 
 /* Compact variant for the home-page mini tables ("This Week" / "Latest Scores") */
@@ -1641,4 +1677,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .brand-logo { width: 60px; height: 60px; border-radius: 14px; }
   .app-header { padding: 12px 16px; gap: 12px; }
   .app { --header-h: 84px; }
+}
+
+/* Tight phones: swap to a shorter title so it stops getting truncated
+   ("CONNECTICUT PICKLEBALL LE…"). The hero already uses "CT Pickleball
+   League" so the abbreviation is consistent with the brand voice. */
+@media (max-width: 540px) {
+  .brand-title-full  { display: none; }
+  .brand-title-short { display: inline; }
+  .brand-title { font-size: 22px; letter-spacing: 1.2px; }
+  .brand-logo  { width: 52px; height: 52px; border-radius: 12px; }
+  .app-header  { padding: 10px 14px; gap: 10px; }
 }
