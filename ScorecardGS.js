@@ -8,8 +8,8 @@ function getOpenMatchesForScoreEntryV3() {
     status: r.status,
     home_team_id: r.home_team_id,
     away_team_id: r.away_team_id,
-    home_team_name: r.home_team_name,
-    away_team_name: r.away_team_name,
+    home_team_name: stripDivisionSuffix_(r.home_team_name),
+    away_team_name: stripDivisionSuffix_(r.away_team_name),
     _source: 'V3'
   }));
 }
@@ -55,8 +55,8 @@ function getOpenMatchesForScoreEntryV2() {
         status: String(m.status || 'scheduled').trim(),
         home_team_id: homeKey,
         away_team_id: awayKey,
-        home_team_name: teamsById[homeKey]?.team_name || homeKey,
-        away_team_name: teamsById[awayKey]?.team_name || awayKey
+        home_team_name: stripDivisionSuffix_(teamsById[homeKey]?.team_name || homeKey),
+        away_team_name: stripDivisionSuffix_(teamsById[awayKey]?.team_name || awayKey)
       };
     })
     .filter(m => m.status.toLowerCase() !== 'completed');
@@ -194,8 +194,8 @@ function getScorecardDataV2(matchId) {
   return {
     match: {
       ...match,
-      home_team_name: homeTeam ? homeTeam.team_name : match.home_team_id,
-      away_team_name: awayTeam ? awayTeam.team_name : match.away_team_id
+      home_team_name: stripDivisionSuffix_(homeTeam ? homeTeam.team_name : match.home_team_id),
+      away_team_name: stripDivisionSuffix_(awayTeam ? awayTeam.team_name : match.away_team_id)
     },
     rounds: rounds
   };

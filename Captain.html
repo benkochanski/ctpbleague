@@ -71,6 +71,10 @@
       color:var(--text-inv);
     }
 
+    /* When embedded in the hub iframe, hide the duplicate league brand. */
+    html.embedded .league-brand { display: none; }
+    html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
+    html.embedded .header-right { justify-content: flex-end; }
     .league-brand{
       display:flex;
       align-items:center;
@@ -1406,6 +1410,27 @@
   </style>
 </head>
 <body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
+
+<!-- Auth: token comes from the wrapper shell (workers.dev) via doGet's
+     idToken query param, injected here. GSI can't validate origin from inside
+     the googleusercontent iframe, so the shell handles sign-in and we just
+     read the resulting token. -->
+<script>
+  window.cpblIdToken = <?= JSON.stringify(injectedIdToken || '') ?>;
+  window.cpblUserEmail = <?= JSON.stringify(injectedEmail || '') ?>;
+</script>
+<style>
+  .cpbl-auth-area { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .cpbl-auth-signedin { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.92); }
+  .cpbl-auth-signedin button {
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 6px;
+    cursor: pointer; transition: background .15s;
+  }
+  .cpbl-auth-signedin button:hover { background: rgba(255,255,255,.24); }
+  .cpbl-auth-email { font-weight: 600; }
+</style>
 <div class="top-shell">
   <div class="league-header">
     <div class="league-brand">
@@ -1419,6 +1444,17 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="cpbl-auth-area">
+        <? if (injectedEmail) { ?>
+          <div class="cpbl-auth-signedin">
+            <span>Signed in as <span class="cpbl-auth-email"><?= injectedEmail ?></span></span>
+          </div>
+        <? } else { ?>
+          <div class="cpbl-auth-signedin" style="opacity:.85;">
+            <span>Sign in from the main page to make changes.</span>
+          </div>
+        <? } ?>
+      </div>
       <div class="league-right"></div>
     </div>
   </div>

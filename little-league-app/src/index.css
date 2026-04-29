@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body {
+  @apply font-sans antialiased;
+}
+
+#root {
+  @apply min-h-screen;
+}

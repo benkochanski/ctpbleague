@@ -13,7 +13,7 @@ function getPlayerListV1() {
     const pid      = String(p.player_id || '').trim();
     const fullName = String(p.name || p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || '').trim();
     const duprRaw  = p.registered_dupr ?? p.dupr ?? null;
-    const teamName = String(p.club || p.team_name || '').trim();
+    const teamName = stripDivisionSuffix_(String(p.club || p.team_name || '').trim());
 
     return {
       player_id: pid,
@@ -93,15 +93,21 @@ function getPlayerPageData(playerId) {
 
   const latestRoster = myRosters[0] || null;
   const myTeam  = latestRoster ? teamMap[String(latestRoster.team_id || '').trim()] : null;
-  const playerClubName = String(player.club || player.team_name || '').trim();
+  // Strip "Division N" so the comparison succeeds whether the Players or
+  // Teams sheet stores the club with or without the suffix.
+  const playerClubName = stripDivisionSuffix_(String(player.club || player.team_name || '').trim());
   const teamClubId = myTeam ? String(myTeam.club_id || '').trim() : '';
   const myClub = myTeam
     ? (clubMap[teamClubId] || allClubs.find(c => {
-        const cname = String(c.club_name || c.short_name || '').toLowerCase();
-        const tname = String(myTeam.team_name || '').toLowerCase();
-        return cname && (tname.includes(cname) || cname.includes(tname.split(' ')[0]));
+        const cname = stripDivisionSuffix_(String(c.club_name || c.short_name || '').trim()).toLowerCase();
+        const tname = stripDivisionSuffix_(String(myTeam.team_name || '').trim()).toLowerCase();
+        return cname && tname && (tname === cname || tname.includes(cname) || cname.includes(tname));
       }))
-    : allClubs.find(c => String(c.club_name || c.short_name || '').trim().toLowerCase() === playerClubName.toLowerCase());
+    : allClubs.find(c => {
+        const cn = stripDivisionSuffix_(String(c.club_name || c.short_name || '').trim()).toLowerCase();
+        const pn = playerClubName.toLowerCase();
+        return cn && pn && (cn === pn || pn.includes(cn) || cn.includes(pn));
+      });
   const logoId  = myClub
     ? String(myClub.logo_id || myClub.logo_file_id || myClub.logo_url || '').trim()
     : '';
@@ -170,9 +176,9 @@ function getPlayerPageData(playerId) {
       won:                won,
       diff:               myScore - oppScore,
       my_team_id:         myTeamId,
-      my_team_name:       String(myTeamObj.team_name  || myTeamId  || '').trim(),
+      my_team_name:       stripDivisionSuffix_(String(myTeamObj.team_name  || myTeamId  || '').trim()),
       opp_team_id:        oppTeamId,
-      opp_team_name:      String(oppTeamObj.team_name || oppTeamId || '').trim()
+      opp_team_name:      stripDivisionSuffix_(String(oppTeamObj.team_name || oppTeamId || '').trim())
     };
   }).sort((a, b) => String(b.match_date).localeCompare(String(a.match_date)));
 
@@ -183,7 +189,7 @@ function getPlayerPageData(playerId) {
       gender:        String(player.gender || '').trim(),
       dupr:          (player.registered_dupr ?? player.dupr) != null ? Number(player.registered_dupr ?? player.dupr) : null,
       team_id:       myTeam ? String(myTeam.team_id  || '').trim() : '',
-      team_name:     myTeam ? String(myTeam.team_name || '').trim() : playerClubName,
+      team_name:     stripDivisionSuffix_(myTeam ? String(myTeam.team_name || '').trim() : playerClubName),
       team_logo_url: driveImageUrl_(logoId)
     },
     gamelog,

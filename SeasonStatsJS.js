@@ -33,21 +33,97 @@ function getSeasonDataV1(divisionKey) {
   // ── Teams in this division ─────────────────────────────────────────────
   const teamRows = ss.getSheetByName('Teams').getDataRange().getValues();
   const tH = teamRows[0];
-  const divTeams = {};
+  const divTeams = {};      // stripped (for display)
+  const divTeamsFull = {};  // unstripped (for logo keyword matching)
   teamRows.slice(1)
     .filter(r => String(r[tH.indexOf('division_id')]) === divisionKey
               && String(r[tH.indexOf('active')]).toLowerCase() === 'true')
-    .forEach(r => { divTeams[String(r[tH.indexOf('team_id')])] = String(r[tH.indexOf('team_name')]); });
+    .forEach(r => {
+      const tid = String(r[tH.indexOf('team_id')]);
+      const fullName = String(r[tH.indexOf('team_name')]);
+      divTeams[tid]     = stripDivisionSuffix_(fullName);
+      divTeamsFull[tid] = fullName;
+    });
 
-  // ── Match IDs for this division/season ─────────────────────────────────
+  // All teams (regardless of active flag) — used for name resolution in matches
+  const allTeamNames = {};
+  const allTeamNamesFull = {};
+  teamRows.slice(1).forEach(r => {
+    const tid = String(r[tH.indexOf('team_id')]);
+    const fullName = String(r[tH.indexOf('team_name')]);
+    allTeamNames[tid]     = stripDivisionSuffix_(fullName);
+    allTeamNamesFull[tid] = fullName;
+  });
+
+  // ── Match IDs + match list for this division/season ────────────────────
   const matchRows = ss.getSheetByName('Matches').getDataRange().getValues();
   const mH = matchRows[0];
-  const divMatchIds = new Set(
-    matchRows.slice(1)
-      .filter(r => String(r[mH.indexOf('division_id')]) === divisionKey
-                && (!seasonId || String(r[mH.indexOf('season_id')]) === seasonId))
-      .map(r => String(r[mH.indexOf('match_id')]))
-  );
+  const mIdIdx     = mH.indexOf('match_id');
+  const mDivIdx    = mH.indexOf('division_id');
+  const mSeasonIdx = mH.indexOf('season_id');
+  const mDateIdx   = mH.indexOf('match_date');
+  const mTimeIdx   = mH.indexOf('start_time');
+  const mStatusIdx = mH.indexOf('status');
+  const mHomeIdx   = mH.indexOf('home_team_id');
+  const mAwayIdx   = mH.indexOf('away_team_id');
+  const mHGWIdx    = mH.indexOf('home_games_won');
+  const mAGWIdx    = mH.indexOf('away_games_won');
+  const mWinIdx    = mH.indexOf('winning_team_id');
+
+  // Helper: normalize match_date to ISO yyyy-mm-dd string regardless of source
+  // (sheet may return native Date object, or string in various formats).
+  const toIsoDate_ = v => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      const y = v.getFullYear();
+      const m = String(v.getMonth() + 1).padStart(2, '0');
+      const d = String(v.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+      const [mo, da, yr] = s.split('/');
+      const y = yr.length === 2 ? `20${yr}` : yr;
+      return `${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    }
+    return s;
+  };
+
+  const divMatches = matchRows.slice(1)
+    .filter(r => String(r[mDivIdx]) === divisionKey
+              && (!seasonId || String(r[mSeasonIdx]) === seasonId))
+    .map(r => {
+      const homeId = String(r[mHomeIdx] || '');
+      const awayId = String(r[mAwayIdx] || '');
+      return {
+        match_id:        String(r[mIdIdx] || ''),
+        match_date:      toIsoDate_(r[mDateIdx]),
+        start_time:      String(r[mTimeIdx] || ''),
+        status:          String(r[mStatusIdx] || '').toLowerCase(),
+        home_team_id:    homeId,
+        away_team_id:    awayId,
+        home_team_name:  allTeamNames[homeId] || homeId || '',
+        away_team_name:  allTeamNames[awayId] || awayId || '',
+        home_games_won:  Number(r[mHGWIdx]) || 0,
+        away_games_won:  Number(r[mAGWIdx]) || 0,
+        winning_team_id: String(r[mWinIdx] || ''),
+      };
+    });
+
+  const divMatchIds = new Set(divMatches.map(m => m.match_id));
+  // Map for in-place enrichment of per-match game tallies during the
+  // Match_Games pass below (the Matches sheet often has empty score cells).
+  const divMatchById_ = {};
+  divMatches.forEach(m => { divMatchById_[m.match_id] = { home: 0, away: 0, ref: m }; });
 
   // ── Players lookup (name + optional gender) ────────────────────────────
   const plyrRows = ss.getSheetByName('Players').getDataRange().getValues();
@@ -118,6 +194,12 @@ function getSeasonDataV1(divisionKey) {
     const homeWon = winner === home;
     const validGt = VALID_TYPES.has(gt);
 
+    // Per-match game tallies (used to fill in match-level scores)
+    const _t = divMatchById_[matchId];
+    if (_t) {
+      if (homeWon) _t.home++; else _t.away++;
+    }
+
     // ── Team stats ─────────────────────────────────────────────────────
     if (validGt) {
       if (typeStats[home]) {
@@ -160,6 +242,17 @@ function getSeasonDataV1(divisionKey) {
       .forEach(pid => accum(pid, away, !homeWon, as_,  hs));
   });
 
+  // ── Apply per-match tallies (overrides empty sheet score cells) ────────
+  Object.values(divMatchById_).forEach(({ home, away, ref }) => {
+    if (home + away === 0) return; // no games yet — match is upcoming
+    if (!ref.home_games_won)  ref.home_games_won = home;
+    if (!ref.away_games_won)  ref.away_games_won = away;
+    if (!ref.winning_team_id) {
+      if (home > away) ref.winning_team_id = ref.home_team_id;
+      else if (away > home) ref.winning_team_id = ref.away_team_id;
+    }
+  });
+
   // ── Standings_Summary (match W/L and ranking) ──────────────────────────
   const stRows = ss.getSheetByName('Standings_Summary').getDataRange().getValues();
   const stH    = stRows[0];
@@ -178,6 +271,7 @@ function getSeasonDataV1(divisionKey) {
 
   const standings = Object.keys(divTeams).map(tid => ({
     team_name:      divTeams[tid],
+    team_name_full: divTeamsFull[tid] || divTeams[tid],
     matches_won:    (stByTeam[tid] || {}).matches_won   || 0,
     matches_lost:   (stByTeam[tid] || {}).matches_lost  || 0,
     standings_rank: (stByTeam[tid] || {}).standings_rank || 99,
@@ -214,6 +308,7 @@ function getSeasonDataV1(divisionKey) {
       return {
         name:            playerNames[pid] || pid,
         team_name:       divTeams[ps.team_id] || ps.team_id,
+        team_name_full:  divTeamsFull[ps.team_id] || divTeams[ps.team_id] || ps.team_id,
         wins:            ps.wins,
         losses:          ps.losses,
         points_for:      ps.points_for,
@@ -230,6 +325,6 @@ function getSeasonDataV1(divisionKey) {
       };
     });
 
-  return JSON.stringify({ standings, playerStats });
+  return JSON.stringify({ standings, playerStats, matches: divMatches });
 
 }

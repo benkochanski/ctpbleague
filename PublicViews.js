@@ -24,8 +24,8 @@ function getPublicMatchStatsV1(matchId) {
   const findTeam = id => teams.find(t => String(t.team_id || '').trim() === id);
   const homeTeam = findTeam(homeTeamId);
   const awayTeam = findTeam(awayTeamId);
-  const homeName = (homeTeam && (homeTeam.team_name || homeTeam.name)) || homeTeamId;
-  const awayName = (awayTeam && (awayTeam.team_name || awayTeam.name)) || awayTeamId;
+  const homeName = stripDivisionSuffix_((homeTeam && (homeTeam.team_name || homeTeam.name)) || homeTeamId);
+  const awayName = stripDivisionSuffix_((awayTeam && (awayTeam.team_name || awayTeam.name)) || awayTeamId);
 
   // Standings Summary — keyed by team_id
   const standingsRows = getObjects_(SHEETS.STANDINGS_SUMMARY);
@@ -34,7 +34,7 @@ function getPublicMatchStatsV1(matchId) {
     if (!row) return null;
     return {
       team_id:        id,
-      team_name:      (findTeam(id) && (findTeam(id).team_name || findTeam(id).name)) || id,
+      team_name:      stripDivisionSuffix_((findTeam(id) && (findTeam(id).team_name || findTeam(id).name)) || id),
       matches_played: Number(row.matches_played  || 0),
       match_wins:     Number(row.match_wins      || 0),
       match_losses:   Number(row.match_losses    || 0),
@@ -100,7 +100,7 @@ function getMatchesPublicV1() {
   const teamMap = {};
   teams.forEach(t => {
     const id = String(t.team_id || '').trim();
-    if (id) teamMap[id] = String(t.team_name || t.name || '').trim() || id;
+    if (id) teamMap[id] = stripDivisionSuffix_(String(t.team_name || t.name || '').trim()) || id;
   });
 
   const rows = matches.map(m => {

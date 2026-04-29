@@ -1,12 +1,16 @@
 {
   "hosting": {
-    "public": ".",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/countdown-timer.html",
+        "destination": "/countdown-timer.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"

@@ -41,8 +41,8 @@ function getCaptainSelectorData() {
         venue: String(m.venue || m.location || m.match_location || '').trim(),
         home_team_id: homeId,
         away_team_id: awayId,
-        home_team_name: String((homeTeam && (homeTeam.team_name || homeTeam.name)) || homeId).trim(),
-        away_team_name: String((awayTeam && (awayTeam.team_name || awayTeam.name)) || awayId).trim()
+        home_team_name: stripDivisionSuffix_(String((homeTeam && (homeTeam.team_name || homeTeam.name)) || homeId)),
+        away_team_name: stripDivisionSuffix_(String((awayTeam && (awayTeam.team_name || awayTeam.name)) || awayId))
       };
     })
   };
@@ -215,9 +215,13 @@ function doGet(e) {
   if (page === 'seasonstats') {
     const t = HtmlService.createTemplateFromFile('SeasonStats');
     t.initialPlayerId = String(params.playerId || '').trim();
+    // Pre-select division when coming from the Matches page "View details"
+    // link. The query string here is reachable via params; the iframe's own
+    // window.location.search is rewritten by Google's googleusercontent
+    // redirect, so reading it client-side doesn't work — inject instead.
+    t.initialDivision = String(params.division || '').trim();
+    t.initialDisplay  = String(params.display  || '').trim();
     // Inject the real exec URL so client-side JS can open other pages correctly.
-    // window.location.href inside a GAS page returns the sandbox googleusercontent.com
-    // domain, not the script.google.com/macros/s/.../exec endpoint.
     t.webAppUrl = ScriptApp.getService().getUrl();
     return t.evaluate()
       .setTitle('CTPBL Player Stats')
@@ -290,6 +294,11 @@ function doGet(e) {
   t.requestedMatchId = matchId;
   t.requestedTeamId = teamId;
   t.bootstrapError = bootstrapError;
+  // Token + email from the wrapper shell's Google Sign-In (workers.dev origin),
+  // forwarded via query string so the iframe's writes can authenticate without
+  // running GSI itself (which can't validate against a googleusercontent origin).
+  t.injectedIdToken = String(params.idToken  || '').trim();
+  t.injectedEmail   = String(params.userEmail || '').trim();
 
   return t.evaluate()
     .setTitle('Captain Portal')
@@ -511,11 +520,12 @@ function getCaptainPortalData(matchId, teamId) {
   };
 }
 
-function saveCaptainLineupDraft(matchId, teamId, assignments) {
+function saveCaptainLineupDraft(idToken, matchId, teamId, assignments) {
   const cleanMatchId = String(matchId || '').trim();
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
+  const access = requireCaptainAccess_(idToken, cleanTeamId);
 
   const normalizedAssignments = normalizeAssignments_(
     assignments,
@@ -523,6 +533,13 @@ function saveCaptainLineupDraft(matchId, teamId, assignments) {
   );
 
   saveTeamLineup_(cleanMatchId, cleanTeamId, normalizedAssignments, false);
+  appendAuditLog_({
+    access,
+    entityType: 'Lineup',
+    entityId:   cleanMatchId + ':' + cleanTeamId,
+    actionType: 'draft',
+    newValueJson: JSON.stringify(normalizedAssignments).slice(0, 50000)
+  });
 
   const games = getObjects_(SHEETS.MATCH_GAMES)
     .filter(g => String(g.match_id || '').trim() === cleanMatchId)
@@ -538,11 +555,12 @@ function saveCaptainLineupDraft(matchId, teamId, assignments) {
   };
 }
 
-function submitCaptainLineup(matchId, teamId, assignments) {
+function submitCaptainLineup(idToken, matchId, teamId, assignments) {
   const cleanMatchId = String(matchId || '').trim();
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
+  const access = requireCaptainAccess_(idToken, cleanTeamId);
 
   const match = getObjects_(SHEETS.MATCHES).find(m =>
     String(m.match_id || '').trim() === cleanMatchId
@@ -557,6 +575,13 @@ function submitCaptainLineup(matchId, teamId, assignments) {
 
   saveTeamLineup_(cleanMatchId, cleanTeamId, assignments || [], true);
   revealLineupsIfReady_(cleanMatchId);
+  appendAuditLog_({
+    access,
+    entityType: 'Lineup',
+    entityId:   cleanMatchId + ':' + cleanTeamId,
+    actionType: 'submit',
+    newValueJson: JSON.stringify(assignments || []).slice(0, 50000)
+  });
 
   return {
     ok: true,
@@ -621,7 +646,7 @@ function getPublicDashboardData() {
  */
 function getPublicSiteData_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('publicSiteData_v1');
+  const cached = cache.get('publicSiteData_v4');
   if (cached) return JSON.parse(cached);
 
   const str = (v) => String(v == null ? '' : v).trim();
@@ -634,38 +659,115 @@ function getPublicSiteData_() {
     active:          normalizeBool_(d.active)
   })).filter(d => d.active !== false);
 
+  // Resolve a club logo from any of the columns the Clubs sheet may use:
+  // logo_url (full URL or Drive ID), logo_id, logo_file_id, image_file_id.
+  const resolveClubLogo = (c) => {
+    const raw = str(c.logo_url) || str(c.logo_id) || str(c.logo_file_id) || str(c.image_file_id);
+    if (!raw) return '';
+    return raw.startsWith('http') ? raw : driveImageUrl_(raw);
+  };
+
   const clubs = getObjects_(SHEETS.CLUBS).map(c => ({
     club_id:    str(c.club_id),
     club_name:  str(c.club_name),
     short_name: str(c.short_name),
-    logo_url:   str(c.logo_url).startsWith('http')
-      ? str(c.logo_url)
-      : (str(c.logo_url) ? driveImageUrl_(str(c.logo_url)) : '')
+    logo_url:   resolveClubLogo(c)
   }));
 
   const teams = getObjects_(SHEETS.TEAMS).map(t => ({
     team_id:     str(t.team_id),
-    team_name:   str(t.team_name),
+    team_name:   stripDivisionSuffix_(str(t.team_name)),
     club_id:     str(t.club_id),
     division_id: str(t.division_id)
   }));
 
-  const matches = getObjects_(SHEETS.MATCHES).map(m => ({
-    match_id:         str(m.match_id),
-    season_id:        str(m.season_id),
-    division_id:      str(m.division_id),
-    home_team_id:     str(m.home_team_id),
-    away_team_id:     str(m.away_team_id),
-    match_date:       str(m.match_date),
-    start_time:       str(m.start_time),
-    venue:            str(m.venue),
-    status:           str(m.status).toLowerCase(),
-    home_rounds_won:  num(m.home_rounds_won),
-    away_rounds_won:  num(m.away_rounds_won),
-    home_games_won:   num(m.home_games_won),
-    away_games_won:   num(m.away_games_won),
-    winning_team_id:  str(m.winning_team_id)
-  }));
+  // Normalize start_time to a "h:mm AM/PM" string. Sheets return a time-only
+  // cell as a Date anchored to 1899-12-30, so extracting hours/minutes gives
+  // the actual time.
+  const toClockTime = (v) => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      let h  = v.getHours();
+      const min = v.getMinutes();
+      if (h === 0 && min === 0) return '';
+      const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2,'0')} ${ap}`;
+    }
+    return String(v).trim();
+  };
+
+  // Normalize match_date to ISO yyyy-mm-dd (sheet may return native Date or
+  // various string formats — clients should not have to guess).
+  const toIsoDate = (v) => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      return Utilities.formatDate(v, Session.getScriptTimeZone() || 'America/New_York', 'yyyy-MM-dd');
+    }
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+      const [mo, da, yr] = s.split('/');
+      const y = yr.length === 2 ? '20' + yr : yr;
+      return y + '-' + mo.padStart(2, '0') + '-' + da.padStart(2, '0');
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return Utilities.formatDate(d, Session.getScriptTimeZone() || 'America/New_York', 'yyyy-MM-dd');
+    }
+    return s;
+  };
+
+  // Derive per-match game tallies from Match_Games (sheet's home_games_won is
+  // often empty). Counts the number of games each team won within each match.
+  const gameRows = getObjects_(SHEETS.MATCH_GAMES);
+  const matchTallies = {};
+  gameRows.forEach(g => {
+    const mid = str(g.match_id);
+    if (!mid) return;
+    if (!matchTallies[mid]) matchTallies[mid] = { home: 0, away: 0 };
+    const winner = str(g.winner_team_id);
+    const home   = str(g.home_team_id);
+    if (!winner) return;
+    if (winner === home) matchTallies[mid].home += 1;
+    else                 matchTallies[mid].away += 1;
+  });
+
+  const matches = getObjects_(SHEETS.MATCHES).map(m => {
+    const matchId = str(m.match_id);
+    const homeId  = str(m.home_team_id);
+    const awayId  = str(m.away_team_id);
+    const tally   = matchTallies[matchId];
+
+    // Prefer Matches sheet values when present, fall back to derived tallies
+    let hgw = num(m.home_games_won);
+    let agw = num(m.away_games_won);
+    let winId = str(m.winning_team_id);
+    if (tally && hgw + agw === 0) { hgw = tally.home; agw = tally.away; }
+    if (!winId && (hgw || agw)) {
+      if (hgw > agw) winId = homeId;
+      else if (agw > hgw) winId = awayId;
+    }
+
+    return {
+      match_id:         matchId,
+      season_id:        str(m.season_id),
+      division_id:      str(m.division_id),
+      home_team_id:     homeId,
+      away_team_id:     awayId,
+      match_date:       toIsoDate(m.match_date),
+      start_time:       toClockTime(m.start_time),
+      venue:            str(m.venue),
+      status:           str(m.status).toLowerCase(),
+      home_rounds_won:  num(m.home_rounds_won),
+      away_rounds_won:  num(m.away_rounds_won),
+      home_games_won:   hgw,
+      away_games_won:   agw,
+      winning_team_id:  winId
+    };
+  });
 
   const standings = getObjects_(SHEETS.STANDINGS_SUMMARY).map(s => ({
     season_id:       str(s.season_id),
@@ -709,7 +811,7 @@ function getPublicSiteData_() {
     standings
   };
 
-  cache.put('publicSiteData_v1', JSON.stringify(payload), 60);
+  cache.put('publicSiteData_v4', JSON.stringify(payload), 60);
   return payload;
 }
 

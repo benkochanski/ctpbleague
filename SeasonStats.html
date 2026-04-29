@@ -27,7 +27,34 @@
     #top-static { flex-shrink: 0; background: var(--bg); box-shadow: 0 4px 20px rgba(8,30,67,.12); z-index: 50; }
     .page { flex: 1; min-height: 0; overflow-y: auto; }
 
-    /* ── Header ── */
+    /* ── Series wrap with corner dropdown ── */
+    .series-wrap { position: relative; margin: 12px 20px; }
+    .div-select-corner {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      z-index: 5;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 6px;
+      padding: 3px 20px 3px 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: rgba(255,255,255,.92);
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(255,255,255,0.7)'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      transition: background-color .15s, border-color .15s;
+    }
+    .div-select-corner:hover { background-color: rgba(255,255,255,.16); border-color: rgba(255,255,255,.36); }
+    .div-select-corner option { background: var(--navy); color: #fff; }
+
+    /* ── Legacy header (kept dormant; markup removed) ── */
     .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); }
     .league-header { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
     .league-brand { display: flex; align-items: center; gap: 12px; }
@@ -71,40 +98,100 @@
     ════════════════════════════════════════════ */
     .series-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3870 48%, #0d5229 100%); padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
     .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .sh-logo-big { height: 96px; width: auto; min-width: 64px; max-width: 160px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.30); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .sh-logo-big { height: 132px; width: auto; min-width: 88px; max-width: 220px; border-radius: 22px; background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.32); overflow: hidden; display: flex; align-items: center; justify-content: center; }
     .sh-logo-big img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
     .sh-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: #fff; text-align: center; }
     .sh-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .sh-series-lbl { font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
-    .sh-score { font-family: 'Bebas Neue', sans-serif; font-size: 68px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
+    .sh-series-lbl { font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
+    .sh-score { font-family: 'Bebas Neue', sans-serif; font-size: 84px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
     .sh-score em { color: var(--gold); font-style: normal; }
-    .sh-leader { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); text-align: center; margin-top: 4px; }
+    .sh-leader { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); text-align: center; margin-top: 4px; }
 
     /* ════════════════════════════════════════════
        GAME-TYPE TILES
     ════════════════════════════════════════════ */
-    .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 4), 1fr); border-top: 1px solid var(--border-s); }
-    .gt-tile { padding: 10px 30px; border-right: 1px solid var(--border-s); }
+    /* ── Display-only mode (player standings popout) ── */
+    html.display-only #top-static { display: none !important; }
+    html.display-only .page { padding: 0 !important; }
+    html.display-only #playerPanel {
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      height: 100vh;
+    }
+    html.display-only .sec-head { border-radius: 0 !important; }
+
+    /* ── Series with narrow schedule sidepanel ── */
+    .series-with-side { display: grid; grid-template-columns: minmax(0,1fr) 200px; }
+    .series-with-side > .series-main { min-width: 0; }
+    .series-side {
+      background: linear-gradient(180deg, var(--navy) 0%, #0d5229 100%);
+      padding: 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-left: 1px solid rgba(255,255,255,.10);
+      min-width: 0;
+    }
+    .ms-hd {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 1.4px;
+      color: var(--gold);
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.18);
+      margin-bottom: 6px;
+    }
+    .ms-row {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 8px;
+      padding: 6px 2px;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .ms-row:last-child { border-bottom: none; }
+    .ms-row.is-clickable { cursor: pointer; border-radius: 4px; transition: background .15s; }
+    .ms-row.is-clickable:hover { background: rgba(255,213,46,.10); }
+    .ms-row.is-clickable:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 1px; }
+    .ms-date {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: .6px;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .ms-info {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.92);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ms-info .winner { color: var(--gold); font-weight: 700; }
+    .ms-info.upcoming { color: rgba(255,255,255,.55); font-style: italic; font-weight: 500; }
+    .ms-empty { color: rgba(255,255,255,.55); font-size: 12px; padding: 8px 4px; }
+    @media (max-width: 700px) { .series-with-side { grid-template-columns: 1fr; } .series-side { border-left: none; border-top: 1px solid rgba(255,255,255,.10); } }
+
+    .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 4), minmax(0,1fr)); border-top: 1px solid var(--border-s); }
+    .gt-tile { padding: 10px 14px; border-right: 1px solid var(--border-s); min-width: 0; }
     .gt-tile:last-child { border-right: none; }
-    .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
-    .gt-type-lbl.all    { color: var(--navy); }
-    .gt-type-lbl.womens { color: #123a7c; }
-    .gt-type-lbl.mens   { color: var(--green); }
-    .gt-type-lbl.mixed  { color: #7a5c00; }
-    .gt-type-lbl.coed   { color: #0d5229; }
+    .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; white-space: nowrap; pointer-events: none; color: var(--navy); }
     /* mini banner */
-    .gt-mini-banner { display: grid; grid-template-columns: 72px 1fr 72px; align-items: center; gap: 6px; }
-    .gt-mini-logo { width: 72px; height: 64px; border-radius: 14px; border: 1.5px solid var(--border-s); background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .gt-mini-banner { display: grid; grid-template-columns: 56px minmax(0,1fr) 56px; align-items: center; gap: 4px; min-width: 0; }
+    .gt-mini-logo { width: 56px; height: 50px; border-radius: 12px; border: 1.5px solid var(--border-s); background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .gt-mini-logo img { width: auto !important; height: 100% !important; object-fit: contain !important; }
-    .gt-score-col { position: relative; height: 64px; display: flex; align-items: center; justify-content: center; }
-    .gt-score-nums { display: flex; align-items: flex-start; gap: 6px; }
-    .gt-score-side { display: flex; flex-direction: column; align-items: center; }
-    .gt-snum-wrap { height: 64px; display: flex; align-items: center; justify-content: center; position: relative; min-width: 36px; }
-    .gt-sdash-wrap { height: 64px; display: flex; align-items: center; }
-    .gt-snum { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 900; line-height: 1; color: var(--muted); }
+    .gt-score-col { position: relative; height: 50px; display: flex; align-items: center; justify-content: center; min-width: 0; }
+    .gt-score-nums { display: flex; align-items: flex-start; gap: 4px; }
+    .gt-score-side { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+    .gt-snum-wrap { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; min-width: 32px; }
+    .gt-sdash-wrap { height: 50px; display: flex; align-items: center; }
+    .gt-snum { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 900; line-height: 1; color: var(--muted); }
     .gt-snum.leader { color: var(--ok); }
-    .gt-sdash { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; color: var(--border); line-height: 1; }
-    .gt-diff { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; color: var(--ok); white-space: nowrap; }
+    .gt-sdash { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700; color: var(--border); line-height: 1; }
+    .gt-diff { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 800; color: var(--ok); white-space: nowrap; }
     .gt-diff-spacer { display: none; }
 
     /* ════════════════════════════════════════════
@@ -158,8 +245,8 @@
 
     /* Table */
     .pst { width: 100%; border-collapse: collapse; }
-    .pst th { position: sticky; top: 0; z-index: 5; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
-    .pst .sr td { padding: 13px 12px; border-bottom: 1px solid var(--border-s); text-align: center; vertical-align: middle; }
+    .pst th { position: sticky; top: 0; z-index: 5; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 7px 6px; border-bottom: 2px solid var(--border-s); text-align: center; background: var(--soft); white-space: nowrap; }
+    .pst .sr td { padding: 13px 6px; border-bottom: 1px solid var(--border-s); text-align: center; vertical-align: middle; }
     .pst .sr { cursor: pointer; }
     .pst .sr:hover td { background: #f5f8ff; }
     .pst .sr:hover + .dr td { background: #f5f8ff; }
@@ -178,10 +265,10 @@
     .dr-diff.ok  { color: var(--ok); }
     .dr-diff.dim { color: var(--muted); opacity: .7; }
     /* subrow type cells */
-    .dr-type-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-    .dr-sub-row { display: flex; align-items: baseline; gap: 4px; justify-content: center; }
-    .dr-sub-rec { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text); }
-    .dr-sub-diff { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; }
+    .dr-type-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+    .dr-sub-row { display: flex; align-items: baseline; gap: 4px; justify-content: center; flex-wrap: nowrap; white-space: nowrap; }
+    .dr-sub-rec { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .dr-sub-diff { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; white-space: nowrap; }
     .dr-sub-diff.ok  { color: var(--ok); }
     .dr-sub-diff.dim { color: var(--muted); opacity: .7; }
     .dr-type-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 2px; width: fit-content; }
@@ -197,14 +284,14 @@
     .td-logo { width: 38px; padding: 8px 4px !important; text-align: center !important; }
     .logo-sq { width: 30px; height: 30px; border-radius: 7px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.13); border: 1px solid var(--border-s); }
     .logo-sq img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
-    .td-name { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; cursor: pointer; }
+    .td-name { text-align: left !important; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; padding-left: 4px !important; padding-right: 4px !important; cursor: pointer; }
     /* Name cell acts as a link — subtle blue on hover with underline affordance */
     .sr .td-name { transition: color .12s; }
     .sr:hover .td-name { color: var(--blue); }
     .td-name:hover { text-decoration: underline; }
-    .td-rating { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; }
+    .td-rating { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
     .td-rec { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
-    .td-diff { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 800; }
+    .td-diff { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 800; white-space: nowrap; }
     .td-diff.pos { color: var(--ok); }
     .td-diff.neg { color: #8fa3be; }
     .td-dpg  { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; white-space: nowrap; }
@@ -282,28 +369,13 @@
 <body>
 <div id="app">
 <div id="top-static">
-  <div class="app-header">
-    <div class="league-header">
-      <div class="league-brand">
-        <div class="league-logo-wrap">
-          <img id="league-logo" alt="" style="display:none;">
-          <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
-        </div>
-        <div class="league-text">
-          <h1 id="league-title">Connecticut Pickleball League</h1>
-          <p>Season Stats</p>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="pill" id="hdr-season">Season 2025</div>
-        <select id="divisionSelect" class="div-select-hero" onchange="handleDivisionChange()">
-          <option value="">Loading…</option>
-        </select>
-      </div>
+  <div class="series-wrap">
+    <select id="divisionSelect" class="div-select-corner" onchange="handleDivisionChange()" aria-label="Division">
+      <option value="">Loading…</option>
+    </select>
+    <div class="side-panel" id="seriesPanel" style="border-radius:var(--r-lg);">
+      <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
     </div>
-  </div>
-  <div class="side-panel" id="seriesPanel" style="margin:12px 20px;border-radius:var(--r-lg);">
-    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
   </div>
 </div>
 
@@ -341,6 +413,15 @@
   let currentDivisionKey = '';
   let currentBranding    = null;
   let currentData        = null;
+
+  // Init values for the "View details" link from the hub Matches page and
+  // the "Display" popout view. Injected by Web.js doGet — Google's
+  // googleusercontent.com redirect strips the original ?division=… etc, so
+  // window.location.search is unreliable; we use template substitution.
+  const INIT_DIVISION = '<?= initialDivision || "" ?>';
+  if ('<?= initialDisplay || "" ?>' === '1') {
+    document.documentElement.classList.add('display-only');
+  }
 
   window.addEventListener('load', () => {
     loadBranding();
@@ -401,6 +482,9 @@
       o.textContent = d.label || d.division_name || d.key || 'Division';
       sel.appendChild(o);
     });
+    if (INIT_DIVISION && [...sel.options].some(o => o.value === INIT_DIVISION)) {
+      sel.value = INIT_DIVISION;
+    }
     currentDivisionKey = sel.value;
     loadSeasonData(currentDivisionKey);
   }
@@ -451,7 +535,7 @@
     const hero = `
       <div class="series-hero">
         <div class="sh-team">
-          <div class="sh-logo-big">${buildLogoHtml(a.team_name, 'lg')}</div>
+          <div class="sh-logo-big">${buildLogoHtml(a.team_name_full || a.team_name, 'lg')}</div>
         </div>
         <div class="sh-center">
           <span class="sh-series-lbl">Season Series</span>
@@ -459,7 +543,7 @@
           <span class="sh-leader">${leaderText}</span>
         </div>
         <div class="sh-team">
-          <div class="sh-logo-big">${buildLogoHtml(b.team_name, 'lg')}</div>
+          <div class="sh-logo-big">${buildLogoHtml(b.team_name_full || b.team_name, 'lg')}</div>
         </div>
       </div>`;
 
@@ -483,7 +567,7 @@
       const bDiff = ad < 0 ? `<span class="gt-diff">+${-ad}</span>` : `<span class="gt-diff-spacer"></span>`;
       return `<div class="gt-tile">
         <div class="gt-mini-banner">
-          <div class="gt-mini-logo">${buildLogoHtml(a.team_name, 'xs')}</div>
+          <div class="gt-mini-logo">${buildLogoHtml(a.team_name_full || a.team_name, 'xs')}</div>
           <div class="gt-score-col">
             <span class="gt-type-lbl ${gt}">${esc(glabels[gt])}</span>
             <div class="gt-score-nums">
@@ -496,13 +580,115 @@
               </div>
             </div>
           </div>
-          <div class="gt-mini-logo">${buildLogoHtml(b.team_name, 'xs')}</div>
+          <div class="gt-mini-logo">${buildLogoHtml(b.team_name_full || b.team_name, 'xs')}</div>
         </div>
       </div>`;
     }).join('');
 
-    return hero + (active.length ? `<div class="gt-tiles" style="--tile-cols:${active.length}">${tilesHtml}</div>` : '');
+    const mainHtml = hero + (active.length ? `<div class="gt-tiles" style="--tile-cols:${active.length}">${tilesHtml}</div>` : '');
+    const sideHtml = renderMiniSchedule(currentData?.matches || []);
+
+    return `<div class="series-with-side">
+      <div class="series-main">${mainHtml}</div>
+      <aside class="series-side">${sideHtml}</aside>
+    </div>`;
   }
+
+  // ── Mini schedule (right sidepanel) ─────────────────────────────────────
+  function renderMiniSchedule(matches) {
+    if (!matches.length) return '<div class="ms-hd">Schedule</div><div class="ms-empty">No matches.</div>';
+    const enriched = matches.map(m => {
+      const _date = parseMatchDate_(m);
+      // A match is completed if it has a winner OR any games have been won.
+      const hasScore  = (Number(m.home_games_won) || 0) + (Number(m.away_games_won) || 0) > 0;
+      const _completed = !!m.winning_team_id || hasScore ||
+                         m.status === 'completed' || m.status === 'finalized' || m.status === 'final';
+      return Object.assign({}, m, { _date, _completed });
+    }).sort((a, b) => {
+      const aT = a._date ? a._date.getTime() : Infinity;
+      const bT = b._date ? b._date.getTime() : Infinity;
+      return aT - bT;
+    });
+
+    const rows = enriched.map(m => {
+      const dateOk  = m._date && !isNaN(m._date.getTime());
+      const dateStr = dateOk ? `${MON_[m._date.getMonth()]} ${m._date.getDate()}` : 'TBD';
+      if (m._completed) {
+        const winnerIsHome  = m.winning_team_id
+          ? m.winning_team_id === m.home_team_id
+          : (Number(m.home_games_won) || 0) > (Number(m.away_games_won) || 0);
+        const winnerName    = winnerIsHome ? m.home_team_name : m.away_team_name;
+        const winnerScore   = winnerIsHome ? m.home_games_won : m.away_games_won;
+        const loserScore    = winnerIsHome ? m.away_games_won : m.home_games_won;
+        const winnerShort   = shortName_(winnerName);
+        return `<div class="ms-row is-clickable" data-match-id="${esc(m.match_id)}" role="button" tabindex="0" title="Open game report">
+          <span class="ms-date">${esc(dateStr)}</span>
+          <span class="ms-info"><span class="winner">${esc(winnerShort)}</span> ${winnerScore}–${loserScore}</span>
+        </div>`;
+      }
+      const homeShort = shortName_(m.home_team_name);
+      return `<div class="ms-row">
+        <span class="ms-date">${esc(dateStr)}</span>
+        <span class="ms-info upcoming">at ${esc(homeShort)}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="ms-hd">Schedule</div>${rows}`;
+  }
+
+  // Open game report in a new tab when a completed schedule row is clicked.
+  // Use the absolute GAS deployment URL since this page may be iframed and
+  // relative URLs would resolve against script.googleusercontent.com.
+  const GAS_EXEC_URL_ = 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
+  function openGameReport_(matchId) {
+    if (!matchId) return;
+    const url = `${GAS_EXEC_URL_}?page=gamereport&matchId=${encodeURIComponent(matchId)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+  document.addEventListener('click', e => {
+    const row = e.target.closest('.ms-row.is-clickable[data-match-id]');
+    if (!row) return;
+    openGameReport_(row.dataset.matchId);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.ms-row.is-clickable[data-match-id]');
+    if (!row) return;
+    e.preventDefault();
+    openGameReport_(row.dataset.matchId);
+  });
+
+  // Hide the top series/schedule section so the player standings fills the page.
+  function toggleDisplayMode() {
+    const html = document.documentElement;
+    const on   = html.classList.toggle('display-only');
+    const btn  = document.getElementById('psDisplayBtn');
+    if (btn) btn.textContent = on ? '⤡ Exit' : '⤢ Display';
+    requestAnimationFrame(equalizePsColHeights);
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.documentElement.classList.contains('display-only')) toggleDisplayMode();
+  });
+
+  function shortName_(name) {
+    const s = String(name || '').trim();
+    if (!s) return '—';
+    return s.split(/\s+/)[0];
+  }
+
+  function parseMatchDate_(m) {
+    const d = String(m.match_date || '').trim();
+    if (!d) return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) return new Date(`${d.slice(0,10)}T00:00:00`);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(d)) {
+      const [mo, da, yr] = d.split('/');
+      const y = yr.length === 2 ? `20${yr}` : yr;
+      return new Date(`${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}T00:00:00`);
+    }
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  const MON_ = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function renderStandingsTable(rows) {
     const gtypes  = ['womens', 'mens', 'mixed', 'coed'];
@@ -531,7 +717,7 @@
       return `<tr class="st-row">
         <td class="st-team-cell"><div class="st-team-inner">
           <span class="st-rank ${rc}">${rank}</span>
-          <div class="st-logo">${buildLogoHtml(r.team_name, 'sm')}</div>
+          <div class="st-logo">${buildLogoHtml(r.team_name_full || r.team_name, 'sm')}</div>
           <span class="st-name ${rc}">${esc(r.team_name || '')}</span>
         </div></td>
         <td class="st-match-cell ${mc}">${mw} – ${ml}</td>
@@ -637,7 +823,7 @@
 
         return `<tr class="sr" data-player-name="${esc(p.name || '')}">
           <td class="td-rank ${rankCls}">${i + 1}</td>
-          <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name, 'xs')}</div></td>
+          <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
           <td class="td-name">${esc(p.name)}</td>
           <td class="td-gms">${gms}</td>
           <td class="td-rating">${esc(ratingStr)}</td>
@@ -661,11 +847,11 @@
         <table class="pst">
           <thead><tr>
             <th colspan="3" class="th-l th-group-lbl"><span class="ps-col-dot ${dotCls}"></span> ${esc(colLabel)}</th>
-            <th style="width:76px" data-sort="gms" data-sort-type="num" class="th-sortable">Gms</th>
-            <th style="width:76px" data-sort="rating" data-sort-type="num" class="th-sortable">Rating</th>
-            <th style="width:76px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
-            <th style="width:76px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
-            <th style="width:76px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
+            <th style="width:56px" data-sort="gms" data-sort-type="num" class="th-sortable">Gms</th>
+            <th style="width:68px" data-sort="rating" data-sort-type="num" class="th-sortable">Rating</th>
+            <th style="width:72px" data-sort="rec" data-sort-type="num" class="th-sortable">W–L</th>
+            <th style="width:60px" data-sort="diff" data-sort-type="num" class="th-sortable">+/–</th>
+            <th style="width:68px" data-sort="dpg" data-sort-type="num" class="th-sortable">Per Gm</th>
             <th style="width:36px;padding:4px 6px 4px 2px;cursor:pointer;user-select:none;" class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
           </tr></thead>
           <tbody>${list.map(buildRow).join('')}</tbody>
@@ -686,6 +872,7 @@
         <button class="ps-hdr-btn" onclick="downloadCSV()">\u2193 CSV</button>
         <button class="ps-hdr-btn" onclick="downloadPDF()">\u2193 PDF</button>
         <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
+        <button class="ps-hdr-btn" id="psDisplayBtn" onclick="toggleDisplayMode()" title="Show only the player standings">\u2922 Display</button>
         <button class="ps-expand-btn" id="psExpandBtn" onclick="toggleExpand()">Detail \u25b8</button>
       </div>
       <div class="ps-scroll"><div class="ps-container" id="ps-container">`;
@@ -802,7 +989,14 @@
     if (e.target.closest('.td-name')) {
       const playerName = sr.dataset.playerName || '';
       if (playerName) {
-        window.open(GAS_WEB_APP_URL + '?page=player&playerName=' + encodeURIComponent(playerName), '_blank');
+        // When embedded in the hub, ask the hub to navigate so the Player
+        // Profile loads inside the shared shell. Standalone, fall back to
+        // opening in a new tab.
+        if (window.self !== window.top) {
+          window.parent.postMessage({ type: 'cpbl-nav', route: 'player', param: playerName }, '*');
+        } else {
+          window.open(GAS_WEB_APP_URL + '?page=player&playerName=' + encodeURIComponent(playerName), '_blank');
+        }
       }
       return; // do NOT expand the row
     }
@@ -884,8 +1078,12 @@
           }
         }
         pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
+        // Remove existing pad row before re-ordering so it doesn't get pushed
+        // to the top when the sr/dr rows are appended past it.
+        tbody.querySelectorAll('tr.pst-pad').forEach(r => r.remove());
         pairs.forEach(({ sr, dr }) => { tbody.appendChild(sr); if (dr) tbody.appendChild(dr); });
         pairs.forEach(({ sr }, i) => { const rk = sr.querySelector('.td-rank'); if (rk) rk.textContent = i + 1; });
+        requestAnimationFrame(equalizePsColHeights);
       });
     });
   }

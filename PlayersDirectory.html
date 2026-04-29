@@ -59,6 +59,10 @@
       color:var(--text-inv);
     }
 
+    /* When embedded in the hub iframe, hide the duplicate league brand. */
+    html.embedded .league-brand { display: none; }
+    html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
+    html.embedded .header-right { justify-content: flex-end; }
     .league-brand{
       display:flex;
       align-items:center;
@@ -511,10 +515,10 @@
       align-content:center;
       justify-content:flex-end;
       gap:6px;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
       flex:0 0 auto;
-      max-width:320px;
       margin-left:12px;
+      white-space:nowrap;
     }
 
     
@@ -913,10 +917,6 @@
 
 
     @media (max-width: 1400px){
-      .group-eligibility-inline{
-        flex-basis:220px;
-        max-width:220px;
-      }
       .ph h2{font-size:30px;}
       .subnote{font-size:10px;}
     }
@@ -930,7 +930,6 @@
 
       .group-eligibility-inline{
         margin-left:0;
-        max-width:none;
       }
     }
     @media (max-width: 1200px){
@@ -1084,6 +1083,7 @@
   </style>
 </head>
 <body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
   <div class="top-shell">
     <div class="league-header">
       <div class="league-brand">
@@ -1097,10 +1097,6 @@
         </div>
       </div>
 
-      <div class="header-right">
-        <div class="pill-stat" id="women-pill">0 Women</div>
-        <div class="pill-stat" id="men-pill">0 Men</div>
-      </div>
     </div>
   </div>
 
@@ -1316,8 +1312,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    console.log('PD: H4b start');
-    alert('PLAYERS DIRECTORY HTML LOADED');
     let allPlayers = [];
     let showAllPlayers = false;
 
@@ -1474,11 +1468,6 @@
       const searchFiltered = getSearchFilteredPlayers();
       renderSearchResults(searchFiltered);
 
-      const womenCount = allPlayers.filter(p => p.gender === 'F').length;
-      const menCount = allPlayers.filter(p => p.gender === 'M').length;
-
-      document.getElementById('women-pill').textContent = `${womenCount} Women`;
-      document.getElementById('men-pill').textContent = `${menCount} Men`;
 
       document.getElementById('all-players-btn').classList.toggle('primary', showAllPlayers);
 
@@ -1718,7 +1707,6 @@
   if (/^https?:\/\//i.test(s)) return s;
   return s;
 }
-    console.log('PD: H4b end');
   </script>
 </body>
 </html>

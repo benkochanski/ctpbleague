@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DILL DINKERS Countdown</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', Arial, sans-serif;
+            background: linear-gradient(135deg, #f47920 0%, #8bc751 100%);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            gap: 60px;
+            padding: 60px;
+            position: relative;
+        }
+
+        .left-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 40px;
+        }
+
+        .logo-area {
+            background: white;
+            border-radius: 25px;
+            padding: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            width: fit-content;
+        }
+
+        .logo-area img {
+            max-width: 250px;
+            height: auto;
+            display: block;
+        }
+
+        .header-title {
+            font-size: 100px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 5px 5px 10px rgba(0, 0, 0, 0.4);
+            letter-spacing: 2px;
+            line-height: 1.1;
+            max-width: 900px;
+        }
+
+        .timer-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 0;
+        }
+
+        .timer-display {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .time-unit {
+            padding: 50px 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 40px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+            text-align: center;
+        }
+
+        .time-unit.pulse {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .time-value {
+            font-size: 220px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f47920 0%, #8bc751 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .time-label {
+            font-size: 50px;
+            color: #333;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .qr-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;
+            width: 500px;
+            height: 500px;
+        }
+
+        .qr-label {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f47920;
+            margin-bottom: 20px;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        #qrcode {
+            width: 380px;
+            height: 380px;
+        }
+
+        .message {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 80px;
+            color: white;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .finished {
+            font-size: 100px;
+            color: white;
+            animation: bounce 1s infinite;
+            font-weight: 900;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-40px); }
+        }
+
+        @media (max-width: 1920px) {
+            .time-value {
+                font-size: 180px;
+            }
+
+            .header-title {
+                font-size: 80px;
+            }
+
+            #qrcode {
+                width: 320px;
+                height: 320px;
+            }
+
+            .qr-section {
+                width: 420px;
+                height: 420px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo-area">
+                <img id="logo" src="./dill-dinkers/logo.jpg" alt="DILL DINKERS">
+            </div>
+
+            <div class="header-title">Deadline to Register For Spring Leagues</div>
+
+            <div class="timer-section">
+                <div class="timer-display">
+                    <div class="time-unit">
+                        <div class="time-value" id="days">0</div>
+                        <div class="time-label">Days</div>
+                    </div>
+                    <div class="time-unit">
+                        <div class="time-value" id="hours">0</div>
+                        <div class="time-label">Hours</div>
+                    </div>
+                    <div class="time-unit">
+                        <div class="time-value" id="minutes">0</div>
+                        <div class="time-label">Minutes</div>
+                    </div>
+                    <div class="time-unit">
+                        <div class="time-value" id="seconds">0</div>
+                        <div class="time-label">Seconds</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-section">
+            <div class="qr-section">
+                <div class="qr-label">REGISTER</div>
+                <div class="qr-container">
+                    <div id="qrcode"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        // Hardcoded configuration
+        const TARGET_DATE = '2026-04-29T20:00:00';
+        const QR_URL = 'https://widgets.courtreserve.com/Online/Public/EmbedCode/12438/29542';
+
+        let countdownInterval = null;
+
+        function initializeClock() {
+            const targetDate = new Date(TARGET_DATE).getTime();
+
+            if (isNaN(targetDate)) {
+                console.error('Invalid target date');
+                return;
+            }
+
+            updateCountdown(targetDate);
+            countdownInterval = setInterval(() => updateCountdown(targetDate), 1000);
+
+            // Generate QR code
+            generateQR();
+        }
+
+        function updateCountdown(targetDate) {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            if (distance < 0) {
+                document.getElementById('days').textContent = '0';
+                document.getElementById('hours').textContent = '0';
+                document.getElementById('minutes').textContent = '0';
+                document.getElementById('seconds').textContent = '0';
+                document.getElementById('message').innerHTML = '<div class="finished">🎉 REGISTRATION CLOSED 🎉</div>';
+                clearInterval(countdownInterval);
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+
+            if (daysEl.textContent !== String(days)) {
+                daysEl.textContent = days;
+                daysEl.parentElement.classList.add('pulse');
+                setTimeout(() => daysEl.parentElement.classList.remove('pulse'), 500);
+            }
+
+            hoursEl.textContent = String(hours).padStart(2, '0');
+            minutesEl.textContent = String(minutes).padStart(2, '0');
+            secondsEl.textContent = String(seconds).padStart(2, '0');
+        }
+
+        function generateQR() {
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: QR_URL,
+                width: 380,
+                height: 380,
+                colorDark: '#f47920',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initializeClock);
+    </script>
+</body>
+</html>

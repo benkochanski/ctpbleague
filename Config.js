@@ -27,6 +27,11 @@ function getBackendSpreadsheet_() {
   return SpreadsheetApp.openById(BACKEND_SPREADSHEET_ID);
 }
 
+// Google OAuth Client ID — used by GIS (Google Identity Services) sign-in
+// in Captain.html / Scorecard.html. Backend verifies tokens against this
+// audience claim. Public; no need to keep secret.
+const GOOGLE_OAUTH_CLIENT_ID = '250461385382-o1jcqvvkom51s3l8qim8te5frr3ju52h.apps.googleusercontent.com';
+
 const ROLE = {
   COMMISSIONER: 'commissioner',
   DIRECTOR: 'director',

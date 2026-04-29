@@ -72,6 +72,10 @@
       border-bottom: 1px solid rgba(255,255,255,.14);
     }
 
+    /* When embedded in the hub iframe, hide the duplicate league brand. */
+    html.embedded .league-brand { display: none; }
+    html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
+    html.embedded .header-right { justify-content: flex-end; }
     .league-brand { display: flex; align-items: center; gap: 12px; }
 
     .league-logo-wrap {
@@ -622,6 +626,7 @@
   </style>
 </head>
 <body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
 
 <div id="top-static">
   <div class="app-header" id="app-header">

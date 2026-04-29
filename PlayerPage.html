@@ -29,6 +29,10 @@
     /* ── Header ── */
     .app-header { background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%); }
     .league-header { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.14); }
+    /* When embedded in the hub iframe, hide the duplicate league brand. */
+    html.embedded .league-brand { display: none; }
+    html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
+    html.embedded .header-right { justify-content: flex-end; }
     .league-brand { display: flex; align-items: center; gap: 12px; }
     .league-logo-wrap { width: 52px; height: 52px; border-radius: 13px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.20); flex-shrink: 0; padding: 2px; overflow: hidden; }
     .league-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -214,6 +218,7 @@
   </style>
 </head>
 <body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
 <div id="app">
 
   <!-- ── Frozen top ── -->
@@ -288,7 +293,7 @@ function onPlayersLoaded(players) {
 
   // GAS template variables injected server-side by doGet.
   // window.location.search is not available inside GAS-served pages,
-  // so parameters must be passed via <?= ?> template interpolation.
+  // so parameters are passed via printing-scriptlet template interpolation.
   const pid   = '<?= initialPlayerId ?>';
   const pname = '<?= initialPlayerName ?>';
 

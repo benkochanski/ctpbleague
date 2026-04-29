@@ -1,0 +1,7 @@
+name = "little-league-app"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "DEPTH_CHARTS"
+id = "85907a1d3b5f44f4be90b8e5c5d56507"

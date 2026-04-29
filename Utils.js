@@ -2,6 +2,18 @@ function getSpreadsheet_() {
   return getBackendSpreadsheet_();
 }
 
+/**
+ * Remove a trailing " Division N" suffix from a team name. Case-insensitive,
+ * tolerates extra whitespace. Returns the trimmed name unchanged if no match.
+ *   "Camp Division 1" → "Camp"
+ *   "Dill Dinkers Division 5" → "Dill Dinkers"
+ *   "Hartford" → "Hartford"
+ */
+function stripDivisionSuffix_(name) {
+  if (!name) return '';
+  return String(name).replace(/\s+division\s+\d+\s*$/i, '').trim();
+}
+
 function getSheet_(sheetName) {
   const sh = getSpreadsheet_().getSheetByName(sheetName);
   if (!sh) throw new Error(`Sheet not found: ${sheetName}`);

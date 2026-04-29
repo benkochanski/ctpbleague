@@ -9,6 +9,11 @@
   const ADMIN_PASSCODE = 'cpbl2026';
   const ADMIN_STORAGE_KEY = 'cpbl_admin_unlocked';
 
+  const GOOGLE_CLIENT_ID = '250461385382-o1jcqvvkom51s3l8qim8te5frr3ju52h.apps.googleusercontent.com';
+  const GOOGLE_TOKEN_KEY = 'cpbl_google_id_token';
+  const GOOGLE_EMAIL_KEY = 'cpbl_google_email';
+  const GOOGLE_EXP_KEY   = 'cpbl_google_exp';
+
   const ROUTES = {
     home:         { kind: 'page' },
     schedule:     { kind: 'page', onEnter: renderSchedule },
@@ -22,10 +27,18 @@
     scoreboard:   { kind: 'iframe', url: `${GAS_BASE}?page=scoreboard` },
     gamereport:   { kind: 'iframe', urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
 
-    captain:      { kind: 'iframe', url: `${GAS_BASE}?page=captain`,   admin: true },
+    captain:      { kind: 'iframe', url: `${GAS_BASE}?page=captain`,   admin: true, withAuth: true },
     display:      { kind: 'iframe', url: `${GAS_BASE}?page=display`,   admin: true },
-    scorecard:    { kind: 'iframe', url: `${GAS_BASE}?page=scorecard`, admin: true },
+    scorecard:    { kind: 'iframe', url: `${GAS_BASE}?page=scorecard`, admin: true, withAuth: true },
   };
+
+  function withAuthParams(url) {
+    const tok = sessionStorage.getItem(GOOGLE_TOKEN_KEY);
+    const eml = sessionStorage.getItem(GOOGLE_EMAIL_KEY);
+    if (!tok) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}idToken=${encodeURIComponent(tok)}${eml ? `&userEmail=${encodeURIComponent(eml)}` : ''}`;
+  }
 
   const app          = document.getElementById('app');
   const toggleBtn    = document.getElementById('toggleSidebar');
@@ -131,7 +144,8 @@
       showPage(routeKey);
       if (route.onEnter) route.onEnter();
     } else if (route.kind === 'iframe') {
-      const url = route.urlFn ? route.urlFn(param) : route.url;
+      let url = route.urlFn ? route.urlFn(param) : route.url;
+      if (route.withAuth) url = withAuthParams(url);
       showIframe(url);
     }
 
@@ -152,6 +166,89 @@
     const [key, param] = (location.hash || '#home').slice(1).split('/');
     if (ROUTES[key]) navigate(key, param);
   });
+
+  // ---------- Google Sign-In ----------
+  // Captures a Google ID token at the workers.dev origin (where it's
+  // registerable, unlike googleusercontent iframes) and forwards it into the
+  // Captain/Scorecard iframe URLs as ?idToken=. Backend verifies via Auth.js.
+  const gsiSlot         = document.getElementById('googleSignInSlot');
+  const gsiBadge        = document.getElementById('googleSignedInBadge');
+  const gsiEmailEl      = document.getElementById('googleUserEmail');
+  const gsiSignOutBtn   = document.getElementById('googleSignOutBtn');
+
+  function isTokenValid() {
+    const tok = sessionStorage.getItem(GOOGLE_TOKEN_KEY);
+    const exp = Number(sessionStorage.getItem(GOOGLE_EXP_KEY) || 0);
+    return !!tok && exp > Math.floor(Date.now() / 1000) + 30;
+  }
+
+  function applyGsiUI() {
+    const valid = isTokenValid();
+    if (valid) {
+      gsiEmailEl.textContent = sessionStorage.getItem(GOOGLE_EMAIL_KEY) || '';
+      gsiBadge.style.display = 'flex';
+      gsiSlot.style.display = 'none';
+    } else {
+      gsiBadge.style.display = 'none';
+      gsiSlot.style.display = '';
+      sessionStorage.removeItem(GOOGLE_TOKEN_KEY);
+      sessionStorage.removeItem(GOOGLE_EMAIL_KEY);
+      sessionStorage.removeItem(GOOGLE_EXP_KEY);
+    }
+  }
+
+  function decodeJwtPayload(jwt) {
+    try {
+      const b64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '==='.slice((b64.length + 3) % 4);
+      return JSON.parse(decodeURIComponent(escape(atob(padded))));
+    } catch { return {}; }
+  }
+
+  function onGoogleCredential(response) {
+    if (!response || !response.credential) return;
+    const payload = decodeJwtPayload(response.credential);
+    sessionStorage.setItem(GOOGLE_TOKEN_KEY, response.credential);
+    sessionStorage.setItem(GOOGLE_EMAIL_KEY, payload.email || '');
+    sessionStorage.setItem(GOOGLE_EXP_KEY, String(payload.exp || 0));
+    applyGsiUI();
+    // If the user is already on an admin page, reload the iframe with the token.
+    const active = document.querySelector('.nav-item.is-active');
+    const routeKey = active && active.dataset.route;
+    if (routeKey && ROUTES[routeKey] && ROUTES[routeKey].withAuth) navigate(routeKey);
+  }
+
+  function initGoogleSignIn() {
+    if (!window.google || !google.accounts || !google.accounts.id) {
+      return setTimeout(initGoogleSignIn, 200);
+    }
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: onGoogleCredential,
+      auto_select: true,
+    });
+    google.accounts.id.renderButton(gsiSlot, {
+      type: 'standard', theme: 'filled_blue', size: 'medium',
+      text: 'signin_with', shape: 'pill',
+    });
+    if (!isTokenValid()) google.accounts.id.prompt();
+  }
+
+  if (gsiSignOutBtn) gsiSignOutBtn.addEventListener('click', () => {
+    if (window.google && google.accounts && google.accounts.id) {
+      try { google.accounts.id.disableAutoSelect(); } catch {}
+    }
+    sessionStorage.removeItem(GOOGLE_TOKEN_KEY);
+    sessionStorage.removeItem(GOOGLE_EMAIL_KEY);
+    sessionStorage.removeItem(GOOGLE_EXP_KEY);
+    applyGsiUI();
+    const active = document.querySelector('.nav-item.is-active');
+    const routeKey = active && active.dataset.route;
+    if (routeKey && ROUTES[routeKey] && ROUTES[routeKey].withAuth) navigate(routeKey);
+  });
+
+  applyGsiUI();
+  initGoogleSignIn();
 
   // ==========================================================================
   //                           DATA + RENDERERS
