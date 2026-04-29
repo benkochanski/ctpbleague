@@ -14,13 +14,22 @@ A league management website for the Connecticut Pickleball League. Backend is Go
 
 | Thing | Value |
 |---|---|
-| Domain | https://ctpbleague.com |
-| Cloudflare Worker | https://morning-wind-da2a.bkochanski.workers.dev |
-| GAS test deployment | https://script.google.com/macros/s/AKfycbwvAFHiqHp5F44JWma3iTlRlweB_x5wGXy-Rru3BYg/dev |
+| **Live hub URL** | **https://live.ctpbleague.com** ← this is the real entry point |
+| Bare domain (currently redirects to GAS Players) | https://ctpbleague.com |
+| Cloudflare Worker | `morning-wind-da2a` (serves `public/` as static assets via `wrangler.jsonc`) |
+| Worker preview URL | https://morning-wind-da2a.bkochanski.workers.dev |
+| GAS prod deployment ID (what the hub iframes) | `AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD` |
+| GAS prod URL | `https://script.google.com/macros/s/AKfycbzuzu.../exec` |
+| GAS test/dev URL (always reflects last `clasp push`) | https://script.google.com/macros/s/AKfycbwvAFHiqHp5F44JWma3iTlRlweB_x5wGXy-Rru3BYg/dev |
 | GAS script ID | `18khk-KdiA9q9grnlJN63vnM2SPnHrcFXBtXWff0JnT7HphrsDhWKbWTs` |
 | Google Sheet | https://docs.google.com/spreadsheets/d/1DRiZ-xraXY9J1Bp09U3Rxg0qx943Apj8guBy1fd5jJ8/edit |
 | Git repo | https://github.com/benkochanski/ctpbleague |
 | Local working dir | `/Users/BenKochanski/CPBL` |
+| Active branch | **`main` only** — no worktrees, no feature branches |
+
+### DNS heads-up
+
+The bare `ctpbleague.com` domain still has two `A` records pointing at an external redirect that bounces visitors to GAS Players. The hub lives at **`live.ctpbleague.com`** until those records are deleted and the apex is bound to the Worker. Don't tell users "go to ctpbleague.com" yet — it won't show the hub.
 
 ---
 
@@ -55,16 +64,26 @@ Typical files:
 
 ## Workflow with Claude
 
-Claude handles all pushes, pulls, and deployments. Default loop:
+**Single branch, single working directory.** All work happens in `/Users/BenKochanski/CPBL` on the `main` branch. No worktrees, no feature branches. Edit → commit → push.
 
-1. **Pull latest** from GAS before editing: `clasp pull`
-2. Edit files locally
-3. **Push** to GAS test deployment: `clasp push`
-4. Test against the dev URL
-5. Commit and push to GitHub when stable
-6. For hub changes, Cloudflare Pages auto-deploys on git push
+There are **two systems** that need publishing separately:
 
-Use `clasp` (already configured in this directory) for GAS sync. Use `git`/`gh` for repo work.
+### Hub changes (anything in `public/` or `wrangler.jsonc`)
+1. Edit files
+2. `git add … && git commit -m "…"`
+3. `git push origin main` — Cloudflare auto-rebuilds the Worker, `live.ctpbleague.com` updates within ~1 min
+
+### GAS changes (anything else: `*.js`, `*.html`, `appsscript.json`)
+1. Edit files (or `clasp pull` first if the GAS console was edited directly)
+2. `clasp push` — uploads to GAS at `@HEAD`. Test URL updates instantly.
+3. **Don't forget step 4** — without it, the hub still iframes the old version:
+4. `clasp deploy --deploymentId AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD --description "…"` — publishes a new version on the prod deployment
+
+### Both
+1. Commit to git as well so the GAS code stays mirrored on GitHub
+2. `git push origin main`
+
+> ⚠️ Pushing to `main` updates production. The session sandbox blocks direct pushes to `main` unless explicitly authorized — ask the user "ok to push to main?" before running `git push origin main` or `clasp deploy`.
 
 ---
 
@@ -72,13 +91,15 @@ Use `clasp` (already configured in this directory) for GAS sync. Use `git`/`gh` 
 
 | Module | Status | Notes |
 |---|---|---|
-| Player directory | **OFFLINE** | Was fully operational, hit issues — needs debugging |
-| Division stats | Done | Possible minor edits |
+| Hub (Cloudflare Worker) | Live | Matches page, Home, sticky header, league date/time overrides — all on `main` |
+| Player directory | Live | `Web.js` `?page=players` route has `ALLOWALL`; loads inside hub iframe |
+| Season Stats (Division stats) | Live | Hero corner dropdown + right-side schedule layout |
 | Player stats | Early dev | |
 | Scorekeeping | Done | |
-| Lineup submission | Mostly done | Authentication still TBD |
+| Lineup submission | Mostly done | Auth via Google Sign-In + ID token (see Auth strategy below) |
 | Display scoreboard | Mostly done | |
 | Full scorecard | Not started | |
+| Feedback / Bug reports | Live | `?page=request` (form) + `?page=requestadmin` (admin manager) |
 
 ---
 
@@ -138,10 +159,11 @@ Tabs include (incomplete):
 
 ## Known issues / current priorities
 
-1. **Player directory regression** — was working, now offline. Likely first thing to fix.
-2. **Lineup submission auth** — needs a real auth strategy (captain identity verification).
-3. **Hub buildout** — Schedule, Scores, Standings, Rules (from PDF), Registration (Google Form embed) still to build.
-4. **Iframe blockers** — confirm `ALLOWALL` is set on every GAS page that should embed in the hub.
+1. **Bare-domain DNS** — `ctpbleague.com` (apex) still has redirect `A` records sending visitors to a GAS Players URL. Hub only reachable at `live.ctpbleague.com`. Fix: in Cloudflare DNS, delete the two `A` records for `ctpbleague.com` and bind the apex to the `morning-wind-da2a` Worker. (User intends to do this manually in the dashboard.)
+2. **Lineup submission auth** — Google Sign-In flow exists; verify it's wired end-to-end on Captain.html.
+3. **Hub buildout** — Standings, Rules (from PDF), Registration (Google Form embed) still to build.
+4. **Iframe blockers** — when adding new GAS routes in `Web.js`, remember to set `.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)` on the `doGet` route, otherwise the page pops out of the hub iframe.
+5. **Stale GAS deployments** — there are 4 deployments listed by `clasp deployments`. Only the one at ID `AKfycbzuzu...` is bound to the hub. The others (`@53`, `@55`, `@HEAD`) are leftovers — safe to delete via Cloudflare/GAS console if you want a single clean target.
 
 ---
 
