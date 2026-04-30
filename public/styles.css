@@ -1125,9 +1125,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
      rule that would otherwise leave extra vertical padding on home rows. */
   .matches-table td,
   .matches-table.is-compact td { display: block; padding: 0; border: none; height: auto; line-height: 1.2; }
-  /* Leading pill upper-left (only present on Matches page) */
+  /* Leading pill upper-left. Need to list the .is-compact form too —
+     `.matches-table.is-compact .col-division { width: 1% }` (used on
+     desktop to shrink the home table column to content) outranks the
+     plain `.matches-table .col-division` selector by specificity, and
+     would otherwise force the pill column to ~1% width here, wrapping
+     the "Division N" text to a second line. */
   .matches-table .col-week,
-  .matches-table .col-division { grid-column: 1; grid-row: 1; width: auto; }
+  .matches-table .col-division,
+  .matches-table.is-compact .col-week,
+  .matches-table.is-compact .col-division { grid-column: 1; grid-row: 1; width: auto; padding-right: 0; }
   /* Date upper-right on every variant — same selector specificity as the
      compact width:70px rule, so source order makes this win. */
   .matches-table .col-date,
