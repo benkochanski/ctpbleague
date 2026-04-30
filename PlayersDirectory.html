@@ -253,21 +253,24 @@
     }
 
     .search-profile{
-      width:auto;
+      width:100%;
       max-width:100%;
-      height:46px;
       min-height:46px;
       border:1px solid var(--border);
       border-radius:14px;
       background:#fff;
-      display:inline-flex;
+      display:flex;
       align-items:center;
       justify-content:flex-start;
       gap:8px;
-      padding:0 10px 0 12px;
+      padding:8px 12px;
       overflow:hidden;
       flex:0 1 auto;
+      cursor:pointer;
+      transition:background .15s;
     }
+    .search-profile:hover { background:#f5f8ff; }
+    .search-profile + .search-profile { margin-top:6px; }
 
     .search-profile-main{
       min-width:0;
@@ -1082,6 +1085,10 @@
     }
 
     @media (max-width: 600px){
+      /* Search results: stack name above meta so nothing is clipped */
+      .search-profile-main{ flex-direction:column; align-items:flex-start; gap:4px; }
+      .search-profile-meta{ flex-wrap:wrap; overflow:visible; }
+
       /* Combined filters: drop max-content width so filters wrap inside the
          panel instead of overflowing off the right edge on narrow phones. */
       .combined-filters-wrap{ width:100%; align-items:flex-start; }
@@ -1485,9 +1492,8 @@
         return;
       }
 
-      const p = rows[0];
-      wrap.innerHTML = `
-        <div class="search-profile">
+      wrap.innerHTML = rows.slice(0, 5).map(p => `
+        <div class="search-profile" data-player-name="${escapeHtml(p.name || '')}">
           <div class="search-profile-main">
             <div class="search-profile-text">${escapeHtml(p.name || '')}</div>
             <div class="search-profile-meta">
@@ -1500,7 +1506,15 @@
             </div>
           </div>
         </div>
-      `;
+      `).join('');
+
+      wrap.querySelectorAll('.search-profile').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+          const name = card.dataset.playerName;
+          window.parent.postMessage({ type: 'cpbl-nav', route: 'player', param: name }, '*');
+        });
+      });
     }
 
     function renderAll() {
