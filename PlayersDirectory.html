@@ -1071,12 +1071,16 @@
 
       .search-results-wrap{
         display:flex;
-        align-items:center;
+        flex-direction:column;
+        align-items:stretch;
+        gap:6px;
       }
 
       .search-profile{
-        overflow:hidden;
+        width:100%;
+        overflow:visible;
       }
+      .search-profile + .search-profile { margin-top:0; }
 
       .search-profile-text{
         max-width:none;
