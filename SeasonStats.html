@@ -383,6 +383,23 @@
       .sh-logo-big { width: 60px; height: 60px; }
       .sh-team-name { font-size: 14px; letter-spacing: 1.4px; }
       .sh-score { font-size: 40px; }
+
+      /* Stack Women + Men player-stats panels vertically so each gets
+         full width instead of two cramped ~160px columns side by side. */
+      .ps-two-col { flex-direction: column; }
+      .ps-col { border-right: none; border-bottom: 1px solid var(--border-s); }
+      .ps-col:last-child { border-bottom: none; }
+
+      /* Shrink stat cells to fit on a single-column 375px table.
+         Hide per-game diff (rarely needed on mobile) to recover space. */
+      .pst th, .pst .sr td { font-size: 10px; padding: 6px 3px; }
+      .td-name { font-size: 13px; max-width: 120px; }
+      .td-rating, .td-rec, .td-diff, .td-dpg, .td-gms { font-size: 13px; }
+      .td-logo { width: 28px; padding: 6px 2px !important; }
+      .logo-sq { width: 22px; height: 22px; }
+      .td-rank { font-size: 16px; width: 22px; }
+      /* Hide per-game column on phones — recovers ~40px per row */
+      .pst th[data-sort="dpg"], .pst .sr .td-dpg { display: none; }
     }
   </style>
 </head>
