@@ -72,7 +72,23 @@ function getSeasonDataV1(divisionKey) {
 
   // Send match_date as-is (same as PublicViews.js does). The client-side
   // parseMatchDate_() handles ISO strings, M/D/YYYY, and stringified Dates.
-  const toIsoDate_ = v => String(v || '').trim();
+  const toIsoDate_ = v => {
+    if (!v) return '';
+    if (v instanceof Date && !isNaN(v.getTime())) {
+      const y = v.getUTCFullYear();
+      const m = String(v.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(v.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+      const [mo, da, yr] = s.split('/');
+      const y = yr.length === 2 ? `20${yr}` : yr;
+      return `${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
+    }
+    return s;
+  };
 
   const divMatches = matchRows.slice(1)
     .filter(r => String(r[mDivIdx]) === divisionKey
