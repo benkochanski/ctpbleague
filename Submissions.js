@@ -1,7 +1,7 @@
-function upsertMatchSubmission_(matchId, teamId, status) {
+function upsertMatchSubmission_(matchId, teamId, status, access) {
   const all = getObjects_(SHEETS.MATCH_SUBMISSIONS);
-  const userId = '';
-  const userEmail = 'Public User';
+  const userId    = String((access && access.userId) || '');
+  const userEmail = String((access && access.email)  || '');
 
   let found = false;
   const updated = all.map(s => {

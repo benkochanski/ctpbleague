@@ -168,6 +168,76 @@ function getDivisionNumberFromMatch_(match) {
   return m ? Number(m[1]) : null;
 }
 
+// Lenient validator for draft saves. Skips empty games entirely and
+// half-filled games (one slot picked, the other still empty), so captains
+// can save mid-edit. Fully-filled games still get the full check —
+// eligibility, gender/game-type match, no double-up in a round, pair-count
+// limits — so we never persist a draft that already violates the rules.
+function validateTeamLineupDraft_(match, teamId, assignments, existingGames) {
+  const playersById = buildValidationPlayersById_();
+  const eligibleIds = buildEligiblePlayerIdSetForTeam_(match, teamId);
+
+  const roundUsage = {};
+  const pairCounts = {};
+
+  (assignments || []).forEach(a => {
+    const game = (existingGames || []).find(
+      g => String(g.game_id || '').trim() === String(a.game_id || '').trim()
+    );
+    if (!game) throw new Error(`Game not found: ${a.game_id}`);
+
+    const p1 = String(a.player_1_id || '').trim();
+    const p2 = String(a.player_2_id || '').trim();
+
+    if (!p1 || !p2) return;  // draft: skip incomplete pairs
+    if (p1 === p2) throw new Error(`Same player used twice in Game ${game.game_sequence}`);
+
+    if (!eligibleIds.has(p1)) throw new Error(`Player ${p1} is not eligible for this match`);
+    if (!eligibleIds.has(p2)) throw new Error(`Player ${p2} is not eligible for this match`);
+
+    const roundKey = String(game.round_number || '');
+    roundUsage[roundKey] = roundUsage[roundKey] || new Set();
+
+    if (roundUsage[roundKey].has(p1) || roundUsage[roundKey].has(p2)) {
+      throw new Error(`A player is being used more than once in round ${game.round_number}`);
+    }
+    roundUsage[roundKey].add(p1);
+    roundUsage[roundKey].add(p2);
+
+    const player1 = playersById[p1];
+    const player2 = playersById[p2];
+    if (!player1 || !player2) {
+      throw new Error(`Player not found in Game ${game.game_sequence}`);
+    }
+
+    validateGameType_(match, game, player1, player2);
+
+    const pairKey = [p1, p2].sort().join('|');
+    const nextCount = (pairCounts[pairKey] || 0) + 1;
+    const maxAllowed = maxPairingsAllowedServer_(match, player1, player2);
+    if (nextCount > maxAllowed) {
+      throw new Error(
+        `Players ${player1.full_name} and ${player2.full_name} cannot be partnered more than ${maxAllowed} times`
+      );
+    }
+    pairCounts[pairKey] = nextCount;
+  });
+}
+
+function buildEligiblePlayerIdSetForTeam_(match, teamId) {
+  const seasonId = String((match && match.season_id) || '').trim();
+  const cleanTeamId = String(teamId || '').trim();
+  const out = new Set();
+  getObjects_(SHEETS.TEAM_ROSTERS).forEach(r => {
+    if (String(r.team_id || '').trim() !== cleanTeamId) return;
+    if (seasonId && String(r.season_id || '').trim() !== seasonId) return;
+    if (String(r.roster_status || '').trim().toLowerCase() !== 'eligible') return;
+    const pid = String(r.player_id || '').trim();
+    if (pid) out.add(pid);
+  });
+  return out;
+}
+
 function maxPairingsAllowedServer_(match, playerA, playerB) {
   const isDivision1 = getDivisionNumberFromMatch_(match) === 1;
   const isWomenPair =

@@ -29,7 +29,7 @@ function getEligibleRosterForMatch_(matchId, teamId) {
   });
 }
 
-function saveTeamLineup_(matchId, teamId, assignments, submitted) {
+function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
   const allGames = getObjects_(SHEETS.MATCH_GAMES);
   const allMatches = getObjects_(SHEETS.MATCHES);
   const match = allMatches.find(m => String(m.match_id || '').trim() === String(matchId || '').trim());
@@ -43,8 +43,8 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted) {
     validateTeamLineupDraft_(match, teamId, assignments, targetGames);
   }
 
-  const userId = '';
-  const userEmail = 'Public User';
+  const userId    = String((access && access.userId) || '');
+  const userEmail = String((access && access.email)  || '');
 
   const now = nowStamp_();
   const isHomeSide = String(teamId || '').trim() === String(match.home_team_id || '').trim();
@@ -109,7 +109,7 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted) {
 
   overwriteObjects_(SHEETS.MATCH_GAMES, updatedGames);
 
-  upsertMatchSubmission_(matchId, teamId, submitted ? SUBMISSION_STATUS.SUBMITTED : SUBMISSION_STATUS.DRAFT);
+  upsertMatchSubmission_(matchId, teamId, submitted ? SUBMISSION_STATUS.SUBMITTED : SUBMISSION_STATUS.DRAFT, access);
 }
 
 function normalizeAssignments_(assignments, existingGames) {

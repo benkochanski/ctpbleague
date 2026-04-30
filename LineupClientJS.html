@@ -807,6 +807,11 @@ function buildAssignmentsForSave_() {
 function queueAutosave() {
   cancelPendingAutosave();
 
+  // No sign-in token = view-only mode (the banner already tells the user to
+  // sign in from the main page). Don't fire autosave or it will trigger an
+  // HTTP 400 from the token verifier on every keystroke.
+  if (!getCpblIdToken_()) return;
+
   autosaveTimer = setTimeout(() => {
     const assignments = buildAssignmentsForSave_();
 

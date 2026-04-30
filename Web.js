@@ -8,10 +8,55 @@ function lineupPingUniqueV1() {
   };
 }
 
+// Sunday of the current week in America/New_York, as yyyy-MM-dd. Matches
+// before this date are hidden from captain dropdowns so captains aren't
+// scrolling past the entire season's history.
+function captainWeekStartIso_() {
+  const tz = Session.getScriptTimeZone() || 'America/New_York';
+  const now = new Date();
+  // 'u' = ISO day of week, 1=Mon..7=Sun. (sun%7)=0, mon=1..sat=6 — days since Sunday.
+  const daysSinceSunday = Number(Utilities.formatDate(now, tz, 'u')) % 7;
+  const start = new Date(now.getTime() - daysSinceSunday * 24 * 60 * 60 * 1000);
+  return Utilities.formatDate(start, tz, 'yyyy-MM-dd');
+}
+
+function captainMatchDateIso_(v) {
+  if (!v) return '';
+  const tz = Session.getScriptTimeZone() || 'America/New_York';
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  }
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+    const [mo, da, yr] = s.split('/');
+    const y = yr.length === 2 ? '20' + yr : yr;
+    return y + '-' + mo.padStart(2, '0') + '-' + da.padStart(2, '0');
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+  return '';
+}
+
+function filterAndSortCaptainMatches_(rawMatches) {
+  const cutoff = captainWeekStartIso_();
+  return (rawMatches || [])
+    .map(m => {
+      m.__iso_match_date = captainMatchDateIso_(m.match_date);
+      return m;
+    })
+    .filter(m => m.__iso_match_date && m.__iso_match_date >= cutoff)
+    .sort((a, b) =>
+      String(a.__iso_match_date || '').localeCompare(String(b.__iso_match_date || '')) ||
+      String(a.start_time || '').localeCompare(String(b.start_time || ''))
+    );
+}
+
 function getCaptainSelectorData() {
   const divisions = getObjects_(SHEETS.DIVISIONS);
   const teams = getObjects_(SHEETS.TEAMS);
-  const matches = getObjects_(SHEETS.MATCHES);
+  const matches = filterAndSortCaptainMatches_(getObjects_(SHEETS.MATCHES));
 
   const divisionMap = {};
   divisions.forEach(d => {
@@ -385,14 +430,16 @@ function getCaptainPortalData(matchId, teamId) {
   const clubs = getObjects_(SHEETS.CLUBS);
   const allMatches = getObjects_(SHEETS.MATCHES);
 
-  const matches = allMatches.slice();
+  const matches = filterAndSortCaptainMatches_(allMatches.slice());
 
   let currentMatchId = cleanMatchId;
-  if (!currentMatchId && matches.length) {
-    currentMatchId = String(matches[0].match_id || '').trim();
+  let currentMatch = currentMatchId
+    ? matches.find(m => String(m.match_id || '').trim() === currentMatchId) || null
+    : null;
+  if (!currentMatch && matches.length) {
+    currentMatch = matches[0];
+    currentMatchId = String(currentMatch.match_id || '').trim();
   }
-
-  const currentMatch = matches.find(m => String(m.match_id || '').trim() === currentMatchId) || null;
 
   const availableDivisions = matches
     .map(m => divisions.find(d => String(d.division_id || '').trim() === String(m.division_id || '').trim()))
@@ -544,7 +591,7 @@ function saveCaptainLineupDraft(idToken, matchId, teamId, assignments) {
     getObjects_(SHEETS.MATCH_GAMES).filter(g => String(g.match_id || '').trim() === cleanMatchId)
   );
 
-  saveTeamLineup_(cleanMatchId, cleanTeamId, normalizedAssignments, false);
+  saveTeamLineup_(cleanMatchId, cleanTeamId, normalizedAssignments, false, access);
   appendAuditLog_({
     access,
     entityType: 'Lineup',
@@ -585,7 +632,7 @@ function submitCaptainLineup(idToken, matchId, teamId, assignments) {
     throw new Error('teamId is not part of this match');
   }
 
-  saveTeamLineup_(cleanMatchId, cleanTeamId, assignments || [], true);
+  saveTeamLineup_(cleanMatchId, cleanTeamId, assignments || [], true, access);
   revealLineupsIfReady_(cleanMatchId);
   appendAuditLog_({
     access,
