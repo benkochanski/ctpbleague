@@ -70,30 +70,9 @@ function getSeasonDataV1(divisionKey) {
   const mAGWIdx    = mH.indexOf('away_games_won');
   const mWinIdx    = mH.indexOf('winning_team_id');
 
-  // Helper: normalize match_date to ISO yyyy-mm-dd string regardless of source
-  // (sheet may return native Date object, or string in various formats).
-  // Use Utilities.formatDate with the spreadsheet timezone for Date objects so
-  // that midnight-UTC dates don't shift one day early in ET.
-  const tz_ = Session.getScriptTimeZone() || 'America/New_York';
-  const toIsoDate_ = v => {
-    if (!v) return '';
-    if (v instanceof Date) {
-      if (isNaN(v.getTime())) return '';
-      return Utilities.formatDate(v, tz_, 'yyyy-MM-dd');
-    }
-    const s = String(v).trim();
-    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
-      const [mo, da, yr] = s.split('/');
-      const y = yr.length === 2 ? `20${yr}` : yr;
-      return `${y}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}`;
-    }
-    const d = new Date(s);
-    if (!isNaN(d.getTime())) {
-      return Utilities.formatDate(d, tz_, 'yyyy-MM-dd');
-    }
-    return s;
-  };
+  // Send match_date as-is (same as PublicViews.js does). The client-side
+  // parseMatchDate_() handles ISO strings, M/D/YYYY, and stringified Dates.
+  const toIsoDate_ = v => String(v || '').trim();
 
   const divMatches = matchRows.slice(1)
     .filter(r => String(r[mDivIdx]) === divisionKey
