@@ -340,7 +340,7 @@
       /* Hide all interactive / screen-only elements */
       .ps-hdr-btn, .ps-filter-input, .ps-expand-btn,
       .div-select-hero, .header-right { display: none !important; }
-      /* Keep sec-head (Player Standings bar) visible */
+      /* Keep sec-head (Player Stats bar) visible */
       .sec-head { display: flex !important; border-radius: 0 !important; }
       /* Hide detail rows for a clean printout */
       .dr { display: none !important; }
@@ -928,7 +928,7 @@
     let html = `
       <div class="sec-head">
         <div class="sec-badge">P</div>
-        <span class="sec-label">Player Standings</span>
+        <span class="sec-label">Player Stats</span>
         <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players\u2026">
         <button class="ps-hdr-btn" onclick="downloadCSV()">\u2193 CSV</button>
         <button class="ps-hdr-btn" onclick="downloadPDF()">\u2193 PDF</button>
