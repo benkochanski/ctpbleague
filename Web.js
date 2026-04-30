@@ -584,7 +584,9 @@ function saveCaptainLineupDraft(idToken, matchId, teamId, assignments) {
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
-  const access = requireCaptainAccess_(idToken, cleanTeamId);
+  // Auth temporarily disabled — anyone can save/submit. Restore by replacing
+  // this with: const access = requireCaptainAccess_(idToken, cleanTeamId);
+  const access = { email: '', name: '', userId: '', allowedTeamIds: [], isCommissioner: false, ok: true };
 
   const normalizedAssignments = normalizeAssignments_(
     assignments,
@@ -619,7 +621,9 @@ function submitCaptainLineup(idToken, matchId, teamId, assignments) {
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
-  const access = requireCaptainAccess_(idToken, cleanTeamId);
+  // Auth temporarily disabled — anyone can save/submit. Restore by replacing
+  // this with: const access = requireCaptainAccess_(idToken, cleanTeamId);
+  const access = { email: '', name: '', userId: '', allowedTeamIds: [], isCommissioner: false, ok: true };
 
   const match = getObjects_(SHEETS.MATCHES).find(m =>
     String(m.match_id || '').trim() === cleanMatchId
