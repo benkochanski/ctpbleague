@@ -1091,9 +1091,14 @@
     }
 
     @media (max-width: 600px){
-      /* Search results: stack name above meta so nothing is clipped */
-      .search-profile-main{ flex-direction:column; align-items:flex-start; gap:4px; }
-      .search-profile-meta{ flex-wrap:wrap; overflow:visible; }
+      /* Search results: compact cards — smaller pills, tighter padding */
+      .search-profile{ padding:6px 10px; gap:4px; }
+      .search-profile-main{ flex-direction:column; align-items:flex-start; gap:3px; }
+      .search-profile-text{ font-size:14px; }
+      .search-profile-meta{ flex-wrap:wrap; overflow:visible; gap:4px; }
+      .search-profile-muted{ height:22px; line-height:22px; font-size:10px; padding:0 8px; }
+      .search-profile .dupr-badge,
+      .search-profile .division-pill{ height:22px; line-height:22px; min-width:44px; padding:0 8px; font-size:10px; }
 
       /* Combined filters: drop max-content width so filters wrap inside the
          panel instead of overflowing off the right edge on narrow phones. */
