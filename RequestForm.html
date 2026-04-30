@@ -53,7 +53,21 @@
     .type-text { font-weight: 600; font-size: 15px; }
 
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 540px) { .row { grid-template-columns: 1fr; } }
+
+    /* Hide hero header when embedded in hub iframe */
+    html.embedded .header { display: none; }
+    html.embedded .wrap { padding-top: 8px; }
+
+    @media (max-width: 540px) {
+      .row { grid-template-columns: 1fr; }
+      .wrap { padding: 16px 14px 48px; }
+      .card { padding: 20px 16px; }
+      .header { padding: 20px; }
+      .header h1 { font-size: 30px; }
+      .type-pick { grid-template-columns: 1fr; }
+      .type-pick label { padding: 11px 12px; }
+      .type-text { font-size: 14px; }
+    }
 
     .submit-btn {
       background: var(--gold); color: var(--navy); border: none; padding: 14px 24px;
@@ -77,6 +91,7 @@
   </style>
 </head>
 <body>
+<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
   <div class="wrap">
     <div class="header">
       <h1>Feedback &amp; <span class="accent">Requests</span></h1>
