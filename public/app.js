@@ -323,32 +323,36 @@
         </table>
       </div>`;
 
-    // Upcoming: nearest 4 not-yet-completed, sorted ascending
-    const upcoming = enriched
-      .filter(m => !isCompleted(m))
-      .sort((a,b) => {
-        if (!a._date && !b._date) return 0;
-        if (!a._date) return 1;
-        if (!b._date) return -1;
-        return a._date - b._date;
-      })
-      .slice(0, 4);
+    // Pick one match per division, ordered by division_order.
+    //   asc=true  → earliest match in each division (used for "This Week")
+    //   asc=false → most recent match in each division (used for "Latest Scores")
+    const pickPerDivision = (matches, asc) => {
+      const byDiv = new Map();
+      matches.forEach(m => {
+        const cur = byDiv.get(m.division_id);
+        if (!cur) { byDiv.set(m.division_id, m); return; }
+        if (!m._date) return;
+        if (!cur._date) { byDiv.set(m.division_id, m); return; }
+        const better = asc ? m._date < cur._date : m._date > cur._date;
+        if (better) byDiv.set(m.division_id, m);
+      });
+      return [...byDiv.values()].sort((a, b) => {
+        const ao = (divsById[a.division_id] || {}).division_order || 0;
+        const bo = (divsById[b.division_id] || {}).division_order || 0;
+        return ao - bo;
+      });
+    };
+
+    // Upcoming: nearest not-yet-completed match per division
+    const upcoming = pickPerDivision(enriched.filter(m => !isCompleted(m)), true);
 
     upcomingEl.innerHTML = upcoming.length
       ? renderHomeTable(upcoming)
       : `<div class="empty-card">No upcoming matches.</div>`;
     upcomingEl.dataset.loaded = '1';
 
-    // Recent: most recent 4 completed, sorted descending
-    const recent = enriched
-      .filter(m => isCompleted(m))
-      .sort((a,b) => {
-        if (!a._date && !b._date) return 0;
-        if (!a._date) return 1;
-        if (!b._date) return -1;
-        return b._date - a._date;
-      })
-      .slice(0, 4);
+    // Recent: most recent completed match per division
+    const recent = pickPerDivision(enriched.filter(m => isCompleted(m)), false);
 
     recentEl.innerHTML = recent.length
       ? renderHomeTable(recent)
@@ -356,14 +360,18 @@
     recentEl.dataset.loaded = '1';
   }
 
-  // Compact home-page row — same match-cell styling as the Matches page,
-  // but only Date + Match columns (no leading week/division, no status pill).
+  // Compact home-page row — same match-cell styling as the Matches page, with
+  // a leading division pill so the layout mirrors the Matches table on phones.
   function homeMatchRowHtml(m, teamsById, divsById, teamLogo) {
     const home     = teamName(teamsById, m.home_team_id);
     const away     = teamName(teamsById, m.away_team_id);
     const homeLogo = teamLogo(m.home_team_id);
     const awayLogo = teamLogo(m.away_team_id);
     const isDone   = isCompleted(m);
+
+    const div = divisionName(divsById, m.division_id);
+    const divNum = (div.match(/\d+/) || [''])[0];
+    const divPill = `<span class="div-pill div-${divNum || 'na'}">${escapeHtml(div)}</span>`;
 
     const displayDate = m._displayDate || m._date;
     const dateBlock = displayDate
@@ -396,6 +404,7 @@
 
     return `
       <tr class="match-row ${isDone ? 'is-done' : 'is-upcoming'}">
+        <td class="col-division">${divPill}</td>
         <td class="col-date">${dateBlock}</td>
         <td class="col-match">${matchCell}</td>
       </tr>`;

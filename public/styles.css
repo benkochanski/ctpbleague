@@ -1077,6 +1077,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .matches-table.is-compact tbody tr:first-child td { border-top: none; }
 .matches-table.is-compact td { padding: 10px 12px; }
 .matches-table.is-compact .col-date { width: 70px; }
+.matches-table.is-compact .col-division { width: 1%; padding-right: 6px; }
 .matches-table.is-compact .date-md  { font-size: 16px; }
 .matches-table.is-compact .date-dow { font-size: 9px; }
 .matches-table.is-compact .match-cell.is-compact {
