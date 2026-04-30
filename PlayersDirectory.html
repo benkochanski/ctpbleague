@@ -1525,7 +1525,7 @@
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => {
           const name = card.dataset.playerName;
-          window.parent.postMessage({ type: 'cpbl-nav', route: 'player', param: name }, '*');
+          window.top.postMessage({ type: 'cpbl-nav', route: 'player', param: name }, '*');
         });
       });
     }

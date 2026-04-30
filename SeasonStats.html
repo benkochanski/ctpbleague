@@ -1056,7 +1056,7 @@
         // Profile loads inside the shared shell. Standalone, fall back to
         // opening in a new tab.
         if (window.self !== window.top) {
-          window.parent.postMessage({ type: 'cpbl-nav', route: 'player', param: playerName }, '*');
+          window.top.postMessage({ type: 'cpbl-nav', route: 'player', param: playerName }, '*');
         } else {
           window.open(GAS_WEB_APP_URL + '?page=player&playerName=' + encodeURIComponent(playerName), '_blank');
         }
