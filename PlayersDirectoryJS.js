@@ -58,27 +58,28 @@ function getLeaguePlayers_() {
 
 function getPlayersDirectoryBranding_() {
   try {
-    const brandingSheetName = (typeof SHEETS !== 'undefined' && SHEETS.BRANDING) ? SHEETS.BRANDING : 'Branding';
     const ss = getBackendSpreadsheet_();
-    const sh = ss.getSheetByName(brandingSheetName);
 
-    if (!sh || sh.getLastRow() <= 1) {
-      return { leagueLogoUrl: '', campLogoUrl: '', dillLogoUrl: '' };
+    // League logo from Branding sheet
+    let leagueLogoUrl = '';
+    const brandingSheetName = (typeof SHEETS !== 'undefined' && SHEETS.BRANDING) ? SHEETS.BRANDING : 'Branding';
+    const bsh = ss.getSheetByName(brandingSheetName);
+    if (bsh && bsh.getLastRow() > 1) {
+      const map = {};
+      bsh.getDataRange().getValues().slice(1).forEach(row => {
+        const key = String(row[0] || '').trim();
+        const value = String(row[1] || '').trim();
+        if (key) map[key] = value;
+      });
+      leagueLogoUrl = resolveBrandingUrlPD_(map.leagueLogoFileId || map.leagueLogoUrl || '');
     }
 
-    const values = sh.getDataRange().getValues();
-    const map = {};
-    values.slice(1).forEach(row => {
-      const key = String(row[0] || '').trim();
-      const value = String(row[1] || '').trim();
-      if (key) map[key] = value;
-    });
+    // Club logos from Clubs sheet (same source used by the rest of the app)
+    const clubLogos = getClubLogos_(ss);
+    const campLogoUrl = clubLogos['camp'] || clubLogos['camp women'] || clubLogos['campwomen'] || '';
+    const dillLogoUrl = clubLogos['dill'] || clubLogos['dill women'] || clubLogos['dillwomen'] || '';
 
-    return {
-      leagueLogoUrl: resolveBrandingUrlPD_(map.leagueLogoFileId || map.leagueLogoUrl || ''),
-      campLogoUrl: resolveBrandingUrlPD_(map.campLogoFileId || map.campLogoUrl || ''),
-      dillLogoUrl: resolveBrandingUrlPD_(map.dillLogoFileId || map.dillLogoUrl || '')
-    };
+    return { leagueLogoUrl, campLogoUrl, dillLogoUrl };
   } catch (err) {
     return { leagueLogoUrl: '', campLogoUrl: '', dillLogoUrl: '' };
   }
