@@ -1070,44 +1070,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .m-score-num { font-size: 22px; }
 }
 
-/* Tight phones: stack each match row into a card. Full Matches page rows
-   show the leading pill + date on top, match below. Compact home rows have
-   no leading pill, so the date alone sits on top spanning the full row. */
-@media (max-width: 600px) {
-  .matches-table thead { display: none; }
-  .matches-table,
-  .matches-table tbody,
-  .matches-table tr { display: block; width: 100%; }
-  .matches-table tbody tr {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 12px;
-    row-gap: 8px;
-    align-items: center;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border-s);
-  }
-  .matches-table tbody tr:last-child { border-bottom: none; }
-  .matches-table td { display: block; padding: 0; border: none; }
-  /* Full Matches page: pill upper-left, date upper-right */
-  .matches-table:not(.is-compact) .col-week,
-  .matches-table:not(.is-compact) .col-division { grid-column: 1; grid-row: 1; width: auto; }
-  .matches-table:not(.is-compact) .col-date     { grid-column: 2; grid-row: 1; width: auto; justify-self: end; }
-  /* Compact home tables (no leading pill): date spans the top row, left-aligned */
-  .matches-table.is-compact .col-date           { grid-column: 1 / -1; grid-row: 1; width: auto; justify-self: start; }
-  .matches-table .col-match                     { grid-column: 1 / -1; grid-row: 2; }
-  .matches-table .col-date .date-stack {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 6px;
-  }
-  .match-cell:not(.is-compact),
-  .match-cell.is-final:not(.is-compact) { grid-template-columns: 1fr 70px 1fr; gap: 8px; }
-  /* Compact match cell: drop the negative bleed margin since the row already
-     handles padding */
-  .matches-table.is-compact .match-cell.is-compact { margin: 0; padding: 0; }
-}
-
 /* Compact variant for the home-page mini tables ("This Week" / "Latest Scores") */
 .matches-table-wrap.is-compact { box-shadow: none; border: 1px solid var(--border-s); border-radius: var(--r); }
 .matches-table.is-compact { min-width: 0; font-size: 12px; }
@@ -1128,6 +1090,51 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .matches-table.is-compact .m-score-num { font-size: 20px; }
 .matches-table.is-compact .m-score-sep { font-size: 16px; }
 .matches-table.is-compact .m-vs { font-size: 9px; letter-spacing: 1.2px; }
+
+/* Tight phones: stack each match row into a card. Both the full Matches page
+   and the compact home tables share the same layout: date in the upper-right,
+   match (logos + score) on the row below. The Matches page also shows a
+   leading week/division pill in the upper-left. Defined AFTER the .is-compact
+   block above so the override of .col-date width wins on source order. */
+@media (max-width: 600px) {
+  .matches-table thead { display: none; }
+  .matches-table,
+  .matches-table tbody,
+  .matches-table tr { display: block; width: 100%; }
+  .matches-table tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    row-gap: 6px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-s);
+  }
+  .matches-table tbody tr:last-child { border-bottom: none; }
+  .matches-table td { display: block; padding: 0; border: none; height: auto; }
+  /* Leading pill upper-left (only present on Matches page) */
+  .matches-table .col-week,
+  .matches-table .col-division { grid-column: 1; grid-row: 1; width: auto; }
+  /* Date upper-right on every variant */
+  .matches-table .col-date     { grid-column: 2; grid-row: 1; width: auto; justify-self: end; white-space: nowrap; }
+  .matches-table .col-date .date-stack {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+  /* Match (teams + score) spans the second row */
+  .matches-table .col-match    { grid-column: 1 / -1; grid-row: 2; }
+  .match-cell:not(.is-compact),
+  .match-cell.is-final:not(.is-compact) { grid-template-columns: 1fr 70px 1fr; gap: 8px; }
+  /* Compact match cell: drop the negative bleed margin since the row already
+     handles padding */
+  .matches-table.is-compact .match-cell.is-compact { margin: 0; padding: 0; }
+  /* The home compact wrap had its own border + radius for the standalone
+     mini-table feel; with the row stacking that doubles up with the row
+     border. Soften by removing the wrap's inner border so rows define
+     themselves. */
+  .matches-table-wrap.is-compact { border: none; border-radius: 0; }
+}
 
 /* Standings table */
 .standings-table-wrap {

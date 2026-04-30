@@ -363,7 +363,27 @@
 
     /* ── Responsive ── */
     @media (max-width: 900px)  { .gt-tiles { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width: 700px)  { .page { padding: 10px 12px; } .series-hero { padding: 20px 14px; gap: 10px; } .sh-score { font-size: 48px; } .sh-logo-big { width: 70px; height: 70px; } }
+    @media (max-width: 700px)  {
+      .page { padding: 10px 12px; }
+      .series-wrap { margin: 10px 0; }
+      .series-hero { padding: 20px 14px; gap: 10px; }
+      .sh-score { font-size: 48px; }
+      /* min-width: 88px on the logo was pushing it wider than the 1fr grid
+         column at narrow widths and clipping the right-hand team's logo —
+         release it here so the explicit width:70px takes effect. */
+      .sh-logo-big { width: 70px; height: 70px; min-width: 0; }
+    }
+    @media (max-width: 480px) {
+      /* Stack the four game-type tiles into a single column on phones —
+         at 2-column the 56px+score+56px banner overflowed and the right
+         team logo was being clipped. */
+      .gt-tiles { grid-template-columns: 1fr; }
+      .gt-tile { border-right: none; border-bottom: 1px solid var(--border-s); padding: 10px 14px; }
+      .gt-tile:last-child { border-bottom: none; }
+      .sh-logo-big { width: 60px; height: 60px; }
+      .sh-team-name { font-size: 14px; letter-spacing: 1.4px; }
+      .sh-score { font-size: 40px; }
+    }
   </style>
 </head>
 <body>
