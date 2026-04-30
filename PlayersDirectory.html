@@ -59,10 +59,8 @@
       color:var(--text-inv);
     }
 
-    /* When embedded in the hub iframe, hide the duplicate league brand. */
-    html.embedded .league-brand { display: none; }
-    html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
-    html.embedded .header-right { justify-content: flex-end; }
+    /* When embedded in the hub iframe, hide the duplicate league header entirely. */
+    html.embedded .top-shell { display: none; }
     .league-brand{
       display:flex;
       align-items:center;
@@ -1135,6 +1133,8 @@
       .group-logo-fallback{ width:80px; height:56px; border-radius:14px; }
       .group-text-block{ height:auto; }
       .group-eligibility-inline{ flex-wrap:wrap; margin-left:0; white-space:normal; }
+      .group-top-line{ flex-wrap:wrap; gap:8px; }
+      .check-pill{ height:20px; min-width:28px; padding:0 7px; font-size:10px; line-height:20px; }
     }
   </style>
 </head>
