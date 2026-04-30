@@ -364,7 +364,14 @@
     /* ── Responsive ── */
     @media (max-width: 900px)  { .gt-tiles { grid-template-columns: repeat(2,1fr); } }
     @media (max-width: 700px)  {
-      .page { padding: 10px 12px; }
+      /* Release fixed-height layout so the whole page scrolls naturally on mobile.
+         Without this, #top-static (hero + tiles + schedule) overflows 100vh and
+         the player stats panel (.page) gets zero height and is invisible. */
+      html, body, #app { height: auto !important; overflow: visible !important; }
+      #top-static { position: static !important; box-shadow: none !important; }
+      .page { flex: none !important; overflow: visible !important; display: block !important; padding: 10px 12px; }
+      #playerPanel, .ps-scroll { flex: none !important; overflow: visible !important; height: auto !important; display: block !important; }
+
       .series-wrap { margin: 10px 0; }
       .series-hero { padding: 20px 14px; gap: 10px; }
       .sh-score { font-size: 48px; }
@@ -372,9 +379,10 @@
          column at narrow widths and clipping the right-hand team's logo —
          release it here so the explicit width:70px takes effect. */
       .sh-logo-big { width: 70px; height: 70px; min-width: 0; }
-      /* Shrink mini-logos in game-type tiles so the game label isn't clipped */
+      /* Shrink mini-logos and match score-col height so logos stay vertically aligned */
       .gt-mini-logo { width: 40px; height: 40px; }
       .gt-mini-banner { grid-template-columns: 40px minmax(0,1fr) 40px; }
+      .gt-score-col, .gt-snum-wrap, .gt-sdash-wrap { height: 40px; }
     }
     @media (max-width: 600px) {
       /* Switch to single-column tiles sooner — at 2-col on a ~375px phone

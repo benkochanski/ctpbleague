@@ -72,14 +72,14 @@ function getSeasonDataV1(divisionKey) {
 
   // Helper: normalize match_date to ISO yyyy-mm-dd string regardless of source
   // (sheet may return native Date object, or string in various formats).
+  // Use Utilities.formatDate with the spreadsheet timezone for Date objects so
+  // that midnight-UTC dates don't shift one day early in ET.
+  const tz_ = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   const toIsoDate_ = v => {
     if (!v) return '';
     if (v instanceof Date) {
       if (isNaN(v.getTime())) return '';
-      const y = v.getFullYear();
-      const m = String(v.getMonth() + 1).padStart(2, '0');
-      const d = String(v.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      return Utilities.formatDate(v, tz_, 'yyyy-MM-dd');
     }
     const s = String(v).trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -90,10 +90,7 @@ function getSeasonDataV1(divisionKey) {
     }
     const d = new Date(s);
     if (!isNaN(d.getTime())) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${dd}`;
+      return Utilities.formatDate(d, tz_, 'yyyy-MM-dd');
     }
     return s;
   };
