@@ -112,6 +112,20 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
   upsertMatchSubmission_(matchId, teamId, submitted ? SUBMISSION_STATUS.SUBMITTED : SUBMISSION_STATUS.DRAFT, access);
 }
 
+function computeGameReadiness_(game) {
+  const hp1 = String(game.home_player_1_id || '').trim();
+  const hp2 = String(game.home_player_2_id || '').trim();
+  const ap1 = String(game.away_player_1_id || '').trim();
+  const ap2 = String(game.away_player_2_id || '').trim();
+
+  const homeReady = !!(hp1 && hp2);
+  const awayReady = !!(ap1 && ap2);
+
+  if (homeReady && awayReady) return 'ready';
+  if (homeReady || awayReady) return 'partial';
+  return 'pending';
+}
+
 function normalizeAssignments_(assignments, existingGames) {
   const validGameIds = new Set((existingGames || []).map(g => String(g.game_id || '').trim()));
 
