@@ -364,14 +364,14 @@
     /* ── Responsive ── */
     @media (max-width: 900px)  { .gt-tiles { grid-template-columns: repeat(2,1fr); } }
     @media (max-width: 700px)  {
-      /* Release fixed-height layout so the whole page scrolls naturally on mobile.
-         Without this, #top-static (hero + tiles + schedule) overflows 100vh and
-         the player stats panel (.page) gets zero height and is invisible. */
-      html, body, #app { height: auto !important; overflow: visible !important; }
-      #top-static { position: static !important; box-shadow: none !important; }
-      .page { flex: none !important; overflow: visible !important; display: block !important; padding: 10px 12px; }
-      #playerPanel, .ps-scroll { flex: none !important; overflow: visible !important; height: auto !important; display: block !important; }
+      /* Make the whole app scroll so the player stats panel is reachable.
+         The iframe viewport is the scrolling boundary — #app just needs
+         overflow-y:auto instead of hidden so content past 100vh is accessible. */
+      #app { overflow-y: auto; }
+      /* #top-static is sticky within the #app scroll container */
+      #top-static { position: sticky; top: 0; }
 
+      .page { padding: 10px 12px; }
       .series-wrap { margin: 10px 0; }
       .series-hero { padding: 20px 14px; gap: 10px; }
       .sh-score { font-size: 48px; }
