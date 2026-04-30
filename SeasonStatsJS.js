@@ -74,7 +74,7 @@ function getSeasonDataV1(divisionKey) {
   // (sheet may return native Date object, or string in various formats).
   // Use Utilities.formatDate with the spreadsheet timezone for Date objects so
   // that midnight-UTC dates don't shift one day early in ET.
-  const tz_ = getBackendSpreadsheet_().getSpreadsheetTimeZone();
+  const tz_ = Session.getScriptTimeZone() || 'America/New_York';
   const toIsoDate_ = v => {
     if (!v) return '';
     if (v instanceof Date) {
