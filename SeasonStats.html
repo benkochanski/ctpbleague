@@ -372,19 +372,29 @@
       #playerPanel { display: flex; flex-direction: column; height: auto; overflow: visible; }
       .ps-scroll { flex: none; overflow: visible; height: auto; }
 
+      /* Suppress column-height equalizer — tables stack, not side-by-side */
+      tr.pst-pad { display: none !important; }
+      .pst-filler { display: none; }
+
+      /* Player stats header: two-row layout on mobile, hide CSV */
+      .sec-head { flex-wrap: wrap; row-gap: 6px; padding: 10px 14px; }
+      .ps-filter-input { order: 10; flex: 0 0 100%; }
+      .ps-hdr-btn, .ps-expand-btn { order: 11; }
+      button[onclick*="downloadCSV"] { display: none !important; }
+
       .series-wrap { margin: 10px 0; }
       .series-hero { padding: 20px 14px; gap: 10px; }
       .sh-score { font-size: 48px; }
       .sh-logo-big { width: 70px; height: 70px; min-width: 0; }
 
-      /* Tile logos: use same 1fr auto 1fr structure as hero so they line up vertically */
-      .gt-mini-logo { width: 40px; height: 40px; justify-self: center; }
+      /* Tile logos: match hero size (70px), centered in 1fr columns like hero */
+      .gt-mini-logo { width: 70px; height: 70px; justify-self: center; }
       .gt-mini-banner { grid-template-columns: 1fr auto 1fr; }
 
-      /* Game-type label: pull out of absolute positioning so it flows above the score numbers */
-      .gt-score-col { height: auto; flex-direction: column; align-items: center; gap: 2px; padding: 3px 0; }
+      /* Game-type label: flows above score numbers with breathing room */
+      .gt-score-col { height: auto; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; }
       .gt-type-lbl { position: static; transform: none; left: auto; top: auto; display: block; }
-      .gt-snum-wrap, .gt-sdash-wrap { height: 30px; }
+      .gt-snum-wrap, .gt-sdash-wrap { height: 34px; }
     }
     @media (max-width: 600px) {
       /* Switch to single-column tiles sooner — at 2-col on a ~375px phone
