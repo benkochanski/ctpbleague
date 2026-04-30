@@ -372,14 +372,18 @@
          column at narrow widths and clipping the right-hand team's logo —
          release it here so the explicit width:70px takes effect. */
       .sh-logo-big { width: 70px; height: 70px; min-width: 0; }
+      /* Shrink mini-logos in game-type tiles so the game label isn't clipped */
+      .gt-mini-logo { width: 40px; height: 40px; }
+      .gt-mini-banner { grid-template-columns: 40px minmax(0,1fr) 40px; }
+    }
+    @media (max-width: 600px) {
+      /* Switch to single-column tiles sooner — at 2-col on a ~375px phone
+         the 40px logos still leave very little room for the game label. */
+      .gt-tiles { grid-template-columns: 1fr; }
+      .gt-tile { border-right: none; border-bottom: 1px solid var(--border-s); }
+      .gt-tile:last-child { border-bottom: none; }
     }
     @media (max-width: 480px) {
-      /* Stack the four game-type tiles into a single column on phones —
-         at 2-column the 56px+score+56px banner overflowed and the right
-         team logo was being clipped. */
-      .gt-tiles { grid-template-columns: 1fr; }
-      .gt-tile { border-right: none; border-bottom: 1px solid var(--border-s); padding: 10px 14px; }
-      .gt-tile:last-child { border-bottom: none; }
       .sh-logo-big { width: 60px; height: 60px; }
       .sh-team-name { font-size: 14px; letter-spacing: 1.4px; }
       .sh-score { font-size: 40px; }

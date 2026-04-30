@@ -1082,6 +1082,11 @@
     }
 
     @media (max-width: 600px){
+      /* Combined filters: drop max-content width so filters wrap inside the
+         panel instead of overflowing off the right edge on narrow phones. */
+      .combined-filters-wrap{ width:100%; align-items:flex-start; }
+      .combined-filters{ justify-content:flex-start; }
+
       /* Phone: hide Registered + Eligibility columns and rebalance the rest
          so Name + DUPR ID + DUPR rating fit cleanly. The td cells don't
          carry the column class names, so we target by nth-child. */
@@ -1743,6 +1748,19 @@
   if (/^https?:\/\//i.test(s)) return s;
   return s;
 }
+
+    // On mobile in iframes the label→hidden-input click association can break,
+    // so we intercept pill clicks explicitly and toggle the checkbox ourselves.
+    document.addEventListener('click', function(e) {
+      const pill = e.target.closest('.check-pill');
+      if (!pill) return;
+      e.preventDefault();
+      const input = pill.querySelector('input[type="checkbox"]');
+      if (input) {
+        input.checked = !input.checked;
+        renderAll();
+      }
+    });
   </script>
 </body>
 </html>
