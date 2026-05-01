@@ -243,10 +243,11 @@ function buildEligiblePlayerIdSetForTeam_(match, teamId) {
 
   const out = new Set();
   getObjects_(SHEETS.PLAYERS).forEach(p => {
-    if (normalizeBoolValue_(p.active) === false) return;
+    const activeRaw = p.active;
+    if (activeRaw !== undefined && activeRaw !== '' && !normalizeBoolValue_(activeRaw)) return;
     if (clubNames.size) {
       const pClub = String(p.club || '').trim().toLowerCase();
-      if (!pClub || !clubNames.has(pClub)) return;
+      if (pClub && !clubNames.has(pClub)) return;
     }
     if (divisionId && p.division) {
       const pDiv = String(p.division || '').trim().toLowerCase();

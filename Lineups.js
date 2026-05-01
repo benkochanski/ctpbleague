@@ -30,18 +30,23 @@ function getEligibleRosterForMatch_(matchId, teamId) {
 
   return getObjects_(SHEETS.PLAYERS)
     .filter(p => {
-      // Club match: p.club must match one of the club's known names.
+      // Exclude only if active is explicitly FALSE — missing/blank = include.
+      const activeRaw = p.active;
+      if (activeRaw !== undefined && activeRaw !== '' && !normalizeBoolValue_(activeRaw)) return false;
+
+      // Club match: only filter if the captain has a resolvable club AND
+      // the player has a club value — skip the filter if either is absent.
       if (clubNames.size) {
         const pClub = String(p.club || '').trim().toLowerCase();
-        if (!pClub || !clubNames.has(pClub)) return false;
+        if (pClub && !clubNames.has(pClub)) return false;
       }
-      // Division eligibility: if p.division is set, it must match the match division.
+
+      // Division eligibility: only filter if both sides are populated.
       if (divisionId && p.division) {
         const pDiv = String(p.division || '').trim().toLowerCase();
         if (pDiv && pDiv !== divisionId.toLowerCase()) return false;
       }
-      // Active players only.
-      if (normalizeBoolValue_(p.active) === false) return false;
+
       return true;
     })
     .map(p => {
