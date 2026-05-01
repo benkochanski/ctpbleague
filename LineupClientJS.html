@@ -1730,65 +1730,23 @@ function getRelevantPortalGames_() {
 }
 
 function getLineupAuditInfo_() {
-  const relevant = getRelevantPortalGames_();
-  const isHome = portalData?.mySide === 'home';
+  // submissionAudit is fetched server-side filtered by (match_id, team_id),
+  // so it's always scoped to the viewing team — no cross-team bleed.
+  const sa = portalData?.submissionAudit;
+  if (!sa) return { lastEdited: null, submitted: null };
 
-  const stamps = relevant
-    .map(g => ({
-      updated_at: isHome ? (g.home_updated_at || g.updated_at || '') : (g.away_updated_at || g.updated_at || ''),
-      updated_by:
-        isHome
-          ? (
-              g.home_updated_by_name ||
-              g.home_updated_by ||
-              g.home_updated_by_email ||
-              g.updated_by_name ||
-              g.updated_by ||
-              g.updated_by_user_id ||
-              ''
-            )
-          : (
-              g.away_updated_by_name ||
-              g.away_updated_by ||
-              g.away_updated_by_email ||
-              g.updated_by_name ||
-              g.updated_by ||
-              g.updated_by_user_id ||
-              ''
-            ),
-      submitted_at: isHome ? (g.home_submitted_at || '') : (g.away_submitted_at || ''),
-      submitted_by:
-        isHome
-          ? (
-              g.home_submitted_by_name ||
-              g.home_submitted_by ||
-              g.home_submitted_by_email ||
-              ''
-            )
-          : (
-              g.away_submitted_by_name ||
-              g.away_submitted_by ||
-              g.away_submitted_by_email ||
-              ''
-            )
-    }))
-    .filter(x => x.updated_at || x.submitted_at);
-
-  if (!stamps.length) {
-    return { lastEdited: null, submitted: null };
-  }
-
-  const sortedByEdit = [...stamps]
-    .filter(x => x.updated_at)
-    .sort((a, b) => parseAppDateTime_(b.updated_at) - parseAppDateTime_(a.updated_at));
-
-  const sortedBySubmit = stamps
-    .filter(x => x.submitted_at)
-    .sort((a, b) => parseAppDateTime_(b.submitted_at) - parseAppDateTime_(a.submitted_at));
+  // Normalise both entries to the shape callers expect:
+  //   { updated_at, updated_by, submitted_at, submitted_by }
+  const norm = e => e ? {
+    updated_at:   e.submitted_at || '',
+    updated_by:   e.submitted_by || '',
+    submitted_at: e.submitted_at || '',
+    submitted_by: e.submitted_by || ''
+  } : null;
 
   return {
-    lastEdited: sortedByEdit[0] || null,
-    submitted: sortedBySubmit[0] || null
+    lastEdited: norm(sa.lastEdited),
+    submitted:  norm(sa.submitted)
   };
 }
 
