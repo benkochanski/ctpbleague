@@ -492,8 +492,13 @@ function updateHeaderMetaFromPortal_() {
 
 function applyBranding(branding) {
   // League logo uses a static URL set in HTML — don't overwrite with GAS Drive URL.
+  const logoWrap = document.getElementById('middle-brand-logo-wrap');
   const teamLogo = document.getElementById('middle-team-logo');
   const teamFallback = document.getElementById('middle-team-logo-fallback');
+
+  // Reveal the team logo area (hidden until match data arrives so nothing
+  // shows through the login overlay backdrop).
+  if (logoWrap) logoWrap.style.visibility = '';
 
   if (branding?.teamLogoUrl && teamLogo && teamFallback) {
     teamLogo.src = branding.teamLogoUrl;
@@ -502,7 +507,7 @@ function applyBranding(branding) {
   } else if (teamLogo && teamFallback) {
     teamLogo.style.display = 'none';
     teamFallback.style.display = 'flex';
-    teamFallback.textContent = 'TEAM';
+    teamFallback.textContent = TEAM_NAME || '';
   }
 }
 
@@ -730,14 +735,20 @@ function formatDisplayDateTime_(value) {
 function parseStartTimeString_(timeStr) {
   const s = String(timeStr || '').trim();
   if (!s) return null;
-  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
-  if (!m) return null;
-  let hours = Number(m[1]);
-  const minutes = Number(m[2] || 0);
-  const ap = m[3].toUpperCase();
-  if (ap === 'PM' && hours !== 12) hours += 12;
-  if (ap === 'AM' && hours === 12) hours = 0;
-  return { hours, minutes };
+  // "h:mm AM/PM" or "h AM/PM"
+  const ampm = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (ampm) {
+    let hours = Number(ampm[1]);
+    const minutes = Number(ampm[2] || 0);
+    const ap = ampm[3].toUpperCase();
+    if (ap === 'PM' && hours !== 12) hours += 12;
+    if (ap === 'AM' && hours === 12) hours = 0;
+    return { hours, minutes };
+  }
+  // "HH:MM" 24-hour (e.g. "12:00", "15:00")
+  const h24 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (h24) return { hours: Number(h24[1]), minutes: Number(h24[2]) };
+  return null;
 }
 
 function getMySubmissionDeadline_() {
@@ -1354,11 +1365,24 @@ const pairCount = Math.min(maxAllowed, arr.length);
 
   const stable = document.getElementById('stable');
   if (stable) {
+    // Preserve which sections are currently open so re-render doesn't collapse them.
+    const openSections = new Set();
+    stable.querySelectorAll('[id^="roster-section-body-"]:not(.collapsed)').forEach(el => {
+      openSections.add(el.id.replace('roster-section-body-', ''));
+    });
+
     stable.innerHTML = `
       ${renderSummarySection('Women', women)}
       ${renderSummarySection('Men', men)}
       ${pairingsSection}
     `;
+
+    openSections.forEach(key => {
+      const body = document.getElementById(`roster-section-body-${key}`);
+      const caret = document.getElementById(`roster-caret-${key}`);
+      if (body) body.classList.remove('collapsed');
+      if (caret) caret.textContent = '▾';
+    });
   }
 
   const allGames = schedule.flat().filter(g => g && Array.isArray(g.team1));

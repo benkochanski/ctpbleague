@@ -1,7 +1,7 @@
 const LEAGUE_LOGO_FILE_ID = '1PA1pVhADGrUO4aIn1pz6srSwI50r41EZ';
 
-// Normalizes a GAS time cell (Date object anchored to 1899-12-30) or any string
-// to a display string like "12 PM" or "9:30 AM". Returns '' if unavailable.
+// Normalizes a GAS time cell (Date object or "HH:MM" / "h:mm AM/PM" string)
+// to a display string like "12 PM" or "3 PM". Returns '' if unavailable.
 function normalizeStartTime_(v) {
   if (!v) return '';
   if (v instanceof Date) {
@@ -13,7 +13,18 @@ function normalizeStartTime_(v) {
     h = h % 12 || 12;
     return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2, '0')} ${ap}`;
   }
-  return String(v).trim();
+  const s = String(v).trim();
+  // Convert "HH:MM" 24-hour string (e.g. "12:00", "15:00") → "12 PM", "3 PM"
+  const h24 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (h24) {
+    let h = Number(h24[1]);
+    const min = Number(h24[2]);
+    if (h === 0 && min === 0) return '';
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2, '0')} ${ap}`;
+  }
+  return s;
 }
 
 function lineupPingUniqueV1() {
@@ -96,14 +107,15 @@ function getCaptainSelectorData() {
       const awayTeam = teams.find(t => String(t.team_id || '').trim() === awayId);
 
       return {
-        match_id: String(m.match_id || '').trim(),
-        division_id: String(m.division_id || '').trim(),
-        match_date: String(m.match_date || '').trim(),
-        venue: String(m.venue || m.location || m.match_location || '').trim(),
-        home_team_id: homeId,
-        away_team_id: awayId,
-        home_team_name: stripDivisionSuffix_(String((homeTeam && (homeTeam.team_name || homeTeam.name)) || homeId)),
-        away_team_name: stripDivisionSuffix_(String((awayTeam && (awayTeam.team_name || awayTeam.name)) || awayId))
+        match_id:        String(m.match_id || '').trim(),
+        division_id:     String(m.division_id || '').trim(),
+        match_date:      captainMatchDateIso_(m.match_date),
+        start_time:      normalizeStartTime_(m.start_time),
+        venue:           String(m.venue || m.location || m.match_location || '').trim(),
+        home_team_id:    homeId,
+        away_team_id:    awayId,
+        home_team_name:  stripDivisionSuffix_(String((homeTeam && (homeTeam.team_name || homeTeam.name)) || homeId)),
+        away_team_name:  stripDivisionSuffix_(String((awayTeam && (awayTeam.team_name || awayTeam.name)) || awayId))
       };
     })
   };
@@ -592,11 +604,18 @@ function getCaptainPortalData(matchId, teamId) {
       Number(a.game_number_in_round || 0) - Number(b.game_number_in_round || 0)
     );
 
+  // Normalize match_date and start_time in every match so clients never
+  // have to deal with raw Date objects or timezone-ambiguous strings.
+  const normalizedMatches = matches.map(m => Object.assign({}, m, {
+    match_date: captainMatchDateIso_(m.match_date),
+    start_time: normalizeStartTime_(m.start_time)
+  }));
+
   return {
     user: { email: '', full_name: 'Public User' },
     clubs: clubId ? [clubId] : [],
     teams: [myTeamId],
-    matches,
+    matches: normalizedMatches,
     currentMatch,
     myTeamId,
     mySide,
