@@ -4,7 +4,10 @@
   // GAS web app — single deployment, anonymous access. Captain/Scorecard
   // pages identify the user via Google Identity Services (client-side sign-in)
   // and pass a verified ID token to the backend. See Auth.js.
-  const GAS_BASE = 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
+  const GAS_PROD    = 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
+  const GAS_STAGING = 'https://script.google.com/macros/s/AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy-/exec';
+  const IS_STAGING  = new URLSearchParams(location.search).get('staging') === '1';
+  const GAS_BASE    = IS_STAGING ? GAS_STAGING : GAS_PROD;
 
   const ROUTES = {
     home:         { kind: 'page', label: 'ctpbleague.com',    onEnter: renderHome },
@@ -832,6 +835,11 @@
   }
 
   // ---------- Init ----------
+  if (IS_STAGING) {
+    const banner = document.getElementById('staging-banner');
+    if (banner) banner.style.display = '';
+  }
+
   const [initialKey, initialParam] = (location.hash || '#home').slice(1).split('/');
   navigate(initialKey || 'home', initialParam);
 })();
