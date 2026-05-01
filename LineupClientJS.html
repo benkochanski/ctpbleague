@@ -656,9 +656,11 @@ function boot() {
 
 function onDivisionChange() {
   const divisionId = selectedDivision();
-  // Always use SELECTOR_DATA.matches — these are the same objects used to
-  // build the division dropdown, so division_id values are guaranteed to match.
   const matches = SELECTOR_DATA.matches || [];
+  console.log('[CPBL] onDivisionChange divisionId=', divisionId,
+    'total matches=', matches.length,
+    'sample division_ids=', matches.slice(0,3).map(m => m.division_id));
+
   const filteredMatches = matches.filter(
     m => String(m.division_id || '').trim() === String(divisionId || '').trim()
   );
@@ -666,10 +668,12 @@ function onDivisionChange() {
   if (!filteredMatches.length) {
     const ms = document.getElementById('match-select');
     if (ms) ms.innerHTML = '<option value="">No matches for this division</option>';
+    showToast('No matches found for division: ' + (divisionId || '(empty)'), 'error');
     return;
   }
 
   const firstMatchId = String(filteredMatches[0].match_id || '').trim();
+  console.log('[CPBL] onDivisionChange → loading match', firstMatchId, 'filtered=', filteredMatches.length);
   populateMatchDropdownFromPortal_(matches, firstMatchId, divisionId);
 
   if (!firstMatchId) return;

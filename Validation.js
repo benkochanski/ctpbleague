@@ -252,7 +252,7 @@ function buildEligiblePlayerIdSetForTeam_(match, teamId) {
     if (p.eligibility !== undefined && p.eligibility !== '') {
       const playerElig = Number(p.eligibility);
       const matchDivNum = Number(String(divisionId || '').replace(/\D/g, '')) || 0;
-      if (matchDivNum && !isNaN(playerElig) && playerElig > matchDivNum) return;
+      if (matchDivNum && !isNaN(playerElig) && playerElig < matchDivNum) return;
     }
     const pid = String(p.player_id || '').trim();
     if (pid) out.add(pid);

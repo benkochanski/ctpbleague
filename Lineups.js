@@ -41,14 +41,16 @@ function getEligibleRosterForMatch_(matchId, teamId) {
         if (pClub && !clubNames.has(pClub)) return false;
       }
 
-      // Division eligibility: p.eligibility holds the max division number the
-      // player is eligible for (1=most elite, 5=most open). Include the player
-      // if their eligibility number >= the match's division number, meaning
-      // they're cleared to play at this level.
+      // Division eligibility: p.eligibility is the player's division rating
+      // (lowest number = most competitive). Include the player if their
+      // eligibility number >= the match's division number — i.e. players
+      // rated for this division and all less-competitive (higher-numbered)
+      // divisions are shown; players rated for more-competitive divisions only
+      // (lower number) are excluded.
       if (p.eligibility !== undefined && p.eligibility !== '') {
         const playerElig = Number(p.eligibility);
         const matchDivNum = Number(String(divisionId || '').replace(/\D/g, '')) || 0;
-        if (matchDivNum && !isNaN(playerElig) && playerElig > matchDivNum) return false;
+        if (matchDivNum && !isNaN(playerElig) && playerElig < matchDivNum) return false;
       }
 
       return true;
