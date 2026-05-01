@@ -359,6 +359,7 @@ function doGet(e) {
   t.requestedMatchId = matchId;
   t.requestedTeamId = teamId;
   t.bootstrapError = bootstrapError;
+  t.gasExecUrl = ScriptApp.getService().getUrl();
   // Token + email from the wrapper shell's Google Sign-In (workers.dev origin),
   // forwarded via query string so the iframe's writes can authenticate without
   // running GSI itself (which can't validate against a googleusercontent origin).
