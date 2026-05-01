@@ -505,7 +505,12 @@ function getCaptainPortalData(matchId, teamId) {
   }
 
   if (!myTeam) {
-    throw new Error('Invalid or missing teamId for this match');
+    // Requested team isn't in this match — fall back to home team so the
+    // captain can still browse matches from other divisions.
+    myTeam = homeTeam || awayTeam || null;
+  }
+  if (!myTeam) {
+    throw new Error('No teams found for this match');
   }
 
   const myTeamId = String(myTeam.team_id || '').trim();

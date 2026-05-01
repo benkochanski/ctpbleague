@@ -672,17 +672,42 @@ function onDivisionChange() {
     return;
   }
 
-  const firstMatchId = String(filteredMatches[0].match_id || '').trim();
+  const firstMatch = filteredMatches[0];
+  const firstMatchId = String(firstMatch.match_id || '').trim();
   console.log('[CPBL] onDivisionChange → loading match', firstMatchId, 'filtered=', filteredMatches.length);
   populateMatchDropdownFromPortal_(matches, firstMatchId, divisionId);
 
   if (!firstMatchId) return;
+
+  // Pick the user's allowed team in this match if possible, otherwise leave
+  // currentTeamId as-is and the server will fall back to home team.
+  const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
+  if (allowedIds.length) {
+    const homeId = String(firstMatch.home_team_id || '').trim();
+    const awayId = String(firstMatch.away_team_id || '').trim();
+    if (allowedIds.includes(homeId)) currentTeamId = homeId;
+    else if (allowedIds.includes(awayId)) currentTeamId = awayId;
+    else currentTeamId = '';
+  }
+
   loadMatch_(firstMatchId);
 }
 
 function onMatchChange() {
   const newMatchId = String(selectedMatch() || '').trim();
   if (!newMatchId) return;
+  const allMatches = SELECTOR_DATA.matches || [];
+  const m = allMatches.find(x => String(x.match_id || '').trim() === newMatchId);
+  if (m) {
+    const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
+    if (allowedIds.length) {
+      const homeId = String(m.home_team_id || '').trim();
+      const awayId = String(m.away_team_id || '').trim();
+      if (allowedIds.includes(homeId)) currentTeamId = homeId;
+      else if (allowedIds.includes(awayId)) currentTeamId = awayId;
+      else currentTeamId = '';
+    }
+  }
   loadMatch_(newMatchId);
 }
 
