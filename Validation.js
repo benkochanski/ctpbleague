@@ -249,9 +249,10 @@ function buildEligiblePlayerIdSetForTeam_(match, teamId) {
       const pClub = String(p.club || '').trim().toLowerCase();
       if (pClub && !clubNames.has(pClub)) return;
     }
-    if (divisionId && p.division) {
-      const pDiv = String(p.division || '').trim().toLowerCase();
-      if (pDiv && pDiv !== divisionId.toLowerCase()) return;
+    if (p.eligibility !== undefined && p.eligibility !== '') {
+      const playerElig = Number(p.eligibility);
+      const matchDivNum = Number(String(divisionId || '').replace(/\D/g, '')) || 0;
+      if (matchDivNum && !isNaN(playerElig) && playerElig > matchDivNum) return;
     }
     const pid = String(p.player_id || '').trim();
     if (pid) out.add(pid);

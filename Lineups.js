@@ -41,10 +41,14 @@ function getEligibleRosterForMatch_(matchId, teamId) {
         if (pClub && !clubNames.has(pClub)) return false;
       }
 
-      // Division eligibility: only filter if both sides are populated.
-      if (divisionId && p.division) {
-        const pDiv = String(p.division || '').trim().toLowerCase();
-        if (pDiv && pDiv !== divisionId.toLowerCase()) return false;
+      // Division eligibility: p.eligibility holds the max division number the
+      // player is eligible for (1=most elite, 5=most open). Include the player
+      // if their eligibility number >= the match's division number, meaning
+      // they're cleared to play at this level.
+      if (p.eligibility !== undefined && p.eligibility !== '') {
+        const playerElig = Number(p.eligibility);
+        const matchDivNum = Number(String(divisionId || '').replace(/\D/g, '')) || 0;
+        if (matchDivNum && !isNaN(playerElig) && playerElig > matchDivNum) return false;
       }
 
       return true;

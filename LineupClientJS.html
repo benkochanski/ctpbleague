@@ -608,7 +608,11 @@ function boot() {
       const firstMatch = matches[0];
       if (firstMatch) {
         const firstMatchId = String(firstMatch.match_id || '').trim();
-        currentTeamId = String(firstMatch.home_team_id || '').trim();
+        // Prefer the team side that matches the signed-in user's allowed teams.
+        const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
+        const awayId = String(firstMatch.away_team_id || '').trim();
+        const homeId = String(firstMatch.home_team_id || '').trim();
+        currentTeamId = (allowedIds.length && allowedIds.includes(awayId)) ? awayId : homeId;
         populateMatchDropdownFromPortal_(matches, firstMatchId, divisionValueForMatch_(firstMatch));
         loadMatch_(firstMatchId);
       } else {
