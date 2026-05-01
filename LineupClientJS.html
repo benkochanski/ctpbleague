@@ -656,7 +656,7 @@ function boot() {
 
 function onDivisionChange() {
   const divisionId = selectedDivision();
-  const matches = portalData.matches || [];
+  const matches = (portalData && portalData.matches) ? portalData.matches : (SELECTOR_DATA.matches || []);
   const filteredMatches = matches.filter(
     m => String(m.division_id || '').trim() === String(divisionId || '').trim()
   );
