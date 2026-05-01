@@ -234,16 +234,114 @@ function getMyCaptainAccessV1(idToken) {
  * PIN is stored in the `pin` column of the Users sheet. Any format is fine
  * (4–6 digit number is typical). Matching is case-insensitive string compare.
  */
+// Step 1 — check whether an email address exists in the Users sheet.
+// Returns { found: true } or { found: false }. Never reveals more.
+function checkPortalEmail(email) {
+  try {
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!cleanEmail) return JSON.stringify({ found: false });
+    const found = getObjects_(SHEETS.USERS).some(u =>
+      String(u.email || '').trim().toLowerCase() === cleanEmail &&
+      (u.active === undefined || u.active === '' || normalizeBool_(u.active))
+    );
+    return JSON.stringify({ found });
+  } catch (e) {
+    return JSON.stringify({ found: false, error: String(e.message || e) });
+  }
+}
+
+// Step 2 — verify email + PIN and return the user's access profile.
+// Chain: Users → User_Access → club_id → Clubs → Teams
+function verifyPortalLogin(email, pin) {
+  try {
+    const r = resolvePortalAccess_(email, pin);
+    if (!r.ok) return JSON.stringify({ ok: false, error: r.reason });
+    return JSON.stringify({
+      ok: true,
+      name: r.name,
+      email: r.email,
+      userId: r.userId,
+      clubId: r.clubId,
+      clubName: r.clubName,
+      shortName: r.shortName,
+      allowedTeamIds: r.allowedTeamIds
+    });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: String(e.message || e) });
+  }
+}
+
+// Internal: resolve access from email + PIN.  Follows the exact chain:
+//   Users → User_Access → club_id → Clubs → Teams
+function resolvePortalAccess_(email, pin) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanPin   = String(pin   || '').trim();
+
+  // 1. Find user by email.
+  const user = getObjects_(SHEETS.USERS).find(u =>
+    String(u.email || '').trim().toLowerCase() === cleanEmail &&
+    (u.active === undefined || u.active === '' || normalizeBool_(u.active))
+  );
+  if (!user) return { ok: false, reason: 'No user registered with that email address' };
+
+  // 2. Verify PIN.
+  if (!cleanPin || String(user.pin || '').trim() !== cleanPin) {
+    return { ok: false, reason: 'Incorrect PIN' };
+  }
+
+  const userId = String(user.user_id || '').trim();
+  const name   = String(user.full_name || user.name || '').trim();
+
+  // 3. Find User_Access rows for this user.
+  const accessRows = getObjects_(SHEETS.USER_ACCESS).filter(a =>
+    String(a.user_id || '').trim() === userId &&
+    (a.active === undefined || a.active === '' || normalizeBool_(a.active))
+  );
+  if (!accessRows.length) return { ok: false, reason: 'No access configured for this user. Contact the commissioner.' };
+
+  // 4. Collect all club IDs from access rows.
+  const clubIds = [...new Set(
+    accessRows.map(a => String(a.club_id || '').trim()).filter(Boolean)
+  )];
+  if (!clubIds.length) return { ok: false, reason: 'No club assigned to this user in User_Access. Contact the commissioner.' };
+
+  // Use first club for name display (most users have one).
+  const primaryClubId = clubIds[0];
+  const allClubs = getObjects_(SHEETS.CLUBS);
+  const primaryClub = allClubs.find(c => String(c.club_id || '').trim() === primaryClubId) || null;
+  const clubName  = primaryClub ? String(primaryClub.club_name  || '').trim() : '';
+  const shortName = primaryClub ? String(primaryClub.short_name || '').trim() : '';
+
+  // 5. Find all teams in any of the user's clubs.
+  const allTeams = getObjects_(SHEETS.TEAMS);
+  const allowedTeamIds = allTeams
+    .filter(t => clubIds.includes(String(t.club_id || '').trim()))
+    .map(t => String(t.team_id || '').trim())
+    .filter(Boolean);
+
+  return { ok: true, userId, name, email: cleanEmail, clubId: primaryClubId, clubName, shortName, allowedTeamIds };
+}
+
+// Used by write handlers: throws unless the caller has access to teamId.
+function requirePortalAccess_(email, pin, teamId) {
+  const cleanTeamId = String(teamId || '').trim();
+  const access = resolvePortalAccess_(email, pin);
+  if (!access.ok) throw new Error(access.reason);
+  if (cleanTeamId && !access.allowedTeamIds.includes(cleanTeamId)) {
+    throw new Error(
+      (access.name || 'This user') + ' does not have access to team ' + cleanTeamId +
+      '. Allowed: ' + (access.allowedTeamIds.join(', ') || '(none)')
+    );
+  }
+  return access;
+}
+
+// Legacy — kept so existing calls continue to work during transition.
 function verifyPortalPin(pin) {
   try {
     const access = getPinAccess_(pin);
     if (!access.ok) return JSON.stringify({ ok: false, error: access.reason });
-    return JSON.stringify({
-      ok: true,
-      name: access.name,
-      userId: access.userId,
-      allowedTeamIds: access.allowedTeamIds
-    });
+    return JSON.stringify({ ok: true, name: access.name, userId: access.userId, allowedTeamIds: access.allowedTeamIds });
   } catch (e) {
     return JSON.stringify({ ok: false, error: String(e.message || e) });
   }
@@ -252,22 +350,12 @@ function verifyPortalPin(pin) {
 function getPinAccess_(pin) {
   const cleanPin = String(pin || '').trim();
   if (!cleanPin) return { ok: false, reason: 'No PIN entered' };
-
-  const users = getObjects_(SHEETS.USERS);
-  const user = users.find(u =>
+  const user = getObjects_(SHEETS.USERS).find(u =>
     String(u.pin || '').trim() === cleanPin &&
     (u.active === undefined || u.active === '' || normalizeBool_(u.active))
   );
-
   if (!user) return { ok: false, reason: 'PIN not recognised' };
-
-  // Reuse the existing team/role expansion logic.
-  const emailAccess = getCaptainAccessForEmail_(String(user.email || '').trim());
-  // Merge: carry the userId forward even if email lookup returns a partial result.
-  emailAccess.userId = emailAccess.userId || String(user.user_id || '').trim();
-  emailAccess.name   = emailAccess.name   || String(user.full_name || '').trim();
-  emailAccess.ok     = true;  // PIN matched an active user — always ok for portal entry
-  return emailAccess;
+  return resolvePortalAccess_(String(user.email || '').trim(), cleanPin);
 }
 
 function requirePinAccess_(pin, teamId) {

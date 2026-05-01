@@ -579,12 +579,12 @@ function getCaptainPortalData(matchId, teamId) {
   };
 }
 
-function saveCaptainLineupDraft(pin, matchId, teamId, assignments) {
+function saveCaptainLineupDraft(email, pin, matchId, teamId, assignments) {
   const cleanMatchId = String(matchId || '').trim();
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
-  const access = requirePinAccess_(pin, cleanTeamId);
+  const access = requirePortalAccess_(email, pin, cleanTeamId);
 
   const normalizedAssignments = normalizeAssignments_(
     assignments,
@@ -614,12 +614,12 @@ function saveCaptainLineupDraft(pin, matchId, teamId, assignments) {
   };
 }
 
-function submitCaptainLineup(pin, matchId, teamId, assignments) {
+function submitCaptainLineup(email, pin, matchId, teamId, assignments) {
   const cleanMatchId = String(matchId || '').trim();
   const cleanTeamId = String(teamId || '').trim();
   if (!cleanMatchId) throw new Error('Missing matchId');
   if (!cleanTeamId) throw new Error('Missing teamId');
-  const access = requirePinAccess_(pin, cleanTeamId);
+  const access = requirePortalAccess_(email, pin, cleanTeamId);
 
   const match = getObjects_(SHEETS.MATCHES).find(m =>
     String(m.match_id || '').trim() === cleanMatchId
