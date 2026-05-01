@@ -1,14 +1,19 @@
 const LEAGUE_LOGO_FILE_ID = '1PA1pVhADGrUO4aIn1pz6srSwI50r41EZ';
 
+// Cached per-execution so callers in tight loops don't re-open the spreadsheet.
+let _cachedSheetTz_ = null;
+function getSheetTimezone_() {
+  if (!_cachedSheetTz_) _cachedSheetTz_ = getSpreadsheet_().getSpreadsheetTimeZone();
+  return _cachedSheetTz_;
+}
+
 // Normalizes a GAS time cell (Date object or "HH:MM" / "h:mm AM/PM" string)
 // to a display string like "12 PM" or "3 PM". Returns '' if unavailable.
 function normalizeStartTime_(v) {
   if (!v) return '';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    // Use the spreadsheet's own timezone (not getActive() — this is a standalone
-    // script; not the script/JVM timezone which may differ from the sheet).
-    const sheetTz = getSpreadsheet_().getSpreadsheetTimeZone();
+    const sheetTz = getSheetTimezone_();
     let h = Number(Utilities.formatDate(v, sheetTz, 'H'));
     const min = Number(Utilities.formatDate(v, sheetTz, 'm'));
     if (h === 0 && min === 0) return '';
@@ -54,9 +59,7 @@ function captainMatchDateIso_(v) {
   if (!v) return '';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    // Use the spreadsheet's own timezone (not getActive() — standalone script).
-    const sheetTz = getSpreadsheet_().getSpreadsheetTimeZone();
-    return Utilities.formatDate(v, sheetTz, 'yyyy-MM-dd');
+    return Utilities.formatDate(v, getSheetTimezone_(), 'yyyy-MM-dd');
   }
   const s = String(v).trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
