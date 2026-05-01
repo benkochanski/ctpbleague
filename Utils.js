@@ -43,6 +43,20 @@ function getObjects_(sheetName) {
   return rowsToObjects_(headers, rows);
 }
 
+// Like getObjects_ but reads cell display strings instead of parsed values.
+// Use this when you need dates/times exactly as the sheet shows them, with no
+// timezone conversion — cells formatted as dates come back as "5/2/2026" etc.
+function getDisplayObjects_(sheetName) {
+  const sh = getSheet_(sheetName);
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow < 2 || lastCol < 1) return [];
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const displayRows = sh.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues()
+    .filter(r => r.some(v => v !== ''));
+  return rowsToObjects_(headers, displayRows);
+}
+
 function appendObjects_(sheetName, objects) {
   if (!objects.length) return;
   const sh = getSheet_(sheetName);

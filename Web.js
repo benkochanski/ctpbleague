@@ -1,28 +1,36 @@
 const LEAGUE_LOGO_FILE_ID = '1PA1pVhADGrUO4aIn1pz6srSwI50r41EZ';
 
-// Cached per-execution so callers in tight loops don't re-open the spreadsheet.
-let _cachedSheetTz_ = null;
-function getSheetTimezone_() {
-  if (!_cachedSheetTz_) _cachedSheetTz_ = getSpreadsheet_().getSpreadsheetTimeZone();
-  return _cachedSheetTz_;
-}
-
-// Normalizes a GAS time cell (Date object or "HH:MM" / "h:mm AM/PM" string)
-// to a display string like "12 PM" or "3 PM". Returns '' if unavailable.
+// Normalizes a time value to a display string like "12 PM" or "3 PM".
+// Accepts: "HH:MM", "HH:MM:SS", "H:MM AM/PM", "H:MM:SS AM/PM", or a Date.
+// When reading from the Matches sheet use getDisplayObjects_ so values arrive
+// as strings — that avoids all GAS timezone-conversion issues with Date cells.
 function normalizeStartTime_(v) {
   if (!v) return '';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    const sheetTz = getSheetTimezone_();
-    let h = Number(Utilities.formatDate(v, sheetTz, 'H'));
-    const min = Number(Utilities.formatDate(v, sheetTz, 'm'));
+    const tz = Session.getScriptTimeZone() || 'America/New_York';
+    let h = Number(Utilities.formatDate(v, tz, 'H'));
+    const min = Number(Utilities.formatDate(v, tz, 'm'));
     if (h === 0 && min === 0) return '';
     const ap = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
     return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2, '0')} ${ap}`;
   }
   const s = String(v).trim();
-  // Convert "HH:MM" 24-hour string (e.g. "12:00", "15:00") → "12 PM", "3 PM"
+  // "H:MM AM/PM" or "H:MM:SS AM/PM" (getDisplayValues format for time cells)
+  const ampm = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+  if (ampm) {
+    let h = Number(ampm[1]);
+    const min = Number(ampm[2]);
+    const ap = ampm[3].toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    if (h === 0 && min === 0) return '';
+    const disp = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return min === 0 ? `${h} ${disp}` : `${h}:${String(min).padStart(2, '0')} ${disp}`;
+  }
+  // "HH:MM" or "HH:MM:SS" 24-hour (plain text in sheet, e.g. "12:00", "15:00")
   const h24 = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (h24) {
     let h = Number(h24[1]);
@@ -59,7 +67,8 @@ function captainMatchDateIso_(v) {
   if (!v) return '';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    return Utilities.formatDate(v, getSheetTimezone_(), 'yyyy-MM-dd');
+    const tz = Session.getScriptTimeZone() || 'America/New_York';
+    return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
   }
   const s = String(v).trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -90,7 +99,7 @@ function filterAndSortCaptainMatches_(rawMatches) {
 function getCaptainSelectorData() {
   const divisions = getObjects_(SHEETS.DIVISIONS);
   const teams = getObjects_(SHEETS.TEAMS);
-  const matches = filterAndSortCaptainMatches_(getObjects_(SHEETS.MATCHES));
+  const matches = filterAndSortCaptainMatches_(getDisplayObjects_(SHEETS.MATCHES));
 
   const divisionMap = {};
   divisions.forEach(d => {
@@ -472,7 +481,7 @@ function getCaptainPortalData(matchId, teamId) {
   const teams = getObjects_(SHEETS.TEAMS);
   const divisions = getObjects_(SHEETS.DIVISIONS);
   const clubs = getObjects_(SHEETS.CLUBS);
-  const allMatches = getObjects_(SHEETS.MATCHES);
+  const allMatches = getDisplayObjects_(SHEETS.MATCHES);
 
   const matches = filterAndSortCaptainMatches_(allMatches.slice());
 
