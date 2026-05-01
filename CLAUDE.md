@@ -20,6 +20,8 @@ A league management website for the Connecticut Pickleball League. Backend is Go
 | Worker preview URL | https://morning-wind-da2a.bkochanski.workers.dev |
 | GAS prod deployment ID (what the hub iframes) | `AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD` |
 | GAS prod URL | `https://script.google.com/macros/s/AKfycbzuzu.../exec` |
+| GAS staging deployment ID | `AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy-` |
+| GAS staging URL | `https://script.google.com/macros/s/AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy-/exec` |
 | GAS test/dev URL (always reflects last `clasp push`) | https://script.google.com/macros/s/AKfycbwvAFHiqHp5F44JWma3iTlRlweB_x5wGXy-Rru3BYg/dev |
 | GAS script ID | `18khk-KdiA9q9grnlJN63vnM2SPnHrcFXBtXWff0JnT7HphrsDhWKbWTs` |
 | Google Sheet | https://docs.google.com/spreadsheets/d/1DRiZ-xraXY9J1Bp09U3Rxg0qx943Apj8guBy1fd5jJ8/edit |
@@ -76,8 +78,9 @@ There are **two systems** that need publishing separately:
 ### GAS changes (anything else: `*.js`, `*.html`, `appsscript.json`)
 1. Edit files (or `clasp pull` first if the GAS console was edited directly)
 2. `clasp push` — uploads to GAS at `@HEAD`. Test URL updates instantly.
-3. **Don't forget step 4** — without it, the hub still iframes the old version:
-4. `clasp deploy --deploymentId AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD --description "…"` — publishes a new version on the prod deployment
+3. **Test on dev URL first** (`/dev` — updates instantly on push, no deploy needed)
+4. **When ready to test stably**, deploy to staging: `clasp deploy --deploymentId AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy- --description "…"` — test at the staging URL without touching prod
+5. **When confirmed good**, deploy to prod: `clasp deploy --deploymentId AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD --description "…"` — publishes to the hub
 
 ### Both
 1. Commit to git as well so the GAS code stays mirrored on GitHub
