@@ -31,7 +31,7 @@
     // page itself; no deployment-level auth is needed, so they can stay iframed.
     captain:      { kind: 'newtab', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`   },
     display:      { kind: 'iframe', label: 'Match Display',     url: `${GAS_BASE}?page=display`   },
-    scorecard:    { kind: 'iframe', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard` },
+    scorecard:    { kind: 'newtab', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard` },
   };
 
   const app          = document.getElementById('app');
