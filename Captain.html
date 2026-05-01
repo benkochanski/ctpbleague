@@ -1755,6 +1755,27 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
     showStep('pin');
   };
 
+  function handleAuthResult(result, pin, errEl, btn) {
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if (!result.ok) {
+      var msg = result.error || 'Sign-in failed. Please try again.';
+      if (msg.toLowerCase().indexOf('email') >= 0 || msg.toLowerCase().indexOf('registered') >= 0) {
+        showStep('email');
+        document.getElementById('auth-email-error').textContent = msg;
+      } else {
+        errEl.textContent = msg;
+        var pi = document.getElementById('pin-input'); if (pi) pi.select();
+      }
+      return;
+    }
+    window.cpblPin     = pin;
+    window.cpblEmail   = pendingEmail;
+    window.cpblPinUser = result;
+    document.getElementById('pin-overlay').classList.add('hidden');
+    showPinUser(result.name || 'Captain');
+    reloadForUser(result);
+  }
+
   window.cpblPinSubmit = function () {
     var pin   = document.getElementById('pin-input').value.trim();
     var errEl = document.getElementById('pin-error');
@@ -1762,34 +1783,32 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
     if (!pin) { errEl.textContent = 'Please enter your PIN.'; return; }
     errEl.textContent = '';
     btn.disabled = true; btn.textContent = 'Signing in…';
-    google.script.run
-      .withSuccessHandler(function (jsonStr) {
-        btn.disabled = false; btn.textContent = 'Sign in';
-        var result; try { result = JSON.parse(jsonStr); } catch(e) { result = { ok: false, error: 'Unexpected response' }; }
-        if (!result.ok) {
-          var msg = result.error || 'Sign-in failed. Please try again.';
-          // If the error is about the email (not found), send back to email step.
-          if (msg.toLowerCase().indexOf('email') >= 0 || msg.toLowerCase().indexOf('registered') >= 0) {
-            showStep('email');
-            document.getElementById('auth-email-error').textContent = msg;
-          } else {
-            errEl.textContent = msg;
-            document.getElementById('pin-input').select();
-          }
-          return;
-        }
-        window.cpblPin   = pin;
-        window.cpblEmail = pendingEmail;
-        window.cpblPinUser = result;
-        document.getElementById('pin-overlay').classList.add('hidden');
-        showPinUser(result.name || 'Captain');
-        reloadForUser(result);
-      })
-      .withFailureHandler(function (err) {
-        btn.disabled = false; btn.textContent = 'Sign in';
-        errEl.textContent = (err && err.message) ? err.message : 'Error signing in. Please try again.';
-      })
-      .verifyPortalLogin(pendingEmail, pin);
+
+    // When inside the hub iframe, relay through the hub to avoid
+    // google.script.run hanging in a cross-origin iframe context.
+    if (window.parent && window.parent !== window) {
+      var reqId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      function authListener(evt) {
+        if (!evt.data || evt.data.type !== 'cpbl-auth-response' || evt.data.reqId !== reqId) return;
+        window.removeEventListener('message', authListener);
+        var result = evt.data.result || { ok: false, error: 'No response from hub' };
+        handleAuthResult(result, pin, errEl, btn);
+      }
+      window.addEventListener('message', authListener);
+      window.parent.postMessage({ type: 'cpbl-auth-request', email: pendingEmail, pin: pin, reqId: reqId }, '*');
+    } else {
+      // Opened directly (not in hub iframe) — use google.script.run.
+      google.script.run
+        .withSuccessHandler(function (jsonStr) {
+          var result; try { result = JSON.parse(jsonStr); } catch(e) { result = { ok: false, error: 'Unexpected response' }; }
+          handleAuthResult(result, pin, errEl, btn);
+        })
+        .withFailureHandler(function (err) {
+          btn.disabled = false; btn.textContent = 'Sign in';
+          errEl.textContent = (err && err.message) ? err.message : 'Error signing in. Please try again.';
+        })
+        .verifyPortalLogin(pendingEmail, pin);
+    }
   };
 
   document.addEventListener('DOMContentLoaded', function () {

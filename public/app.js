@@ -112,7 +112,35 @@
   // Season Stats opens the Player Profile inside the hub instead of a new tab).
   window.addEventListener('message', e => {
     const data = e.data;
-    if (!data || data.type !== 'cpbl-nav' || !data.route) return;
+    if (!data) return;
+
+    // Auth relay: GAS iframes can't call google.script.run reliably from inside
+    // a cross-origin iframe, so they postMessage here and we fetch on their behalf.
+    if (data.type === 'cpbl-auth-request') {
+      const url = GAS_BASE
+        + '?page=auth'
+        + '&email=' + encodeURIComponent(data.email || '')
+        + '&pin='   + encodeURIComponent(data.pin   || '');
+      const frame = document.getElementById('appFrame');
+      fetch(url)
+        .then(r => r.json())
+        .then(result => {
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'cpbl-auth-response', reqId: data.reqId, result }, '*');
+          }
+        })
+        .catch(err => {
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({
+              type: 'cpbl-auth-response', reqId: data.reqId,
+              result: { ok: false, error: String(err && err.message ? err.message : err) }
+            }, '*');
+          }
+        });
+      return;
+    }
+
+    if (data.type !== 'cpbl-nav' || !data.route) return;
     if (!ROUTES[data.route]) return;
     navigate(data.route, data.param);
   });

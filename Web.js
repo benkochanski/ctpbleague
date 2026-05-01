@@ -312,6 +312,14 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (page === 'auth') {
+    const email = String(params.email || '').trim();
+    const pin   = String(params.pin   || '').trim();
+    return ContentService
+      .createTextOutput(verifyPortalLogin(email, pin))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (page === 'scoreboard') {
     const tSb = HtmlService.createTemplateFromFile('PublicScoreboard');
     tSb.initialMatchId = String(params.matchId || '').trim();
