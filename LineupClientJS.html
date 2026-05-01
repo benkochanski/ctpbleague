@@ -619,6 +619,15 @@ function boot() {
   if (window.__LINEUP_BOOTED__) return;
   window.__LINEUP_BOOTED__ = true;
 
+  // If a stored-session auto-sign-in is underway, defer the data load.
+  // The auto-sign-in callback will call reloadForUser → loadMatch_ once
+  // credentials are confirmed — no need to fire a speculative loadMatch_ now.
+  if (window.__CPBL_AUTO_SIGNING_IN__) {
+    syncDivisionSelectorVisibility_();
+    populateDivisionDropdownFromPortal_(SELECTOR_DATA.availableDivisions || [], '');
+    return;
+  }
+
   try {
     portalData = window.__INITIAL_DATA__ || null;
     currentTeamId =

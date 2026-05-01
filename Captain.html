@@ -1695,11 +1695,31 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
 <script>
 (function () {
 
+  var STORAGE_KEY = 'cpbl_captain_email';
+
   function showSignedIn(name) {
     var el = document.getElementById('cpbl-auth-user');
     var nameEl = document.getElementById('cpbl-auth-name');
     if (el) el.style.display = '';
     if (nameEl) nameEl.textContent = name;
+  }
+
+  function showFreshOverlay_() {
+    var overlay = document.getElementById('pin-overlay');
+    if (!overlay) return;
+    var pinBox = document.getElementById('pin-box');
+    if (pinBox) {
+      pinBox.innerHTML =
+        '<h2>Captain Portal</h2>' +
+        '<p>Enter your email address to sign in.</p>' +
+        '<input id="auth-email-input" class="auth-input" type="email" placeholder="you@example.com"' +
+        ' autocomplete="email" onkeydown="if(event.key===\'Enter\')cpblEmailSignIn()">' +
+        '<button id="auth-email-btn" class="auth-btn" onclick="cpblEmailSignIn()">Sign in</button>' +
+        '<div id="auth-email-error" class="auth-error"></div>';
+    }
+    overlay.classList.remove('hidden');
+    var inp = document.getElementById('auth-email-input');
+    if (inp) inp.focus();
   }
 
   function reloadForUser(result, callbacks) {
@@ -1750,6 +1770,7 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
   }
 
   window.cpblPinSignOut = function () {
+    sessionStorage.removeItem(STORAGE_KEY);
     window.cpblEmail   = '';
     window.cpblPinUser = null;
     var el = document.getElementById('cpbl-auth-user');
@@ -1781,6 +1802,7 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
         }
         window.cpblEmail   = email;
         window.cpblPinUser = result;
+        sessionStorage.setItem(STORAGE_KEY, email);
         showSignedIn(result.name || 'Captain');
         // Show loading state in overlay — dismiss only after match data arrives.
         errEl.textContent = '';
@@ -1814,14 +1836,66 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
   };
 
   document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(function () {
-      var overlay = document.getElementById('pin-overlay');
-      if (overlay && !window.cpblEmail) {
-        overlay.classList.remove('hidden');
-        var inp = document.getElementById('auth-email-input');
-        if (inp) inp.focus();
+    var savedEmail = '';
+    try { savedEmail = sessionStorage.getItem(STORAGE_KEY) || ''; } catch(e) {}
+
+    if (savedEmail) {
+      // Auto-resume: tell boot() to hold off on loading until we confirm the session.
+      window.__CPBL_AUTO_SIGNING_IN__ = true;
+
+      // Replace overlay content with a loading message instead of the sign-in form.
+      var pinBox = document.getElementById('pin-box');
+      if (pinBox) {
+        pinBox.innerHTML =
+          '<h2>Captain Portal</h2>' +
+          '<p style="color:#123a7c;font-weight:600;margin-top:8px">Restoring your session…</p>';
       }
-    }, 400);
+
+      google.script.run
+        .withSuccessHandler(function(raw) {
+          window.__CPBL_AUTO_SIGNING_IN__ = false;
+          var result;
+          try { result = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { result = null; }
+
+          if (result && result.ok) {
+            window.cpblEmail   = savedEmail;
+            window.cpblPinUser = result;
+            showSignedIn(result.name || 'Captain');
+            if (typeof syncDivisionSelectorVisibility_ === 'function') syncDivisionSelectorVisibility_();
+            reloadForUser(result, {
+              onSuccess: function() {
+                document.getElementById('pin-overlay').classList.add('hidden');
+                var lw = document.getElementById('middle-brand-logo-wrap');
+                if (lw) lw.style.visibility = '';
+              },
+              onFailure: function() {
+                try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+                showFreshOverlay_();
+              }
+            });
+          } else {
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+            showFreshOverlay_();
+          }
+        })
+        .withFailureHandler(function() {
+          window.__CPBL_AUTO_SIGNING_IN__ = false;
+          try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+          showFreshOverlay_();
+        })
+        .verifyPortalEmail(savedEmail);
+
+    } else {
+      // No saved session — show overlay after a short delay (original behaviour).
+      setTimeout(function () {
+        var overlay = document.getElementById('pin-overlay');
+        if (overlay && !window.cpblEmail) {
+          overlay.classList.remove('hidden');
+          var inp = document.getElementById('auth-email-input');
+          if (inp) inp.focus();
+        }
+      }, 400);
+    }
   });
 }());
 </script>
