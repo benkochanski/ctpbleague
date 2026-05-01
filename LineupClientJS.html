@@ -25,11 +25,12 @@ function isDirector_() {
 function canSwitchDivisions_() {
   return isCommissioner_() || isDirector_();
 }
-// Matches the signed-in user is allowed to see. Commissioners/directors see all;
-// captains see only matches involving their team(s).
+// Matches the signed-in user is allowed to see.
+// Commissioner sees all. Director sees matches for their club's teams.
+// Captain sees only their specific team's matches.
 function captainMatches_() {
   const all = SELECTOR_DATA.matches || [];
-  if (canSwitchDivisions_()) return all;
+  if (isCommissioner_()) return all;
   const allowed = new Set((window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || []);
   if (!allowed.size) return all;
   return all.filter(m =>
@@ -521,7 +522,7 @@ function updateHeaderMetaFromPortal_() {
 function updateTeamSwitcher_() {
   const switcher = document.getElementById('commissioner-team-switcher');
   if (!switcher) return;
-  if (!canSwitchDivisions_() || !portalData?.currentMatch) {
+  if (!isCommissioner_() || !portalData?.currentMatch) {
     switcher.style.display = 'none';
     return;
   }
