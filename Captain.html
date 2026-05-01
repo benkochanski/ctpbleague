@@ -1582,15 +1582,11 @@
 
       <div class="pb" style="display:flex; flex-direction:column; gap:12px;">
         <div class="manager-section">
-          <div class="manager-subheader">Select Match</div>
+          <div class="manager-subheader">Current Match</div>
 
-          <div class="manager-selects">
-            <div class="selector selector-compact" id="division-select-wrap">
+          <div class="manager-selects" id="division-select-wrap" style="display:none">
+            <div class="selector selector-compact">
               <select id="division-select" onchange="onDivisionChange()"></select>
-            </div>
-
-            <div class="selector selector-match">
-              <select id="match-select" onchange="onMatchChange()"></select>
             </div>
           </div>
 

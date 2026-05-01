@@ -112,10 +112,6 @@ function scheduleGameNumber_(r, g) {
   return num + 1;
 }
 
-function selectedMatch() {
-  return document.getElementById('match-select')?.value || '';
-}
-
 function selectedDivision() {
   return document.getElementById('division-select')?.value || '';
 }
@@ -440,34 +436,6 @@ function parseAppDateTime_(value) {
   return isNaN(t) ? 0 : t;
 }
 
-function populateMatchDropdownFromPortal_(matches, selectedMatchId, divisionId) {
-  const sel = document.getElementById('match-select');
-  if (!sel) return;
-
-  const currentDivisionId = String(divisionId || '').trim();
-  const filtered = (matches || []).filter(m => {
-    const d = divisionValueForMatch_(m);
-    return !currentDivisionId || d === currentDivisionId;
-  });
-
-  if (!filtered.length) {
-    sel.innerHTML = `<option value="">No matches loaded</option>`;
-    return;
-  }
-
-  sel.innerHTML = '';
-
-  filtered.forEach(m => {
-    const opt = document.createElement('option');
-    const matchId = String(m.match_id || '').trim();
-    opt.value = matchId;
-    opt.textContent = formatMatchDropdownLabel_(m);
-    if (matchId === String(selectedMatchId || '').trim()) {
-      opt.selected = true;
-    }
-    sel.appendChild(opt);
-  });
-}
 
 function updateHeaderMetaFromPortal_() {
   const titleEl = document.getElementById('middle-brand-title');
@@ -618,14 +586,6 @@ function loadMatch_(matchId, opts = {}) {
           divisionSelect.value = currentDivisionId;
         }
 
-        // Captains see only their team's matches; no division filter applied so all
-        // their matches remain reachable. Commissioner/director filter by division.
-        const matchListSource = captainMatches_();
-        const effectiveDivId = canSwitchDivisions_() ? currentDivisionId : '';
-        populateMatchDropdownFromPortal_(matchListSource, currentMatchId, effectiveDivId);
-        const matchSelect = document.getElementById('match-select');
-        if (matchSelect) matchSelect.value = currentMatchId;
-
         render();
         showToast('Loaded ' + currentMatchId, 'success');
 
@@ -669,19 +629,14 @@ function boot() {
     syncDivisionSelectorVisibility_();
 
     if (!portalData || !portalData.currentMatch) {
-      const divisions = SELECTOR_DATA.availableDivisions || [];
-      populateDivisionDropdownFromPortal_(divisions, '');
-      const visibleMatches = captainMatches_();
-      const firstMatch = visibleMatches[0];
+      populateDivisionDropdownFromPortal_(SELECTOR_DATA.availableDivisions || [], '');
+      const firstMatch = captainMatches_()[0];
       if (firstMatch) {
         const firstMatchId = String(firstMatch.match_id || '').trim();
         const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
         const awayId = String(firstMatch.away_team_id || '').trim();
         const homeId = String(firstMatch.home_team_id || '').trim();
         currentTeamId = (allowedIds.length && allowedIds.includes(awayId)) ? awayId : homeId;
-        // Captains: no division filter (show all their matches); commissioners: filter by division
-        const divId = canSwitchDivisions_() ? divisionValueForMatch_(firstMatch) : '';
-        populateMatchDropdownFromPortal_(visibleMatches, firstMatchId, divId);
         loadMatch_(firstMatchId);
       } else {
         render();
@@ -704,9 +659,6 @@ function boot() {
       : '';
 
     populateDivisionDropdownFromPortal_(portalData.availableDivisions || [], currentDivisionId);
-    const bootMatchList = captainMatches_();
-    const bootDivId = canSwitchDivisions_() ? currentDivisionId : '';
-    populateMatchDropdownFromPortal_(bootMatchList, currentMatchId, bootDivId);
 
     applyBranding(portalData.brand || {});
     updateHeaderMetaFromPortal_();
@@ -726,54 +678,22 @@ function boot() {
 
 function onDivisionChange() {
   const divisionId = selectedDivision();
-  const matches = SELECTOR_DATA.matches || [];
-  console.log('[CPBL] onDivisionChange divisionId=', divisionId,
-    'total matches=', matches.length,
-    'sample division_ids=', matches.slice(0,3).map(m => m.division_id));
-
-  const filteredMatches = matches.filter(
+  const filtered = captainMatches_().filter(
     m => String(m.division_id || '').trim() === String(divisionId || '').trim()
   );
-
-  if (!filteredMatches.length) {
-    const ms = document.getElementById('match-select');
-    if (ms) ms.innerHTML = '<option value="">No matches for this division</option>';
-    showToast('No matches found for division: ' + (divisionId || '(empty)'), 'error');
+  if (!filtered.length) {
+    showToast('No matches found for this division', 'error');
     return;
   }
-
-  const firstMatch = filteredMatches[0];
+  const firstMatch = filtered[0];
   const firstMatchId = String(firstMatch.match_id || '').trim();
-  console.log('[CPBL] onDivisionChange → loading match', firstMatchId, 'filtered=', filteredMatches.length);
-  populateMatchDropdownFromPortal_(matches, firstMatchId, divisionId);
-
-  if (!firstMatchId) return;
-
-  // Pick the user's allowed team in this match; commissioner defaults to home.
   const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
   const homeId = String(firstMatch.home_team_id || '').trim();
   const awayId = String(firstMatch.away_team_id || '').trim();
   if (allowedIds.includes(homeId)) currentTeamId = homeId;
   else if (allowedIds.includes(awayId)) currentTeamId = awayId;
-  else currentTeamId = homeId; // commissioner or no match → default home
-
+  else currentTeamId = homeId;
   loadMatch_(firstMatchId);
-}
-
-function onMatchChange() {
-  const newMatchId = String(selectedMatch() || '').trim();
-  if (!newMatchId) return;
-  const allMatches = SELECTOR_DATA.matches || [];
-  const m = allMatches.find(x => String(x.match_id || '').trim() === newMatchId);
-  if (m) {
-    const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
-    const homeId = String(m.home_team_id || '').trim();
-    const awayId = String(m.away_team_id || '').trim();
-    if (allowedIds.includes(homeId)) currentTeamId = homeId;
-    else if (allowedIds.includes(awayId)) currentTeamId = awayId;
-    else currentTeamId = homeId; // commissioner or no match → default home
-  }
-  loadMatch_(newMatchId);
 }
 
 /* =========================
