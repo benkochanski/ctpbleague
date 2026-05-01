@@ -1702,6 +1702,25 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
         window.cpblPinUser = result;
         document.getElementById('pin-overlay').classList.add('hidden');
         showPinUser(result.name || 'Captain');
+
+        // Reload portal data with the correct team side if needed.
+        var allowedIds = result.allowedTeamIds || [];
+        if (allowedIds.length &&
+            typeof currentMatchId !== 'undefined' && currentMatchId &&
+            typeof currentTeamId !== 'undefined') {
+          if (!allowedIds.includes(currentTeamId)) {
+            var cm = (typeof portalData !== 'undefined' && portalData && portalData.currentMatch) ? portalData.currentMatch : null;
+            if (cm) {
+              var hId = String(cm.home_team_id || '').trim();
+              var aId = String(cm.away_team_id || '').trim();
+              var correctTeam = allowedIds.includes(aId) ? aId : (allowedIds.includes(hId) ? hId : '');
+              if (correctTeam && correctTeam !== currentTeamId) {
+                currentTeamId = correctTeam;
+                if (typeof loadMatch_ === 'function') loadMatch_(currentMatchId);
+              }
+            }
+          }
+        }
       })
       .withFailureHandler(function (err) {
         btn.disabled = false;
