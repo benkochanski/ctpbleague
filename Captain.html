@@ -1413,7 +1413,7 @@
 <script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
 
 <script>
-  window.cpblPin = '';
+  window.cpblEmail = '';
   window.cpblPinUser = null;
 </script>
 <style>
@@ -1647,52 +1647,23 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
 
 <?!= include('LineupClientJS') ?>
 
-<!-- PIN entry overlay -->
+<!-- Sign-in overlay -->
 <div id="pin-overlay">
   <div id="pin-box">
     <h2>Captain Portal</h2>
-
-    <!-- Step 1: Email (client-side only, no server call) -->
-    <div id="auth-step-email">
-      <p>Enter your email address to sign in.</p>
-      <input id="auth-email-input" class="auth-input" type="email" placeholder="you@example.com"
-             autocomplete="email" onkeydown="if(event.key==='Enter')cpblEmailNext()">
-      <button id="auth-email-btn" class="auth-btn" onclick="cpblEmailNext()">Next</button>
-      <div id="auth-email-error" class="auth-error"></div>
-      <button class="auth-link" onclick="cpblPinViewOnly()">View only (no changes)</button>
-    </div>
-
-    <!-- Step 2: PIN -->
-    <div id="auth-step-pin" style="display:none;">
-      <p>Enter your PIN for <strong id="auth-pin-email-label" style="word-break:break-all;"></strong>.</p>
-      <input id="pin-input" type="password" inputmode="numeric" maxlength="10"
-             placeholder="••••" autocomplete="off"
-             onkeydown="if(event.key==='Enter')cpblPinSubmit()">
-      <button id="pin-submit" class="auth-btn" onclick="cpblPinSubmit()">Sign in</button>
-      <div id="pin-error" class="auth-error"></div>
-      <button class="auth-link" onclick="cpblBackToEmail()">← Different email</button>
-    </div>
-
+    <p>Enter your email address to sign in.</p>
+    <input id="auth-email-input" class="auth-input" type="email" placeholder="you@example.com"
+           autocomplete="email" onkeydown="if(event.key==='Enter')cpblEmailSignIn()">
+    <button id="auth-email-btn" class="auth-btn" onclick="cpblEmailSignIn()">Sign in</button>
+    <div id="auth-email-error" class="auth-error"></div>
+    <button class="auth-link" onclick="cpblPinViewOnly()">View only (no changes)</button>
   </div>
 </div>
 
 <script>
 (function () {
-  var pendingEmail = '';
 
-  function showStep(step) {
-    document.getElementById('auth-step-email').style.display = step === 'email' ? '' : 'none';
-    document.getElementById('auth-step-pin').style.display   = step === 'pin'   ? '' : 'none';
-    if (step === 'email') {
-      document.getElementById('auth-email-error').textContent = '';
-      var el = document.getElementById('auth-email-input'); if (el) el.focus();
-    } else {
-      document.getElementById('pin-error').textContent = '';
-      var el = document.getElementById('pin-input'); if (el) { el.value = ''; el.focus(); }
-    }
-  }
-
-  function showPinUser(name) {
+  function showSignedIn(name) {
     var el = document.getElementById('cpbl-auth-user');
     var nameEl = document.getElementById('cpbl-auth-name');
     if (el) el.style.display = '';
@@ -1727,88 +1698,59 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
   }
 
   window.cpblPinSignOut = function () {
-    window.cpblPin = '';
-    window.cpblEmail = '';
+    window.cpblEmail   = '';
     window.cpblPinUser = null;
-    pendingEmail = '';
     var el = document.getElementById('cpbl-auth-user');
     if (el) el.style.display = 'none';
     document.getElementById('pin-overlay').classList.remove('hidden');
-    showStep('email');
+    var inp = document.getElementById('auth-email-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+    document.getElementById('auth-email-error').textContent = '';
   };
 
   window.cpblPinViewOnly = function () {
     document.getElementById('pin-overlay').classList.add('hidden');
   };
 
-  window.cpblBackToEmail = function () {
-    showStep('email');
-  };
-
-  window.cpblEmailNext = function () {
+  window.cpblEmailSignIn = function () {
     var email = document.getElementById('auth-email-input').value.trim();
     var errEl = document.getElementById('auth-email-error');
+    var btn   = document.getElementById('auth-email-btn');
     if (!email) { errEl.textContent = 'Please enter your email address.'; return; }
     if (email.indexOf('@') < 1) { errEl.textContent = 'Please enter a valid email address.'; return; }
     errEl.textContent = '';
-    pendingEmail = email;
-    document.getElementById('auth-pin-email-label').textContent = email;
-    showStep('pin');
-  };
-
-  function handleAuthResult(result, pin, errEl, btn) {
-    btn.disabled = false; btn.textContent = 'Sign in';
-    if (!result.ok) {
-      var msg = result.error || 'Sign-in failed. Please try again.';
-      if (msg.toLowerCase().indexOf('email') >= 0 || msg.toLowerCase().indexOf('registered') >= 0) {
-        showStep('email');
-        document.getElementById('auth-email-error').textContent = msg;
-      } else {
-        errEl.textContent = msg;
-        var pi = document.getElementById('pin-input'); if (pi) pi.select();
-      }
-      return;
-    }
-    window.cpblPin     = pin;
-    window.cpblEmail   = pendingEmail;
-    window.cpblPinUser = result;
-    document.getElementById('pin-overlay').classList.add('hidden');
-    showPinUser(result.name || 'Captain');
-    reloadForUser(result);
-  }
-
-  window.cpblPinSubmit = function () {
-    var pin   = document.getElementById('pin-input').value.trim();
-    var errEl = document.getElementById('pin-error');
-    var btn   = document.getElementById('pin-submit');
-    if (!pin) { errEl.textContent = 'Please enter your PIN.'; return; }
-    errEl.textContent = '';
     btn.disabled = true; btn.textContent = 'Signing in…';
 
-    // Use fetch directly to the GAS exec URL — same origin, no CORS issue,
-    // and avoids google.script.run which deadlocks inside a cross-origin iframe.
-    var execUrl = (typeof window.__GAS_EXEC_URL__ !== 'undefined' && window.__GAS_EXEC_URL__)
-      ? window.__GAS_EXEC_URL__
-      : 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
-    var url = execUrl + '?page=auth'
-      + '&email=' + encodeURIComponent(pendingEmail)
-      + '&pin='   + encodeURIComponent(pin);
-
-    fetch(url)
-      .then(function (r) { return r.json(); })
-      .then(function (result) { handleAuthResult(result, pin, errEl, btn); })
-      .catch(function (err) {
+    google.script.run
+      .withSuccessHandler(function (raw) {
         btn.disabled = false; btn.textContent = 'Sign in';
-        errEl.textContent = 'Network error. Please try again. (' + (err && err.message ? err.message : err) + ')';
-      });
+        var result;
+        try { result = typeof raw === 'string' ? JSON.parse(raw) : raw; }
+        catch (e) { errEl.textContent = 'Unexpected response from server.'; return; }
+        if (!result.ok) {
+          errEl.textContent = result.error || 'Sign-in failed. Please try again.';
+          return;
+        }
+        window.cpblEmail   = email;
+        window.cpblPinUser = result;
+        document.getElementById('pin-overlay').classList.add('hidden');
+        showSignedIn(result.name || 'Captain');
+        reloadForUser(result);
+      })
+      .withFailureHandler(function (err) {
+        btn.disabled = false; btn.textContent = 'Sign in';
+        errEl.textContent = 'Sign-in failed: ' + (err && err.message ? err.message : String(err));
+      })
+      .verifyPortalEmail(email);
   };
 
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () {
       var overlay = document.getElementById('pin-overlay');
-      if (overlay && !window.cpblPin) {
+      if (overlay && !window.cpblEmail) {
         overlay.classList.remove('hidden');
-        showStep('email');
+        var inp = document.getElementById('auth-email-input');
+        if (inp) inp.focus();
       }
     }, 400);
   });

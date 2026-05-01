@@ -824,7 +824,7 @@ function queueAutosave() {
       .withFailureHandler((err) => {
         showToast('Autosave failed: ' + (err && err.message ? err.message : err), 'error');
       })
-      .saveCaptainLineupDraft(getCpblEmail_(), getCpblPin_(), currentMatchId, currentTeamId, assignments);
+      .saveCaptainLineupDraft(getCpblEmail_(), currentMatchId, currentTeamId, assignments);
   }, 500);
 }
 
@@ -852,11 +852,7 @@ function submitOfficialLineup() {
     .withFailureHandler((err) => {
       showToast('Submit failed: ' + (err && err.message ? err.message : err), 'error');
     })
-    .submitCaptainLineup(getCpblEmail_(), getCpblPin_(), currentMatchId, currentTeamId, assignments);
-}
-
-function getCpblPin_() {
-  return (typeof window !== 'undefined' && window.cpblPin) ? window.cpblPin : '';
+    .submitCaptainLineup(getCpblEmail_(), currentMatchId, currentTeamId, assignments);
 }
 
 function getCpblEmail_() {

@@ -26,7 +26,7 @@
 
     // Captain + Scorecard run a Google Identity Services sign-in inside the
     // page itself; no deployment-level auth is needed, so they can stay iframed.
-    captain:      { kind: 'iframe', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`   },
+    captain:      { kind: 'newtab', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`   },
     display:      { kind: 'iframe', label: 'Match Display',     url: `${GAS_BASE}?page=display`   },
     scorecard:    { kind: 'iframe', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard` },
   };
@@ -113,32 +113,6 @@
   window.addEventListener('message', e => {
     const data = e.data;
     if (!data) return;
-
-    // Auth relay: GAS iframes can't call google.script.run reliably from inside
-    // a cross-origin iframe, so they postMessage here and we fetch on their behalf.
-    if (data.type === 'cpbl-auth-request') {
-      const url = GAS_BASE
-        + '?page=auth'
-        + '&email=' + encodeURIComponent(data.email || '')
-        + '&pin='   + encodeURIComponent(data.pin   || '');
-      const frame = document.getElementById('appFrame');
-      fetch(url)
-        .then(r => r.json())
-        .then(result => {
-          if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ type: 'cpbl-auth-response', reqId: data.reqId, result }, '*');
-          }
-        })
-        .catch(err => {
-          if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({
-              type: 'cpbl-auth-response', reqId: data.reqId,
-              result: { ok: false, error: String(err && err.message ? err.message : err) }
-            }, '*');
-          }
-        });
-      return;
-    }
 
     if (data.type !== 'cpbl-nav' || !data.route) return;
     if (!ROUTES[data.route]) return;

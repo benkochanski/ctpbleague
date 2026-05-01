@@ -234,6 +234,80 @@ function getMyCaptainAccessV1(idToken) {
  * PIN is stored in the `pin` column of the Users sheet. Any format is fine
  * (4–6 digit number is typical). Matching is case-insensitive string compare.
  */
+// Email-only auth: verify email exists and return access profile (no PIN required).
+function verifyPortalEmail(email) {
+  try {
+    const r = resolvePortalEmailAccess_(email);
+    if (!r.ok) return JSON.stringify({ ok: false, error: r.reason });
+    return JSON.stringify({
+      ok: true,
+      name: r.name,
+      email: r.email,
+      userId: r.userId,
+      clubId: r.clubId,
+      clubName: r.clubName,
+      shortName: r.shortName,
+      allowedTeamIds: r.allowedTeamIds
+    });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: String(e.message || e) });
+  }
+}
+
+// Internal: resolve access from email alone (no PIN check).
+function resolvePortalEmailAccess_(email) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail) return { ok: false, reason: 'No email supplied' };
+
+  const user = getObjects_(SHEETS.USERS).find(u =>
+    String(u.email || '').trim().toLowerCase() === cleanEmail &&
+    (u.active === undefined || u.active === '' || normalizeBool_(u.active))
+  );
+  if (!user) return { ok: false, reason: 'No user registered with that email address' };
+
+  const userId = String(user.user_id || '').trim();
+  const name   = String(user.full_name || user.name || '').trim();
+
+  const accessRows = getObjects_(SHEETS.USER_ACCESS).filter(a =>
+    String(a.user_id || '').trim() === userId &&
+    (a.active === undefined || a.active === '' || normalizeBool_(a.active))
+  );
+  if (!accessRows.length) return { ok: false, reason: 'No access configured for this user. Contact the commissioner.' };
+
+  const clubIds = [...new Set(
+    accessRows.map(a => String(a.club_id || '').trim()).filter(Boolean)
+  )];
+  if (!clubIds.length) return { ok: false, reason: 'No club assigned to this user in User_Access. Contact the commissioner.' };
+
+  const primaryClubId = clubIds[0];
+  const allClubs = getObjects_(SHEETS.CLUBS);
+  const primaryClub = allClubs.find(c => String(c.club_id || '').trim() === primaryClubId) || null;
+  const clubName  = primaryClub ? String(primaryClub.club_name  || '').trim() : '';
+  const shortName = primaryClub ? String(primaryClub.short_name || '').trim() : '';
+
+  const allTeams = getObjects_(SHEETS.TEAMS);
+  const allowedTeamIds = allTeams
+    .filter(t => clubIds.includes(String(t.club_id || '').trim()))
+    .map(t => String(t.team_id || '').trim())
+    .filter(Boolean);
+
+  return { ok: true, userId, name, email: cleanEmail, clubId: primaryClubId, clubName, shortName, allowedTeamIds };
+}
+
+// Used by write handlers: throws unless the caller's email has access to teamId.
+function requireEmailAccess_(email, teamId) {
+  const cleanTeamId = String(teamId || '').trim();
+  const access = resolvePortalEmailAccess_(email);
+  if (!access.ok) throw new Error(access.reason);
+  if (cleanTeamId && !access.allowedTeamIds.includes(cleanTeamId)) {
+    throw new Error(
+      (access.name || 'This user') + ' does not have access to team ' + cleanTeamId +
+      '. Allowed: ' + (access.allowedTeamIds.join(', ') || '(none)')
+    );
+  }
+  return access;
+}
+
 // Step 1 — check whether an email address exists in the Users sheet.
 // Returns { found: true } or { found: false }. Never reveals more.
 function checkPortalEmail(email) {
