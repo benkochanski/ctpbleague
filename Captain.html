@@ -1703,22 +1703,32 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
         document.getElementById('pin-overlay').classList.add('hidden');
         showPinUser(result.name || 'Captain');
 
-        // Reload portal data with the correct team side if needed.
+        // After PIN auth, navigate to the correct match + team for this user.
         var allowedIds = result.allowedTeamIds || [];
-        if (allowedIds.length &&
-            typeof currentMatchId !== 'undefined' && currentMatchId &&
-            typeof currentTeamId !== 'undefined') {
-          if (!allowedIds.includes(currentTeamId)) {
-            var cm = (typeof portalData !== 'undefined' && portalData && portalData.currentMatch) ? portalData.currentMatch : null;
-            if (cm) {
-              var hId = String(cm.home_team_id || '').trim();
-              var aId = String(cm.away_team_id || '').trim();
-              var correctTeam = allowedIds.includes(aId) ? aId : (allowedIds.includes(hId) ? hId : '');
-              if (correctTeam && correctTeam !== currentTeamId) {
-                currentTeamId = correctTeam;
-                if (typeof loadMatch_ === 'function') loadMatch_(currentMatchId);
-              }
+        if (allowedIds.length && typeof loadMatch_ === 'function') {
+          // First try to fix the team within the currently loaded match.
+          var cm = (typeof portalData !== 'undefined' && portalData && portalData.currentMatch) ? portalData.currentMatch : null;
+          var correctTeam = '';
+          var correctMatch = typeof currentMatchId !== 'undefined' ? currentMatchId : '';
+          if (cm) {
+            var hId = String(cm.home_team_id || '').trim();
+            var aId = String(cm.away_team_id || '').trim();
+            if (allowedIds.includes(hId)) correctTeam = hId;
+            else if (allowedIds.includes(aId)) correctTeam = aId;
+          }
+          // If the current match has no team for this user, search all matches.
+          if (!correctTeam) {
+            var allMs = (typeof SELECTOR_DATA !== 'undefined' && SELECTOR_DATA.matches) ? SELECTOR_DATA.matches : [];
+            for (var i = 0; i < allMs.length; i++) {
+              var mh = String(allMs[i].home_team_id || '').trim();
+              var ma = String(allMs[i].away_team_id || '').trim();
+              if (allowedIds.includes(mh)) { correctMatch = String(allMs[i].match_id || '').trim(); correctTeam = mh; break; }
+              if (allowedIds.includes(ma)) { correctMatch = String(allMs[i].match_id || '').trim(); correctTeam = ma; break; }
             }
+          }
+          if (correctTeam) {
+            if (typeof currentTeamId !== 'undefined') currentTeamId = correctTeam;
+            loadMatch_(correctMatch);
           }
         }
       })
