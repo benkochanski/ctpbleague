@@ -1651,7 +1651,7 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
   <div id="pin-box">
     <h2>Captain Portal</h2>
 
-    <!-- Step 1: Email -->
+    <!-- Step 1: Email (client-side only, no server call) -->
     <div id="auth-step-email">
       <p>Enter your email address to sign in.</p>
       <input id="auth-email-input" class="auth-input" type="email" placeholder="you@example.com"
@@ -1671,6 +1671,7 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
       <div id="pin-error" class="auth-error"></div>
       <button class="auth-link" onclick="cpblBackToEmail()">← Different email</button>
     </div>
+
   </div>
 </div>
 
@@ -1746,27 +1747,12 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
   window.cpblEmailNext = function () {
     var email = document.getElementById('auth-email-input').value.trim();
     var errEl = document.getElementById('auth-email-error');
-    var btn   = document.getElementById('auth-email-btn');
     if (!email) { errEl.textContent = 'Please enter your email address.'; return; }
+    if (email.indexOf('@') < 1) { errEl.textContent = 'Please enter a valid email address.'; return; }
     errEl.textContent = '';
-    btn.disabled = true; btn.textContent = 'Checking…';
-    google.script.run
-      .withSuccessHandler(function (jsonStr) {
-        btn.disabled = false; btn.textContent = 'Next';
-        var r; try { r = JSON.parse(jsonStr); } catch(e) { r = { found: false }; }
-        if (!r.found) {
-          errEl.textContent = 'No user registered with that email address.';
-          return;
-        }
-        pendingEmail = email;
-        document.getElementById('auth-pin-email-label').textContent = email;
-        showStep('pin');
-      })
-      .withFailureHandler(function (err) {
-        btn.disabled = false; btn.textContent = 'Next';
-        errEl.textContent = (err && err.message) ? err.message : 'Error checking email. Please try again.';
-      })
-      .checkPortalEmail(email);
+    pendingEmail = email;
+    document.getElementById('auth-pin-email-label').textContent = email;
+    showStep('pin');
   };
 
   window.cpblPinSubmit = function () {
@@ -1781,8 +1767,15 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
         btn.disabled = false; btn.textContent = 'Sign in';
         var result; try { result = JSON.parse(jsonStr); } catch(e) { result = { ok: false, error: 'Unexpected response' }; }
         if (!result.ok) {
-          errEl.textContent = result.error || 'Incorrect PIN. Please try again.';
-          document.getElementById('pin-input').select();
+          var msg = result.error || 'Sign-in failed. Please try again.';
+          // If the error is about the email (not found), send back to email step.
+          if (msg.toLowerCase().indexOf('email') >= 0 || msg.toLowerCase().indexOf('registered') >= 0) {
+            showStep('email');
+            document.getElementById('auth-email-error').textContent = msg;
+          } else {
+            errEl.textContent = msg;
+            document.getElementById('pin-input').select();
+          }
           return;
         }
         window.cpblPin   = pin;
