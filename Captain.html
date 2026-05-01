@@ -1656,7 +1656,6 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
            autocomplete="email" onkeydown="if(event.key==='Enter')cpblEmailSignIn()">
     <button id="auth-email-btn" class="auth-btn" onclick="cpblEmailSignIn()">Sign in</button>
     <div id="auth-email-error" class="auth-error"></div>
-    <button class="auth-link" onclick="cpblPinViewOnly()">View only (no changes)</button>
   </div>
 </div>
 
@@ -1706,10 +1705,6 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     var inp = document.getElementById('auth-email-input');
     if (inp) { inp.value = ''; inp.focus(); }
     document.getElementById('auth-email-error').textContent = '';
-  };
-
-  window.cpblPinViewOnly = function () {
-    document.getElementById('pin-overlay').classList.add('hidden');
   };
 
   window.cpblEmailSignIn = function () {
