@@ -161,73 +161,14 @@ function resolveDefaultCaptainRoute_(selectorData, userEmail) {
     };
   }
 
-  const users = getObjects_(SHEETS.USERS);
-  const accessRows = getObjects_(SHEETS.USER_ACCESS);
-  const teams = getObjects_(SHEETS.TEAMS);
-
-  const user = users.find(u =>
-    String(u.email || '').trim().toLowerCase() === cleanEmail &&
-    normalizeBool_(u.active)
-  );
-  if (!user) {
-    return {
-      ok: false,
-      matchId: '',
-      teamId: '',
-      reason: 'Email not found in active USERS list'
-    };
+  const access = resolveAccessByEmail_(cleanEmail);
+  if (!access.ok) {
+    return { ok: false, matchId: '', teamId: '', reason: access.reason };
   }
 
-  const userAccess = accessRows.filter(a =>
-    String(a.user_id || '').trim() === String(user.user_id || '').trim() &&
-    normalizeBool_(a.active)
-  );
-  if (!userAccess.length) {
-    return {
-      ok: false,
-      matchId: '',
-      teamId: '',
-      reason: 'No active USER_ACCESS rows for this user'
-    };
-  }
-
-  const allowedTeamIds = new Set();
-  let preferredCaptainTeamId = '';
-  let isCommissioner = false;
-
-  userAccess.forEach(a => {
-    const role = String(a.role_type || '').trim().toLowerCase();
-    if (role === ROLE.COMMISSIONER) {
-      isCommissioner = true;
-    } else if (role === ROLE.DIRECTOR) {
-      const clubId = String(a.club_id || '').trim();
-      if (!clubId) return;
-      teams.forEach(t => {
-        if (String(t.club_id || '').trim() === clubId) {
-          const teamId = String(t.team_id || '').trim();
-          if (teamId) allowedTeamIds.add(teamId);
-        }
-      });
-    } else if (role === ROLE.CAPTAIN) {
-      const teamId = String(a.team_id || '').trim();
-      if (teamId) {
-        if (!preferredCaptainTeamId) preferredCaptainTeamId = teamId;
-        allowedTeamIds.add(teamId);
-        return;
-      }
-
-      // Backward-compatible captain access: if team_id is blank but club_id exists,
-      // treat it as club-scoped captain access.
-      const clubId = String(a.club_id || '').trim();
-      if (!clubId) return;
-      teams.forEach(t => {
-        if (String(t.club_id || '').trim() === clubId) {
-          const clubTeamId = String(t.team_id || '').trim();
-          if (clubTeamId) allowedTeamIds.add(clubTeamId);
-        }
-      });
-    }
-  });
+  const allowedTeamIds = new Set(access.allowedTeamIds);
+  const isCommissioner = access.isCommissioner;
+  const preferredCaptainTeamId = access.allowedTeamIds[0] || '';
 
   if (isCommissioner) {
     return {

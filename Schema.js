@@ -10,10 +10,7 @@ function getSchemaMap_() {
       'team_id', 'team_name', 'club_id', 'division_id', 'active'
     ],
     [SHEETS.USERS]: [
-      'user_id', 'full_name', 'email', 'active', 'pin'
-    ],
-    [SHEETS.USER_ACCESS]: [
-      'access_id', 'user_id', 'role_type', 'club_id', 'team_id', 'active'
+      'user_id', 'full_name', 'email', 'active', 'pin', 'role_type', 'team_id', 'club_id'
     ],
     [SHEETS.PLAYERS]: [
       'player_id', 'first_name', 'last_name', 'full_name', 'gender', 'dupr', 'dupr_id', 'email', 'phone', 'active', 'notes'

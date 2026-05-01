@@ -3,7 +3,6 @@ const SHEETS = {
   CLUBS: 'Clubs',
   TEAMS: 'Teams',
   USERS: 'Users',
-  USER_ACCESS: 'User_Access',
   PLAYERS: 'Players',
   TEAM_ROSTERS: 'Team_Rosters',
   SEASONS: 'Seasons',

@@ -16,6 +16,10 @@ const BOOTSTRAP_ERROR = window.__BOOTSTRAP_ERROR__ || '';
 
 let currentTeamId = REQUESTED_TEAM_ID || '';
 
+function isCommissioner_() {
+  return !!(window.cpblPinUser && window.cpblPinUser.isCommissioner);
+}
+
 let portalData = null;
 let currentMatchId = '';
 let players = [];
@@ -487,7 +491,34 @@ function updateHeaderMetaFromPortal_() {
     chipEl.textContent = portalData?.mySide === 'home' ? 'Home Match' : 'Away Match';
   }
 
+  updateTeamSwitcher_();
   renderStatusAndCountdown_();
+}
+
+function updateTeamSwitcher_() {
+  const switcher = document.getElementById('commissioner-team-switcher');
+  if (!switcher) return;
+  if (!isCommissioner_() || !portalData?.currentMatch) {
+    switcher.style.display = 'none';
+    return;
+  }
+  switcher.style.display = 'flex';
+  const isHome = portalData.mySide === 'home';
+  const homeBtn = document.getElementById('csw-home-btn');
+  const awayBtn = document.getElementById('csw-away-btn');
+  if (homeBtn) homeBtn.classList.toggle('active', isHome);
+  if (awayBtn) awayBtn.classList.toggle('active', !isHome);
+}
+
+function switchTeamSide_(side) {
+  if (!portalData?.currentMatch) return;
+  const m = portalData.currentMatch;
+  const newTeamId = side === 'home'
+    ? String(m.home_team_id || '').trim()
+    : String(m.away_team_id || '').trim();
+  if (!newTeamId || newTeamId === currentTeamId) return;
+  currentTeamId = newTeamId;
+  loadMatch_(currentMatchId);
 }
 
 function applyBranding(branding) {
@@ -496,9 +527,8 @@ function applyBranding(branding) {
   const teamLogo = document.getElementById('middle-team-logo');
   const teamFallback = document.getElementById('middle-team-logo-fallback');
 
-  // Reveal the team logo area (hidden until match data arrives so nothing
-  // shows through the login overlay backdrop).
-  if (logoWrap) logoWrap.style.visibility = '';
+  // logoWrap visibility is controlled by the login flow, not here — it stays
+  // hidden until the overlay dismisses so nothing bleeds through the backdrop.
 
   if (branding?.teamLogoUrl && teamLogo && teamFallback) {
     teamLogo.src = branding.teamLogoUrl;
@@ -550,13 +580,26 @@ function loadMatch_(matchId, opts = {}) {
         applyBranding(data.brand || {});
         updateHeaderMetaFromPortal_();
 
-        const currentDivisionId = data.currentMatch ? divisionValueForMatch_(data.currentMatch) : '';
+        // Find the division using SELECTOR_DATA (same source as dropdown options)
+        // so the option value format is guaranteed to match.
+        const selectorMatch = (SELECTOR_DATA.matches || []).find(m =>
+          String(m.match_id || '').trim() === currentMatchId
+        );
+        const currentDivisionId = selectorMatch
+          ? String(selectorMatch.division_id || '').trim()
+          : (data.currentMatch ? divisionValueForMatch_(data.currentMatch) : '');
+
         const divisionSelect = document.getElementById('division-select');
         if (divisionSelect && currentDivisionId) {
           divisionSelect.value = currentDivisionId;
         }
 
-        populateMatchDropdownFromPortal_(data.matches || [], currentMatchId, currentDivisionId);
+        // Use SELECTOR_DATA.matches for the match dropdown so IDs are consistent
+        // with what onMatchChange looks up.
+        const matchListSource = (SELECTOR_DATA.matches && SELECTOR_DATA.matches.length)
+          ? SELECTOR_DATA.matches
+          : (data.matches || []);
+        populateMatchDropdownFromPortal_(matchListSource, currentMatchId, currentDivisionId);
         const matchSelect = document.getElementById('match-select');
         if (matchSelect) matchSelect.value = currentMatchId;
 
@@ -678,16 +721,13 @@ function onDivisionChange() {
 
   if (!firstMatchId) return;
 
-  // Pick the user's allowed team in this match if possible, otherwise leave
-  // currentTeamId as-is and the server will fall back to home team.
+  // Pick the user's allowed team in this match; commissioner defaults to home.
   const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
-  if (allowedIds.length) {
-    const homeId = String(firstMatch.home_team_id || '').trim();
-    const awayId = String(firstMatch.away_team_id || '').trim();
-    if (allowedIds.includes(homeId)) currentTeamId = homeId;
-    else if (allowedIds.includes(awayId)) currentTeamId = awayId;
-    else currentTeamId = '';
-  }
+  const homeId = String(firstMatch.home_team_id || '').trim();
+  const awayId = String(firstMatch.away_team_id || '').trim();
+  if (allowedIds.includes(homeId)) currentTeamId = homeId;
+  else if (allowedIds.includes(awayId)) currentTeamId = awayId;
+  else currentTeamId = homeId; // commissioner or no match → default home
 
   loadMatch_(firstMatchId);
 }
@@ -699,13 +739,11 @@ function onMatchChange() {
   const m = allMatches.find(x => String(x.match_id || '').trim() === newMatchId);
   if (m) {
     const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
-    if (allowedIds.length) {
-      const homeId = String(m.home_team_id || '').trim();
-      const awayId = String(m.away_team_id || '').trim();
-      if (allowedIds.includes(homeId)) currentTeamId = homeId;
-      else if (allowedIds.includes(awayId)) currentTeamId = awayId;
-      else currentTeamId = '';
-    }
+    const homeId = String(m.home_team_id || '').trim();
+    const awayId = String(m.away_team_id || '').trim();
+    if (allowedIds.includes(homeId)) currentTeamId = homeId;
+    else if (allowedIds.includes(awayId)) currentTeamId = awayId;
+    else currentTeamId = homeId; // commissioner or no match → default home
   }
   loadMatch_(newMatchId);
 }

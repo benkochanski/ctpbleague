@@ -382,6 +382,27 @@
   line-height:1.15;
   max-width:155px;
 }
+.commissioner-team-switcher{
+  display:flex;
+  gap:4px;
+  margin-bottom:4px;
+}
+.csw-btn{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  padding:3px 10px;
+  border-radius:20px;
+  border:1.5px solid var(--league-blue,#123a7c);
+  background:transparent;
+  color:var(--league-blue,#123a7c);
+  cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.csw-btn.active{
+  background:var(--league-blue,#123a7c);
+  color:#fff;
+}
 
     .middle-status-bar{
   display:flex;
@@ -1533,6 +1554,10 @@
 
       <div class="middle-brand-side">
         <div class="away-chip" id="hero-away-chip">Away Match</div>
+        <div class="commissioner-team-switcher" id="commissioner-team-switcher" style="display:none">
+          <button class="csw-btn" id="csw-home-btn" onclick="switchTeamSide_('home')">Home</button>
+          <button class="csw-btn" id="csw-away-btn" onclick="switchTeamSide_('away')">Away</button>
+        </div>
         <div class="hero-last-edited-top" id="hero-last-edited-top">Last edited 04/15 9:08 PM by Ben Kochanski</div>
       </div>
     </div>
@@ -1684,6 +1709,19 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
   function reloadForUser(result, callbacks) {
     callbacks = callbacks || {};
     var allowedIds = result.allowedTeamIds || [];
+    var isCommissioner = !!result.isCommissioner;
+
+    // Commissioner has no specific team — treat all teams in the selector as allowed
+    if (isCommissioner && !allowedIds.length) {
+      var allTeamMs = (typeof SELECTOR_DATA !== 'undefined' && SELECTOR_DATA.matches) ? SELECTOR_DATA.matches : [];
+      var teamSet = {};
+      allTeamMs.forEach(function(m) {
+        if (m.home_team_id) teamSet[m.home_team_id] = true;
+        if (m.away_team_id) teamSet[m.away_team_id] = true;
+      });
+      allowedIds = Object.keys(teamSet);
+    }
+
     if (!allowedIds.length || typeof loadMatch_ !== 'function') {
       if (callbacks.onFailure) callbacks.onFailure(new Error('No teams found for this account'));
       return;
@@ -1761,6 +1799,8 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
         reloadForUser(result, {
           onSuccess: function() {
             document.getElementById('pin-overlay').classList.add('hidden');
+            var lw = document.getElementById('middle-brand-logo-wrap');
+            if (lw) lw.style.visibility = '';
           },
           onFailure: function(err) {
             errEl.textContent = 'Match load failed: ' + (err && err.message ? err.message : String(err));

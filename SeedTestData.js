@@ -85,35 +85,28 @@ function seedSeason_() {
 
 function seedUsersAndAccess_(email) {
   const users = getObjects_(SHEETS.USERS);
-  const access = getObjects_(SHEETS.USER_ACCESS);
+  const cleanEmail = String(email).toLowerCase();
 
-  const existingUser = users.find(u => String(u.email).toLowerCase() === String(email).toLowerCase());
+  const existingRow = users.find(u =>
+    String(u.email).toLowerCase() === cleanEmail &&
+    u.role_type === ROLE.CAPTAIN &&
+    u.team_id === 'TEAM_CAMP_DIV1'
+  );
 
-  let userId = existingUser ? existingUser.user_id : 'USR_TEST_CAPTAIN';
+  if (!existingRow) {
+    const userId = users.find(u => String(u.email).toLowerCase() === cleanEmail)
+      ? users.find(u => String(u.email).toLowerCase() === cleanEmail).user_id
+      : 'USR_TEST_CAPTAIN';
 
-  if (!existingUser) {
     appendObjects_(SHEETS.USERS, [{
       user_id: userId,
       full_name: 'Test Captain',
       email: email,
-      active: true
-    }]);
-  }
-
-  const existingAccess = access.find(a =>
-    a.user_id === userId &&
-    a.role_type === ROLE.CAPTAIN &&
-    a.team_id === 'TEAM_CAMP_DIV1'
-  );
-
-  if (!existingAccess) {
-    appendObjects_(SHEETS.USER_ACCESS, [{
-      access_id: 'ACC_TEST_CAPTAIN',
-      user_id: userId,
+      active: true,
+      pin: '',
       role_type: ROLE.CAPTAIN,
-      club_id: '',
       team_id: 'TEAM_CAMP_DIV1',
-      active: true
+      club_id: ''
     }]);
   }
 }
