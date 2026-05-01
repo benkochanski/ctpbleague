@@ -6,8 +6,11 @@ function normalizeStartTime_(v) {
   if (!v) return '';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    let h = v.getHours();
-    const min = v.getMinutes();
+    // Use the spreadsheet's own timezone (not getActive() — this is a standalone
+    // script; not the script/JVM timezone which may differ from the sheet).
+    const sheetTz = getSpreadsheet_().getSpreadsheetTimeZone();
+    let h = Number(Utilities.formatDate(v, sheetTz, 'H'));
+    const min = Number(Utilities.formatDate(v, sheetTz, 'm'));
     if (h === 0 && min === 0) return '';
     const ap = h >= 12 ? 'PM' : 'AM';
     h = h % 12 || 12;
@@ -49,10 +52,11 @@ function captainWeekStartIso_() {
 
 function captainMatchDateIso_(v) {
   if (!v) return '';
-  const tz = Session.getScriptTimeZone() || 'America/New_York';
   if (v instanceof Date) {
     if (isNaN(v.getTime())) return '';
-    return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+    // Use the spreadsheet's own timezone (not getActive() — standalone script).
+    const sheetTz = getSpreadsheet_().getSpreadsheetTimeZone();
+    return Utilities.formatDate(v, sheetTz, 'yyyy-MM-dd');
   }
   const s = String(v).trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -61,8 +65,8 @@ function captainMatchDateIso_(v) {
     const y = yr.length === 2 ? '20' + yr : yr;
     return y + '-' + mo.padStart(2, '0') + '-' + da.padStart(2, '0');
   }
-  const d = new Date(s);
-  if (!isNaN(d.getTime())) return Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+  // Avoid new Date(isoString) — JS parses ISO dates as UTC midnight which then
+  // shifts to the previous day when formatted in a negative-UTC-offset timezone.
   return '';
 }
 
