@@ -94,7 +94,7 @@ function getCaptainAccessForEmail_(email) {
   const users = getObjects_(SHEETS.USERS);
   const user = users.find(u =>
     String(u.email || '').trim().toLowerCase() === cleanEmail &&
-    normalizeBool_(u.active)
+    (u.active === undefined || u.active === '' || normalizeBool_(u.active))
   );
   if (!user) {
     return { ok: false, email: cleanEmail, userId: '', name: '',
@@ -105,7 +105,7 @@ function getCaptainAccessForEmail_(email) {
   const userId = String(user.user_id || '').trim();
   const accessRows = getObjects_(SHEETS.USER_ACCESS).filter(a =>
     String(a.user_id || '').trim() === userId &&
-    normalizeBool_(a.active)
+    (a.active === undefined || a.active === '' || normalizeBool_(a.active))
   );
 
   let isCommissioner = false;
@@ -255,7 +255,8 @@ function getPinAccess_(pin) {
 
   const users = getObjects_(SHEETS.USERS);
   const user = users.find(u =>
-    String(u.pin || '').trim() === cleanPin && normalizeBool_(u.active)
+    String(u.pin || '').trim() === cleanPin &&
+    (u.active === undefined || u.active === '' || normalizeBool_(u.active))
   );
 
   if (!user) return { ok: false, reason: 'PIN not recognised' };
