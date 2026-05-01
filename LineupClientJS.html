@@ -19,6 +19,29 @@ let currentTeamId = REQUESTED_TEAM_ID || '';
 function isCommissioner_() {
   return !!(window.cpblPinUser && window.cpblPinUser.isCommissioner);
 }
+function isDirector_() {
+  return !!(window.cpblPinUser && window.cpblPinUser.isDirector);
+}
+function canSwitchDivisions_() {
+  return isCommissioner_() || isDirector_();
+}
+// Matches the signed-in user is allowed to see. Commissioners/directors see all;
+// captains see only matches involving their team(s).
+function captainMatches_() {
+  const all = SELECTOR_DATA.matches || [];
+  if (canSwitchDivisions_()) return all;
+  const allowed = new Set((window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || []);
+  if (!allowed.size) return all;
+  return all.filter(m =>
+    allowed.has(String(m.home_team_id || '').trim()) ||
+    allowed.has(String(m.away_team_id || '').trim())
+  );
+}
+function syncDivisionSelectorVisibility_() {
+  const wrap = document.getElementById('division-select-wrap');
+  if (!wrap) return;
+  wrap.style.display = canSwitchDivisions_() ? '' : 'none';
+}
 
 let portalData = null;
 let currentMatchId = '';
@@ -498,7 +521,7 @@ function updateHeaderMetaFromPortal_() {
 function updateTeamSwitcher_() {
   const switcher = document.getElementById('commissioner-team-switcher');
   if (!switcher) return;
-  if (!isCommissioner_() || !portalData?.currentMatch) {
+  if (!canSwitchDivisions_() || !portalData?.currentMatch) {
     switcher.style.display = 'none';
     return;
   }
@@ -580,8 +603,7 @@ function loadMatch_(matchId, opts = {}) {
         applyBranding(data.brand || {});
         updateHeaderMetaFromPortal_();
 
-        // Find the division using SELECTOR_DATA (same source as dropdown options)
-        // so the option value format is guaranteed to match.
+        // Derive division from SELECTOR_DATA so the format matches dropdown option values.
         const selectorMatch = (SELECTOR_DATA.matches || []).find(m =>
           String(m.match_id || '').trim() === currentMatchId
         );
@@ -589,17 +611,17 @@ function loadMatch_(matchId, opts = {}) {
           ? String(selectorMatch.division_id || '').trim()
           : (data.currentMatch ? divisionValueForMatch_(data.currentMatch) : '');
 
+        // Sync the division selector (only visible for commissioner/director).
         const divisionSelect = document.getElementById('division-select');
-        if (divisionSelect && currentDivisionId) {
+        if (divisionSelect && currentDivisionId && canSwitchDivisions_()) {
           divisionSelect.value = currentDivisionId;
         }
 
-        // Use SELECTOR_DATA.matches for the match dropdown so IDs are consistent
-        // with what onMatchChange looks up.
-        const matchListSource = (SELECTOR_DATA.matches && SELECTOR_DATA.matches.length)
-          ? SELECTOR_DATA.matches
-          : (data.matches || []);
-        populateMatchDropdownFromPortal_(matchListSource, currentMatchId, currentDivisionId);
+        // Captains see only their team's matches; no division filter applied so all
+        // their matches remain reachable. Commissioner/director filter by division.
+        const matchListSource = captainMatches_();
+        const effectiveDivId = canSwitchDivisions_() ? currentDivisionId : '';
+        populateMatchDropdownFromPortal_(matchListSource, currentMatchId, effectiveDivId);
         const matchSelect = document.getElementById('match-select');
         if (matchSelect) matchSelect.value = currentMatchId;
 
@@ -643,19 +665,22 @@ function boot() {
         ? String(portalData.myTeamId).trim()
         : REQUESTED_TEAM_ID;
 
+    syncDivisionSelectorVisibility_();
+
     if (!portalData || !portalData.currentMatch) {
       const divisions = SELECTOR_DATA.availableDivisions || [];
-      const matches = SELECTOR_DATA.matches || [];
       populateDivisionDropdownFromPortal_(divisions, '');
-      const firstMatch = matches[0];
+      const visibleMatches = captainMatches_();
+      const firstMatch = visibleMatches[0];
       if (firstMatch) {
         const firstMatchId = String(firstMatch.match_id || '').trim();
-        // Prefer the team side that matches the signed-in user's allowed teams.
         const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
         const awayId = String(firstMatch.away_team_id || '').trim();
         const homeId = String(firstMatch.home_team_id || '').trim();
         currentTeamId = (allowedIds.length && allowedIds.includes(awayId)) ? awayId : homeId;
-        populateMatchDropdownFromPortal_(matches, firstMatchId, divisionValueForMatch_(firstMatch));
+        // Captains: no division filter (show all their matches); commissioners: filter by division
+        const divId = canSwitchDivisions_() ? divisionValueForMatch_(firstMatch) : '';
+        populateMatchDropdownFromPortal_(visibleMatches, firstMatchId, divId);
         loadMatch_(firstMatchId);
       } else {
         render();
@@ -678,7 +703,9 @@ function boot() {
       : '';
 
     populateDivisionDropdownFromPortal_(portalData.availableDivisions || [], currentDivisionId);
-    populateMatchDropdownFromPortal_(portalData.matches || [], currentMatchId, currentDivisionId);
+    const bootMatchList = captainMatches_();
+    const bootDivId = canSwitchDivisions_() ? currentDivisionId : '';
+    populateMatchDropdownFromPortal_(bootMatchList, currentMatchId, bootDivId);
 
     applyBranding(portalData.brand || {});
     updateHeaderMetaFromPortal_();

@@ -1585,7 +1585,7 @@
           <div class="manager-subheader">Select Match</div>
 
           <div class="manager-selects">
-            <div class="selector selector-compact">
+            <div class="selector selector-compact" id="division-select-wrap">
               <select id="division-select" onchange="onDivisionChange()"></select>
             </div>
 
@@ -1710,6 +1710,7 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     callbacks = callbacks || {};
     var allowedIds = result.allowedTeamIds || [];
     var isCommissioner = !!result.isCommissioner;
+    if (typeof syncDivisionSelectorVisibility_ === 'function') syncDivisionSelectorVisibility_();
 
     // Commissioner has no specific team — treat all teams in the selector as allowed
     if (isCommissioner && !allowedIds.length) {

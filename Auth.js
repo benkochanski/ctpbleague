@@ -108,6 +108,9 @@ function resolveAccessByEmail_(email) {
   const isCommissioner = rows.some(r =>
     String(r.role_type || '').trim().toLowerCase() === ROLE.COMMISSIONER
   );
+  const isDirector = rows.some(r =>
+    String(r.role_type || '').trim().toLowerCase() === ROLE.DIRECTOR
+  );
 
   const directTeamIds = new Set();
   const clubIds = new Set();
@@ -165,6 +168,7 @@ function resolveAccessByEmail_(email) {
     userId,
     name,
     isCommissioner,
+    isDirector,
     allowedTeamIds: Array.from(allowedTeamIds),
     allowedClubIds: Array.from(clubIds),
     clubId: primaryClubId,
@@ -280,6 +284,7 @@ function verifyPortalEmail(email) {
       email: r.email,
       userId: r.userId,
       isCommissioner: !!r.isCommissioner,
+      isDirector: !!r.isDirector,
       clubId: r.clubId,
       clubName: r.clubName,
       shortName: r.shortName,
