@@ -1,5 +1,21 @@
 const LEAGUE_LOGO_FILE_ID = '1PA1pVhADGrUO4aIn1pz6srSwI50r41EZ';
 
+// Normalizes a GAS time cell (Date object anchored to 1899-12-30) or any string
+// to a display string like "12 PM" or "9:30 AM". Returns '' if unavailable.
+function normalizeStartTime_(v) {
+  if (!v) return '';
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    let h = v.getHours();
+    const min = v.getMinutes();
+    if (h === 0 && min === 0) return '';
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2, '0')} ${ap}`;
+  }
+  return String(v).trim();
+}
+
 function lineupPingUniqueV1() {
   return {
     ok: true,
@@ -515,6 +531,13 @@ function getCaptainPortalData(matchId, teamId) {
 
   const myTeamId = String(myTeam.team_id || '').trim();
   const mySide = myTeamId === String(currentMatch.home_team_id || '').trim() ? 'home' : 'away';
+
+  // Normalize start_time to "h:mm AM/PM" string so clients don't need to
+  // interpret GAS Date objects or raw sheet cell values.
+  currentMatch = Object.assign({}, currentMatch, {
+    start_time: normalizeStartTime_(currentMatch.start_time),
+    match_date: captainMatchDateIso_(currentMatch.match_date)
+  });
 
   ensureRoundsAndGamesForMatch_(currentMatchId);
 

@@ -188,6 +188,14 @@
       overflow:hidden;
     }
 
+    /* Connects middle-brand (top) and middle-status-bar (bottom) as one unit,
+       so .main-shell's gap:10px doesn't split them. */
+    .match-header-block{
+      display:flex;
+      flex-direction:column;
+      flex-shrink:0;
+    }
+
     .left-rail,
     .right-rail{
       min-height:0;
@@ -1472,12 +1480,12 @@
   <div class="league-header">
     <div class="league-brand">
       <div class="league-logo-wrap">
-        <img id="league-logo" class="league-logo-img" alt="League Logo" style="display:none;">
-        <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+        <img id="league-logo" class="league-logo-img" src="https://ctpbleague.com/assets/logo.png" alt="League Logo" onerror="this.style.display='none';document.getElementById('league-logo-fallback').style.display='';">
+        <div id="league-logo-fallback" class="league-logo-fallback" style="display:none">CPL</div>
       </div>
       <div class="league-text">
         <h1>Connecticut Pickleball League</h1>
-        <p>Official Match Lineup Portal</p>
+        <p>Captain Portal</p>
       </div>
     </div>
     <div class="header-right">
@@ -1508,6 +1516,7 @@
   </div>
 
   <div class="main-shell">
+    <div class="match-header-block">
     <div class="middle-brand">
       <div class="middle-brand-logo">
         <img id="middle-team-logo" alt="Team Logo" style="display:none;">
@@ -1535,6 +1544,7 @@
         </div>
       </div>
     </div>
+    </div><!-- /.match-header-block -->
 
     <div class="main" id="main-grid"></div>
   </div>
@@ -1669,9 +1679,13 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     if (nameEl) nameEl.textContent = name;
   }
 
-  function reloadForUser(result) {
+  function reloadForUser(result, callbacks) {
+    callbacks = callbacks || {};
     var allowedIds = result.allowedTeamIds || [];
-    if (!allowedIds.length || typeof loadMatch_ !== 'function') return;
+    if (!allowedIds.length || typeof loadMatch_ !== 'function') {
+      if (callbacks.onFailure) callbacks.onFailure(new Error('No teams found for this account'));
+      return;
+    }
     var cm = (typeof portalData !== 'undefined' && portalData && portalData.currentMatch) ? portalData.currentMatch : null;
     var correctTeam = '';
     var correctMatch = typeof currentMatchId !== 'undefined' ? currentMatchId : '';
@@ -1692,7 +1706,9 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     }
     if (correctTeam) {
       if (typeof currentTeamId !== 'undefined') currentTeamId = correctTeam;
-      loadMatch_(correctMatch);
+      loadMatch_(correctMatch, { onSuccess: callbacks.onSuccess, onFailure: callbacks.onFailure });
+    } else {
+      if (callbacks.onFailure) callbacks.onFailure(new Error('No match found for your team'));
     }
   }
 
@@ -1728,9 +1744,28 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
         }
         window.cpblEmail   = email;
         window.cpblPinUser = result;
-        document.getElementById('pin-overlay').classList.add('hidden');
         showSignedIn(result.name || 'Captain');
-        reloadForUser(result);
+        // Show loading state in overlay — dismiss only after match data arrives.
+        errEl.textContent = '';
+        var loadingEl = document.getElementById('auth-loading-msg');
+        if (!loadingEl) {
+          loadingEl = document.createElement('p');
+          loadingEl.id = 'auth-loading-msg';
+          loadingEl.style.cssText = 'color:#123a7c;font-weight:600;margin-top:12px;font-size:13px';
+          document.getElementById('pin-box').appendChild(loadingEl);
+        }
+        loadingEl.textContent = 'Loading your lineup…';
+        loadingEl.style.display = '';
+        reloadForUser(result, {
+          onSuccess: function() {
+            document.getElementById('pin-overlay').classList.add('hidden');
+          },
+          onFailure: function(err) {
+            errEl.textContent = 'Match load failed: ' + (err && err.message ? err.message : String(err));
+            if (loadingEl) loadingEl.style.display = 'none';
+            btn.disabled = false; btn.textContent = 'Sign in';
+          }
+        });
       })
       .withFailureHandler(function (err) {
         btn.disabled = false; btn.textContent = 'Sign in';

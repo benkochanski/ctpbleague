@@ -327,7 +327,7 @@ function populateDivisionDropdownFromPortal_(availableDivisions, selectedDivisio
 function formatMatchDropdownLabel_(match) {
   const matchId = String(match?.match_id || '').trim();
   const weekMatch = matchId.match(/_W(\d+)_/i);
-  const weekLabel = weekMatch ? `Week ${weekMatch[1]}` : 'Match';
+  const weekLabel = weekMatch ? `Match ${weekMatch[1]}` : 'Match';
 
   const rawDate = String(match?.match_date || '').trim();
   const dateLabel = formatSheetDateLabel_(rawDate);
@@ -468,9 +468,8 @@ function updateHeaderMetaFromPortal_() {
       })
     : 'Date TBD';
 
-  const timeText = start && !isNaN(start.getTime())
-    ? start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-    : 'Time TBD';
+  // Use the pre-normalized start_time string from the server ("12 PM", "9:30 AM", etc.)
+  const timeText = String(m.start_time || '').trim() || 'Time TBD';
 
   const locationText =
     m.location ||
@@ -483,23 +482,18 @@ function updateHeaderMetaFromPortal_() {
   if (metaEl) metaEl.textContent = `${timeText} at ${locationText}`;
   if (statusEl) statusEl.textContent = `${divisionName} • ${matchLabel}`;
 
+  const chipEl = document.getElementById('hero-away-chip');
+  if (chipEl) {
+    chipEl.textContent = portalData?.mySide === 'home' ? 'Home Match' : 'Away Match';
+  }
+
   renderStatusAndCountdown_();
 }
 
 function applyBranding(branding) {
-  const leagueLogo = document.getElementById('league-logo');
+  // League logo uses a static URL set in HTML — don't overwrite with GAS Drive URL.
   const teamLogo = document.getElementById('middle-team-logo');
-  const leagueFallback = document.getElementById('league-logo-fallback');
   const teamFallback = document.getElementById('middle-team-logo-fallback');
-
-  if (branding?.leagueLogoUrl && leagueLogo && leagueFallback) {
-    leagueLogo.src = branding.leagueLogoUrl;
-    leagueLogo.style.display = 'block';
-    leagueFallback.style.display = 'none';
-  } else if (leagueLogo && leagueFallback) {
-    leagueLogo.style.display = 'none';
-    leagueFallback.style.display = 'block';
-  }
 
   if (branding?.teamLogoUrl && teamLogo && teamFallback) {
     teamLogo.src = branding.teamLogoUrl;
@@ -733,12 +727,31 @@ function formatDisplayDateTime_(value) {
   return `${mm}/${dd} ${hours}:${minutes} ${ampm}`;
 }
 
+function parseStartTimeString_(timeStr) {
+  const s = String(timeStr || '').trim();
+  if (!s) return null;
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (!m) return null;
+  let hours = Number(m[1]);
+  const minutes = Number(m[2] || 0);
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && hours !== 12) hours += 12;
+  if (ap === 'AM' && hours === 12) hours = 0;
+  return { hours, minutes };
+}
+
 function getMySubmissionDeadline_() {
   const m = portalData?.currentMatch || null;
   if (!m) return null;
 
   const matchStart = parseMatchStartLocal_(m.match_date);
   if (!matchStart || isNaN(matchStart.getTime())) return null;
+
+  // Apply the actual match start time if available (server sends "12 PM", "9:30 AM", etc.)
+  const parsed = parseStartTimeString_(m.start_time);
+  if (parsed) {
+    matchStart.setHours(parsed.hours, parsed.minutes, 0, 0);
+  }
 
   const isHome = portalData?.mySide === 'home';
 
@@ -1692,11 +1705,12 @@ function closeRosterDrawer() {
 function extractMatchNumber_(matchId) {
   const s = String(matchId || '').trim();
 
+  // Prefer _W(\d+)_ week number (e.g. SEASON_W2_DIV1 → 2)
+  const weekMatch = s.match(/_W(\d+)_/i);
+  if (weekMatch) return Number(weekMatch[1]);
+
   const explicit = s.match(/(?:_M|MATCH_?)(\d+)/i);
   if (explicit) return Number(explicit[1]);
-
-  const tail = s.match(/(\d+)$/);
-  if (tail) return Number(tail[1]);
 
   return '';
 }
