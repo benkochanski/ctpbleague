@@ -224,6 +224,64 @@ function getMyCaptainAccessV1(idToken) {
  *     reason:        string  (optional, free text)
  *   })
  */
+/**
+ * Look up a captain PIN in the Users sheet. Returns a JSON string so it can
+ * be called via google.script.run from the client.
+ *
+ *   { ok: true,  name, userId, allowedTeamIds }
+ *   { ok: false, error: '...' }
+ *
+ * PIN is stored in the `pin` column of the Users sheet. Any format is fine
+ * (4–6 digit number is typical). Matching is case-insensitive string compare.
+ */
+function verifyPortalPin(pin) {
+  try {
+    const access = getPinAccess_(pin);
+    if (!access.ok) return JSON.stringify({ ok: false, error: access.reason });
+    return JSON.stringify({
+      ok: true,
+      name: access.name,
+      userId: access.userId,
+      allowedTeamIds: access.allowedTeamIds
+    });
+  } catch (e) {
+    return JSON.stringify({ ok: false, error: String(e.message || e) });
+  }
+}
+
+function getPinAccess_(pin) {
+  const cleanPin = String(pin || '').trim();
+  if (!cleanPin) return { ok: false, reason: 'No PIN entered' };
+
+  const users = getObjects_(SHEETS.USERS);
+  const user = users.find(u =>
+    String(u.pin || '').trim() === cleanPin && normalizeBool_(u.active)
+  );
+
+  if (!user) return { ok: false, reason: 'PIN not recognised' };
+
+  // Reuse the existing team/role expansion logic.
+  const emailAccess = getCaptainAccessForEmail_(String(user.email || '').trim());
+  // Merge: carry the userId forward even if email lookup returns a partial result.
+  emailAccess.userId = emailAccess.userId || String(user.user_id || '').trim();
+  emailAccess.name   = emailAccess.name   || String(user.full_name || '').trim();
+  emailAccess.ok     = true;  // PIN matched an active user — always ok for portal entry
+  return emailAccess;
+}
+
+function requirePinAccess_(pin, teamId) {
+  const cleanTeamId = String(teamId || '').trim();
+  const access = getPinAccess_(pin);
+  if (!access.ok) throw new Error(access.reason || 'Invalid PIN');
+  if (!access.isCommissioner && cleanTeamId && !access.allowedTeamIds.includes(cleanTeamId)) {
+    throw new Error(
+      (access.name || 'This user') + ' does not have access to team ' + cleanTeamId +
+      '. Allowed: ' + (access.allowedTeamIds.join(', ') || '(none)')
+    );
+  }
+  return access;
+}
+
 function appendAuditLog_(entry) {
   if (!entry || typeof entry !== 'object') return;
   const ss = getBackendSpreadsheet_();

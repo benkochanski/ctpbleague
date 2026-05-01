@@ -1,32 +1,59 @@
 function getEligibleRosterForMatch_(matchId, teamId) {
-  const match = getObjects_(SHEETS.MATCHES).find(
-    m => String(m.match_id || '').trim() === String(matchId || '').trim()
-  );
-  if (!match) throw new Error('Match not found');
+  const cleanTeamId = String(teamId || '').trim();
+  const cleanMatchId = String(matchId || '').trim();
 
-  const rosters = getObjects_(SHEETS.TEAM_ROSTERS).filter(r =>
-    String(r.team_id || '').trim() === String(teamId || '').trim() &&
-    String(r.season_id || '').trim() === String(match.season_id || '').trim() &&
-    String(r.roster_status || '').trim().toLowerCase() === 'eligible'
+  // Resolve the captain's club name from Teams + Clubs.
+  const teams = getObjects_(SHEETS.TEAMS);
+  const clubs  = getObjects_(SHEETS.CLUBS);
+  const thisTeam = teams.find(t => String(t.team_id || '').trim() === cleanTeamId);
+  const clubId   = thisTeam ? String(thisTeam.club_id || '').trim() : '';
+  const thisClub = clubs.find(c => String(c.club_id || '').trim() === clubId);
+
+  // All names this club goes by in the Players sheet (club_name, short_name).
+  const clubNames = new Set(
+    [
+      thisClub && String(thisClub.club_name  || '').trim(),
+      thisClub && String(thisClub.short_name || '').trim(),
+      clubId
+    ].filter(Boolean).map(s => s.toLowerCase())
   );
 
-  const players = getObjects_(SHEETS.PLAYERS);
+  // Resolve match division for eligibility filtering.
+  const matches = getObjects_(SHEETS.MATCHES);
+  const thisMatch = matches.find(m => String(m.match_id || '').trim() === cleanMatchId);
+  const divisionId = String((thisMatch && thisMatch.division_id) || (thisTeam && thisTeam.division_id) || '').trim();
+
   const availability = getObjects_(SHEETS.MATCH_PLAYER_AVAILABILITY).filter(a =>
-    String(a.match_id || '').trim() === String(matchId || '').trim() &&
-    String(a.team_id || '').trim() === String(teamId || '').trim()
+    String(a.match_id || '').trim() === cleanMatchId &&
+    String(a.team_id || '').trim() === cleanTeamId
   );
 
-  return rosters.map(r => {
-    const player = players.find(p => String(p.player_id || '').trim() === String(r.player_id || '').trim());
-    const a = availability.find(av => String(av.player_id || '').trim() === String(r.player_id || '').trim());
-
-    return {
-      player_id: String(r.player_id || '').trim(),
-      full_name: String((player && (player.full_name || player.name)) || '').trim(),
-      gender: normalizeGenderCodeForRoster_(player ? player.gender : ''),
-      available: a ? normalizeBoolValue_(a.available) : true
-    };
-  });
+  return getObjects_(SHEETS.PLAYERS)
+    .filter(p => {
+      // Club match: p.club must match one of the club's known names.
+      if (clubNames.size) {
+        const pClub = String(p.club || '').trim().toLowerCase();
+        if (!pClub || !clubNames.has(pClub)) return false;
+      }
+      // Division eligibility: if p.division is set, it must match the match division.
+      if (divisionId && p.division) {
+        const pDiv = String(p.division || '').trim().toLowerCase();
+        if (pDiv && pDiv !== divisionId.toLowerCase()) return false;
+      }
+      // Active players only.
+      if (normalizeBoolValue_(p.active) === false) return false;
+      return true;
+    })
+    .map(p => {
+      const playerId = String(p.player_id || '').trim();
+      const a = availability.find(av => String(av.player_id || '').trim() === playerId);
+      return {
+        player_id: playerId,
+        full_name: String(p.name || p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || '').trim(),
+        gender: normalizeGenderCodeForRoster_(p.gender),
+        available: a ? normalizeBoolValue_(a.available) : true
+      };
+    });
 }
 
 function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
@@ -45,6 +72,7 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
 
   const userId    = String((access && access.userId) || '');
   const userEmail = String((access && access.email)  || '');
+  const userName  = String((access && access.name)   || userEmail || '');
 
   const now = nowStamp_();
   const isHomeSide = String(teamId || '').trim() === String(match.home_team_id || '').trim();
@@ -73,13 +101,15 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
       g.lineup_submitted_home = !!submitted;
 
       g.home_updated_at = now;
-      g.home_updated_by = userEmail;
+      g.home_updated_by = userName;
       g.home_updated_by_email = userEmail;
+      g.home_updated_by_name = userName;
 
       if (submitted) {
         g.home_submitted_at = now;
-        g.home_submitted_by = userEmail;
+        g.home_submitted_by = userName;
         g.home_submitted_by_email = userEmail;
+        g.home_submitted_by_name = userName;
       }
     }
 
@@ -89,18 +119,20 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
       g.lineup_submitted_away = !!submitted;
 
       g.away_updated_at = now;
-      g.away_updated_by = userEmail;
+      g.away_updated_by = userName;
       g.away_updated_by_email = userEmail;
+      g.away_updated_by_name = userName;
 
       if (submitted) {
         g.away_submitted_at = now;
-        g.away_submitted_by = userEmail;
+        g.away_submitted_by = userName;
         g.away_submitted_by_email = userEmail;
+        g.away_submitted_by_name = userName;
       }
     }
 
     g.updated_at = now;
-    g.updated_by = userEmail;
+    g.updated_by = userName;
     g.updated_by_user_id = userId;
     g.status = computeGameReadiness_(g);
 

@@ -820,7 +820,7 @@ function queueAutosave() {
       .withFailureHandler((err) => {
         showToast('Autosave failed: ' + (err && err.message ? err.message : err), 'error');
       })
-      .saveCaptainLineupDraft(getCpblIdToken_(), currentMatchId, currentTeamId, assignments);
+      .saveCaptainLineupDraft(getCpblPin_(), currentMatchId, currentTeamId, assignments);
   }, 500);
 }
 
@@ -848,14 +848,11 @@ function submitOfficialLineup() {
     .withFailureHandler((err) => {
       showToast('Submit failed: ' + (err && err.message ? err.message : err), 'error');
     })
-    .submitCaptainLineup(getCpblIdToken_(), currentMatchId, currentTeamId, assignments);
+    .submitCaptainLineup(getCpblPin_(), currentMatchId, currentTeamId, assignments);
 }
 
-/* getCpblIdToken_ — returns the Google ID token captured by the GIS sign-in
-   button in Captain.html. Returns '' if not signed in; the backend will then
-   throw a friendly "please sign in" error which the failure handler surfaces. */
-function getCpblIdToken_() {
-  return (typeof window !== 'undefined' && window.cpblIdToken) ? window.cpblIdToken : '';
+function getCpblPin_() {
+  return (typeof window !== 'undefined' && window.cpblPin) ? window.cpblPin : '';
 }
 
 /* =========================

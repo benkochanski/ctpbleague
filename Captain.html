@@ -1412,24 +1412,54 @@
 <body>
 <script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
 
-<!-- Auth: token comes from the wrapper shell (workers.dev) via doGet's
-     idToken query param, injected here. GSI can't validate origin from inside
-     the googleusercontent iframe, so the shell handles sign-in and we just
-     read the resulting token. -->
 <script>
-  window.cpblIdToken = <?= JSON.stringify(injectedIdToken || '') ?>;
-  window.cpblUserEmail = <?= JSON.stringify(injectedEmail || '') ?>;
+  window.cpblPin = '';
+  window.cpblPinUser = null;
 </script>
 <style>
   .cpbl-auth-area { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-  .cpbl-auth-signedin { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.92); }
-  .cpbl-auth-signedin button {
+  .cpbl-auth-user  { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,.92); font-size: 13px; }
+  .cpbl-auth-user strong { font-weight: 600; }
+  .cpbl-auth-user button {
     background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
-    color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 6px;
-    cursor: pointer; transition: background .15s;
+    color: #fff; font-size: 12px; padding: 3px 9px; border-radius: 6px;
+    cursor: pointer; transition: background .15s; margin-left: 6px;
   }
-  .cpbl-auth-signedin button:hover { background: rgba(255,255,255,.24); }
-  .cpbl-auth-email { font-weight: 600; }
+  .cpbl-auth-user button:hover { background: rgba(255,255,255,.24); }
+
+  /* PIN modal */
+  #pin-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(8,31,67,.82); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #pin-overlay.hidden { display: none; }
+  #pin-box {
+    background: #fff; border-radius: 14px; padding: 36px 32px 28px;
+    width: 320px; box-shadow: 0 8px 40px rgba(0,0,0,.35);
+    text-align: center;
+  }
+  #pin-box h2 { margin: 0 0 6px; font-size: 20px; color: #081f43; }
+  #pin-box p  { margin: 0 0 20px; font-size: 13px; color: #555; }
+  #pin-input {
+    width: 100%; box-sizing: border-box;
+    font-size: 28px; letter-spacing: 6px; text-align: center;
+    border: 2px solid #ccd; border-radius: 8px; padding: 10px 12px;
+    outline: none; transition: border-color .15s;
+  }
+  #pin-input:focus { border-color: #123a7c; }
+  #pin-submit {
+    margin-top: 16px; width: 100%; padding: 11px;
+    background: #123a7c; color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s;
+  }
+  #pin-submit:hover { background: #0b7e39; }
+  #pin-submit:disabled { background: #aab; cursor: default; }
+  #pin-error { margin-top: 10px; font-size: 13px; color: #c0392b; min-height: 18px; }
+  #pin-view-link {
+    margin-top: 14px; font-size: 12px; color: #888; cursor: pointer;
+    text-decoration: underline; background: none; border: none; padding: 0;
+  }
 </style>
 <div class="top-shell">
   <div class="league-header">
@@ -1444,7 +1474,12 @@
       </div>
     </div>
     <div class="header-right">
-      <div class="cpbl-auth-area"></div>
+      <div class="cpbl-auth-area" id="cpbl-auth-area">
+        <div class="cpbl-auth-user" id="cpbl-auth-user" style="display:none;">
+          <span>Signed in as <strong id="cpbl-auth-name"></strong></span>
+          <button onclick="cpblPinSignOut()">Sign out</button>
+        </div>
+      </div>
       <div class="league-right"></div>
     </div>
   </div>
@@ -1603,5 +1638,91 @@ window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
 </script>
 
 <?!= include('LineupClientJS') ?>
+
+<!-- PIN entry overlay -->
+<div id="pin-overlay">
+  <div id="pin-box">
+    <h2>Captain Portal</h2>
+    <p>Enter your PIN to make lineup changes.</p>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="10"
+           placeholder="••••" autocomplete="off"
+           onkeydown="if(event.key==='Enter')cpblPinSubmit()">
+    <button id="pin-submit" onclick="cpblPinSubmit()">Enter</button>
+    <div id="pin-error"></div>
+    <button id="pin-view-link" onclick="cpblPinViewOnly()">View only (no changes)</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  function showPinUser(name) {
+    var el = document.getElementById('cpbl-auth-user');
+    var nameEl = document.getElementById('cpbl-auth-name');
+    if (el) el.style.display = '';
+    if (nameEl) nameEl.textContent = name;
+  }
+
+  window.cpblPinSignOut = function () {
+    window.cpblPin = '';
+    window.cpblPinUser = null;
+    var el = document.getElementById('cpbl-auth-user');
+    if (el) el.style.display = 'none';
+    document.getElementById('pin-overlay').classList.remove('hidden');
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-input').focus();
+  };
+
+  window.cpblPinViewOnly = function () {
+    document.getElementById('pin-overlay').classList.add('hidden');
+  };
+
+  window.cpblPinSubmit = function () {
+    var pin = document.getElementById('pin-input').value.trim();
+    var errEl = document.getElementById('pin-error');
+    var btn = document.getElementById('pin-submit');
+    if (!pin) { errEl.textContent = 'Please enter your PIN.'; return; }
+
+    errEl.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+
+    google.script.run
+      .withSuccessHandler(function (jsonStr) {
+        btn.disabled = false;
+        btn.textContent = 'Enter';
+        var result;
+        try { result = JSON.parse(jsonStr); } catch (e) { result = { ok: false, error: 'Unexpected response' }; }
+        if (!result.ok) {
+          errEl.textContent = result.error || 'Invalid PIN. Please try again.';
+          document.getElementById('pin-input').select();
+          return;
+        }
+        window.cpblPin = pin;
+        window.cpblPinUser = result;
+        document.getElementById('pin-overlay').classList.add('hidden');
+        showPinUser(result.name || 'Captain');
+      })
+      .withFailureHandler(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Enter';
+        errEl.textContent = (err && err.message) ? err.message : 'Error verifying PIN. Please try again.';
+      })
+      .verifyPortalPin(pin);
+  };
+
+  // Show the overlay on load — view-only by default until PIN entered.
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      var overlay = document.getElementById('pin-overlay');
+      if (overlay && !window.cpblPin) {
+        overlay.classList.remove('hidden');
+        var input = document.getElementById('pin-input');
+        if (input) input.focus();
+      }
+    }, 400);
+  });
+}());
+</script>
 </body>
 </html>

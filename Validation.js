@@ -225,14 +225,34 @@ function validateTeamLineupDraft_(match, teamId, assignments, existingGames) {
 }
 
 function buildEligiblePlayerIdSetForTeam_(match, teamId) {
-  const seasonId = String((match && match.season_id) || '').trim();
   const cleanTeamId = String(teamId || '').trim();
+  const teams = getObjects_(SHEETS.TEAMS);
+  const clubs  = getObjects_(SHEETS.CLUBS);
+  const thisTeam = teams.find(t => String(t.team_id || '').trim() === cleanTeamId);
+  const clubId   = thisTeam ? String(thisTeam.club_id || '').trim() : '';
+  const thisClub = clubs.find(c => String(c.club_id || '').trim() === clubId);
+  const divisionId = String((thisTeam && thisTeam.division_id) || (match && match.division_id) || '').trim();
+
+  const clubNames = new Set(
+    [
+      thisClub && String(thisClub.club_name  || '').trim(),
+      thisClub && String(thisClub.short_name || '').trim(),
+      clubId
+    ].filter(Boolean).map(s => s.toLowerCase())
+  );
+
   const out = new Set();
-  getObjects_(SHEETS.TEAM_ROSTERS).forEach(r => {
-    if (String(r.team_id || '').trim() !== cleanTeamId) return;
-    if (seasonId && String(r.season_id || '').trim() !== seasonId) return;
-    if (String(r.roster_status || '').trim().toLowerCase() !== 'eligible') return;
-    const pid = String(r.player_id || '').trim();
+  getObjects_(SHEETS.PLAYERS).forEach(p => {
+    if (normalizeBoolValue_(p.active) === false) return;
+    if (clubNames.size) {
+      const pClub = String(p.club || '').trim().toLowerCase();
+      if (!pClub || !clubNames.has(pClub)) return;
+    }
+    if (divisionId && p.division) {
+      const pDiv = String(p.division || '').trim().toLowerCase();
+      if (pDiv && pDiv !== divisionId.toLowerCase()) return;
+    }
+    const pid = String(p.player_id || '').trim();
     if (pid) out.add(pid);
   });
   return out;
