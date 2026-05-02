@@ -1216,21 +1216,25 @@
   }
   // Decide which week to surface: the earliest week whose match_date is on/after today.
   // Fall back to the latest week with matches if everything is in the past.
+  // Compares YYYY-MM-DD strings to avoid UTC/local rollover (match_date arrives
+  // as "2026-05-02T00:00:00.000Z" which becomes May 1 in EDT after timezone math).
   function pickCurrentWeek(matches) {
     if (!matches || !matches.length) return 0;
-    const today = new Date(); today.setHours(0,0,0,0);
+    const t = new Date();
+    const todayStr = t.getFullYear() + '-' +
+      String(t.getMonth()+1).padStart(2,'0') + '-' +
+      String(t.getDate()).padStart(2,'0');
     const byWeek = {};
     for (const m of matches) {
       const w = extractWeekNum(m);
       if (!w) continue;
-      const d = new Date(m.match_date);
-      if (isNaN(d.getTime())) continue;
-      d.setHours(0,0,0,0);
-      if (!byWeek[w] || d < byWeek[w]) byWeek[w] = d;
+      const dStr = String(m.match_date || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dStr)) continue;
+      if (!byWeek[w] || dStr < byWeek[w]) byWeek[w] = dStr;
     }
     const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
     if (!weeks.length) return 0;
-    for (const w of weeks) { if (byWeek[w] >= today) return w; }
+    for (const w of weeks) { if (byWeek[w] >= todayStr) return w; }
     return weeks[weeks.length - 1];
   }
   function divLabel(match) { const n = extractDivNum(match); return n ? 'Division ' + n : 'Division'; }

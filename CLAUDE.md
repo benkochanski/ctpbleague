@@ -49,6 +49,26 @@ Any GAS HTML that needs to load inside the hub iframe must set:
 ```
 in its `doGet` route. Pages that lack this open in a new tab instead.
 
+### JSON fetch endpoints (bypass `google.script.run` deadlock)
+
+Inside an iframe, `google.script.run` can deadlock Chrome during sign-in. To avoid this, several routes return raw JSON via `ContentService` so the page can call them with plain `fetch()`:
+
+- `?page=verifyemail&email=…` — runs `verifyPortalEmail(email)`, returns `{ok, userId, name, allowedTeamIds, isCommissioner, …}`
+- `?page=openmatches` — list of open matches for score entry
+- `?page=scorecarddata&matchId=…` — full scorecard payload for one match
+- `?page=scorebranding` — club logos/colors for the scorecard chrome
+- `?page=admin` — Admin landing page (HTML, not JSON, but uses the fetch flow)
+
+The HTML routes (`captain`, `scorecard`, `display`, `admin`) inject `gasExecUrl = ScriptApp.getService().getUrl()` into the template so client JS can build absolute fetch URLs:
+
+```js
+const t = HtmlService.createTemplateFromFile('Captain');
+t.gasExecUrl = ScriptApp.getService().getUrl();
+return t.evaluate().setXFrameOptionsMode(...);
+```
+
+Client-side reads it via `<?!= JSON.stringify(gasExecUrl) ?>` into `window.__GAS_EXEC_URL__`.
+
 ---
 
 ## File layout
@@ -56,11 +76,14 @@ in its `doGet` route. Pages that lack this open in a new tab instead.
 All files live flat in `/Users/BenKochanski/CPBL` — no subdirectories. The `public/` folder (if present) holds the Cloudflare Pages hub assets.
 
 Typical files:
-- `Web.js` — GAS router (`doGet`), the spine of the GAS deployment
-- `*.html` — one per module (Captain, Scorecard, SeasonStats, PlayerPage, PlayersDirectory, PublicScoreboard, MatchDisplay, GameReport, etc.)
-- `*.js` (server-side `.gs`) — backend functions called via `google.script.run`
-- `appsscript.json` — GAS manifest
-- `public/index.html`, `public/styles.css`, `public/app.js` — Cloudflare hub shell
+- `Web.js` — GAS router (`doGet`), the spine of the GAS deployment. Owns the `?page=…` route table and template-variable injection (e.g. `gasExecUrl`).
+- `Admin.html` — landing page; signs the user in once and hands the access blob to other modules via `localStorage.cpbl_admin_email`.
+- `Captain.html`, `Scorecard.html`, `MatchDisplay.html`, `PublicScoreboard.html`, `SeasonStats.html`, `PlayerPage.html`, `PlayersDirectory.html`, `GameReport.html`, `RequestForm.html`, `RequestAdmin.html` — the modules.
+- `Auth.js` — `resolveAccessByEmail_`, `verifyPortalEmail`, `requireCaptainAccess_`, `appendAuditLog_`.
+- `Schema.js`, `Config.js` — sheet schemas + constants. `ensureSchema_()` idempotently creates/repairs tabs.
+- `Matches.js`, `Lineups.js`, `Submissions.js`, `ScorecardGS.js`, `Standings.js`, `MatchGamesBuilder.js`, `Templates.js`, `Validation.js`, `Utils.js`, `Branding.js`, `ActivePlayers.js`, `PlayerPageGS.js`, `PlayersDirectoryJS.js`, `PublicViews.js`, `Requests.js`, `SeasonStatsJS.js`, `SeedTestData.js`, `sandbox.js` — backend logic.
+- `appsscript.json` — GAS manifest.
+- `public/index.html`, `public/styles.css`, `public/app.js`, `wrangler.jsonc` — Cloudflare hub shell.
 
 ---
 
@@ -82,9 +105,21 @@ There are **two systems** that need publishing separately:
 4. **When ready to test stably**, deploy to staging: `clasp deploy --deploymentId AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy- --description "…"` — test at the staging URL without touching prod
 5. **When confirmed good**, deploy to prod: `clasp deploy --deploymentId AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD --description "…"` — publishes to the hub
 
+### Promote an exact staging version to prod (no new code)
+
+If you just want to ship the staging version as-is without redeploying current `@HEAD`, pin prod to a specific version:
+
+```
+clasp deploy --versionNumber <N> --deploymentId AKfycbzuzu… --description "Promote staging vN to prod"
+```
+
+This is the cleanest "push staging to production" path — no risk of including uncommitted local edits.
+
 ### Both
 1. Commit to git as well so the GAS code stays mirrored on GitHub
 2. `git push origin main`
+
+> ⚠️ **Keep git in sync with GAS HEAD.** It's tempting to `clasp push` for a quick test and skip the git commit. Don't — the repo silently drifts behind GAS, and `git diff` starts showing "additions" for code that's already live in production. After every `clasp push` that you intend to keep, also stage + commit the same files so `git log` reflects what's actually deployed.
 
 > ⚠️ Pushing to `main` updates production. The session sandbox blocks direct pushes to `main` unless explicitly authorized — ask the user "ok to push to main?" before running `git push origin main` or `clasp deploy`.
 
@@ -98,11 +133,14 @@ There are **two systems** that need publishing separately:
 | Player directory | Live | `Web.js` `?page=players` route has `ALLOWALL`; loads inside hub iframe |
 | Season Stats (Division stats) | Live | Hero corner dropdown + right-side schedule layout |
 | Player stats | Early dev | |
-| Scorekeeping | Done | |
-| Lineup submission | Mostly done | Auth via Google Sign-In + ID token (see Auth strategy below) |
-| Display scoreboard | Mostly done | |
+| Admin landing | Live | Single sign-in entry; hands access blob to Captain/Scorecard via `localStorage.cpbl_admin_email` |
+| Lineup submission (Captain) | Live | Email-only sign-in via `?page=verifyemail` fetch; auto-resumes from admin handoff or sessionStorage |
+| Scorekeeping (Scorecard) | Live | Any registered user can keep score; saves record actor on `Match_Games.score_entered_by_user_id` + `Audit_Log` |
+| Display scoreboard | Live | Auto-picks current week; 4K wide-rail with Other Matches + Division Stats |
+| Public Scoreboard | Live | Deep-linked from match-cell clicks on Home/Matches via `?page=scoreboard&matchId=…` |
 | Full scorecard | Not started | |
 | Feedback / Bug reports | Live | `?page=request` (form) + `?page=requestadmin` (admin manager) |
+| Rules & Handbook | Stub | Hub nav entry exists; native page not yet built |
 
 ---
 
@@ -110,28 +148,30 @@ There are **two systems** that need publishing separately:
 
 Single-page hub with collapsible sidebar nav. Admin section is passcode-gated (client-side only — Cloudflare Access is the planned production gate).
 
-**Nav structure (target):**
+**Current nav structure** (defined in [public/index.html](public/index.html), routes wired in [public/app.js](public/app.js)):
 ```
 LEAGUE (public)
   Home
-  Schedule & Scores
-  Standings
+  Matches
   Season Stats
   Players
-  Live Scoreboard
-  Game Reports
 
-ABOUT (public, static)
-  Rules           ← from PDF
-  Registration    ← Google Form embed
+ABOUT
+  Rules           ← stub page, content not yet authored
+  Feedback        ← iframes ?page=request
 
 LEAGUE OPS (admin-gated)
-  Captain / Lineups
+  Admin           ← signs in once, hands off to Captain/Scorekeeping
   Match Display
-  Scorekeeping
 ```
 
-Schedule, Scores, Standings, Rules, and Registration are **planned but not yet built** as of last session.
+Hidden routes (still callable for deep-links and bookmarks, but not in the sidebar):
+- `captain` (`?page=captain`) — opens in new tab
+- `scorecard` (`?page=scorecard`) — opens in new tab
+- `scoreboard` (`?page=scoreboard&matchId=…`) — used by match-cell clicks on Home/Matches
+- `gamereport` (`?page=gamereport&matchId=…`)
+- `player` (`?page=player&playerName=…`)
+- `registration` — placeholder, not implemented
 
 ---
 
@@ -152,60 +192,95 @@ Header uses navy → blue → green gradient with gold accent. Fonts: **DM Sans*
 
 ## Sheet structure
 
-> _Fill in tab names and purposes here as we re-confirm them. Many tabs, used in many ways — raw data, config, computed views, lookup tables._
+Source of truth: `getSchemaMap_()` in [Schema.js](Schema.js). `ensureSchema_()` is idempotent — running it creates missing tabs and rewrites mismatched header rows.
 
-Tabs include (incomplete):
-- Matches
-- (others — TBD)
+**Config / lookup tabs:**
+- `Divisions` — `division_id, division_name, division_order, match_template_id, active`
+- `Clubs` — `club_id, club_name, short_name, logo_url, active`
+- `Teams` — `team_id, team_name, club_id, division_id, active`
+- `Users` — `user_id, full_name, email, active, pin, role_type, team_id, club_id` (one row per role assignment; see Auth strategy)
+- `Players` — `player_id, first_name, last_name, full_name, gender, dupr, dupr_id, email, phone, active, notes`
+- `Team_Rosters` — `roster_id, season_id, team_id, player_id, roster_status, available, active, start_date, end_date, notes`
+- `Seasons` — `season_id, season_name, start_date, end_date, status`
+- `Match_Format_Templates` — `template_row_id, match_template_id, round_number, round_type, game_number_in_round, game_type`
+- `Lineup_Validation_Rules` — `rule_id, division_id, game_type, rule_name, rule_value, active`
+
+**Match data tabs:**
+- `Matches` — schedule + result rollups (`status, away_lineup_due_at, …, home_rounds_won, away_rounds_won, winning_team_id, …`)
+- `Match_Rounds` — per-round summary (`round_id, match_id, round_number, round_type, …, status`)
+- `Match_Games` — per-game scores; carries the `score_entered_by_user_id`/`score_entered_at` actor columns
+- `Match_Submissions` — captain lineup submissions (`submission_status, is_visible_to_opponent, officially_submitted, …`)
+- `Match_Player_Availability` — captain availability reports
+
+**Computed / read-only views (regenerated by `refreshAllSummaries_`):**
+- `Standings_Summary` — division standings rollup
+- `Player_Stats_Summary` — per-player season stats
+- `Pairing_Stats_Summary` — partner-pairing aggregates
+
+**Operational tabs:**
+- `Audit_Log` — append-only audit trail (`audit_id, entity_type, entity_id, action_type, old_value_json, new_value_json, changed_by_user_id, changed_at, reason`)
+- `Requests` — bug/enhancement form submissions (see Feedback module)
+- `README` — free-form notes (`section, notes`)
 
 ---
 
 ## Known issues / current priorities
 
 1. **`www` subdomain** — `www.ctpbleague.com` returns 522 because the existing `CNAME www → ctpbleague.com` doesn't route through the Worker the way Custom Domains do. Add `www.ctpbleague.com` as a Custom Domain on the `morning-wind-da2a` Worker to fix.
-2. **Lineup submission auth** — Google Sign-In flow exists; verify it's wired end-to-end on Captain.html.
-3. **Hub buildout** — Rules (from PDF) still to build. Standings, Live Scoreboard, Registration removed from nav (routes still exist for hash-based access).
-4. **Iframe blockers** — when adding new GAS routes in `Web.js`, remember to set `.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)` on the `doGet` route, otherwise the page pops out of the hub iframe.
-5. **Stale GAS deployments** — there are 4 deployments listed by `clasp deployments`. Only the one at ID `AKfycbzuzu...` is bound to the hub. The others (`@53`, `@55`, `@HEAD`) are leftovers — safe to delete via GAS console if you want a single clean target.
+2. **Rules page content** — nav entry exists but the page is a stub. Content lives in `CT_Pickleball_League_Handbook.pdf` and needs to be ported (or embedded) into a hub page.
+3. **Iframe blockers** — when adding new GAS routes in `Web.js`, remember to set `.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)` on the `doGet` route, otherwise the page pops out of the hub iframe. For pages that need to call back into GAS via `fetch`, also set `t.gasExecUrl = ScriptApp.getService().getUrl()` on the template.
+4. **GAS HEAD vs git drift** — clasp pushes don't auto-commit. After working on GAS-side files, always `git add` + `git commit` so the repo stays mirrored. If you ever see `git diff` showing large "additions" of code that's already running in production, that's the smell.
+5. **Deployments** — 3 deployments listed by `clasp deployments`: prod (`AKfycbzuzu…`), staging (`AKfycbzjVryG…`), and the auto-managed test/dev (`AKfycbwvAFHi…@HEAD`). Don't add more — the dev/staging/prod split is enough.
 
 ---
 
 ## Auth strategy
 
-**Approach: Google Identity Services (GIS) on the client + token verification on the server.**
+**Approach: email-only sign-in via fetch + single-sheet authorization in the `Users` tab.**
 
 The league has no sensitive data — auth is just administrative control + tracking who edited what. The flow:
 
 1. Single GAS deployment, "Execute as: Me / Anyone, even anonymous". One URL, no deployment-level sign-in.
-2. Captain.html (and Scorecard.html, when added) embed Google's GIS button. The captain clicks it → Google signs them in → returns a signed JWT (the "ID token") to the page.
-3. The page stores the token in `window.cpblIdToken` and passes it as the first argument of every `google.script.run.x(...)` write call.
-4. Backend handlers call `requireCaptainAccess_(idToken, teamId)` from [Auth.js](Auth.js):
-   - `verifyGoogleIdToken_()` hits `https://oauth2.googleapis.com/tokeninfo?id_token=...` to validate the signature, issuer, audience (our OAuth client ID), and expiry. Throws if any check fails.
-   - `getCaptainAccessForEmail_()` looks up the verified email in `Users` + `User_Access`, expands director→teams, returns the allowed team list.
-   - Throws if the user isn't authorized for the team.
-5. Every successful write is appended to `Audit_Log` via `appendAuditLog_({ access, entityType, entityId, actionType, newValueJson })`.
+2. **Admin landing ([Admin.html](Admin.html))** is the canonical entry point. The user lands on `?page=admin`, types their email, the page POSTs to `?page=verifyemail&email=…` via plain `fetch`. The endpoint runs `verifyPortalEmail()` → `resolveAccessByEmail_()` and returns the full access blob `{ok, userId, name, allowedTeamIds, isCommissioner, isDirector, clubId, …}`.
+3. **Admin stores the verified blob in `localStorage.cpbl_admin_email`** as JSON, then offers buttons that open `?page=captain` or `?page=scorecard` in new tabs.
+4. **Captain / Scorecard auto-resume from the handoff.** On load they read `localStorage.cpbl_admin_email`; if the blob has `allowedTeamIds`/`isCommissioner` they trust it and skip re-verifying. Otherwise they fall through to the sessionStorage or `?userEmail=` paths and call `?page=verifyemail` themselves.
+5. **Why fetch instead of `google.script.run`?** Inside a hub iframe, `google.script.run` can deadlock Chrome (the sandbox iframe waits for a response that never arrives). Direct `fetch` to the same `/exec` URL bypasses this — same auth, same backend, no deadlock.
+6. Every successful write is appended to `Audit_Log` via `appendAuditLog_({ access, entityType, entityId, actionType, newValueJson, reason })`. Score saves and resets in [ScorecardGS.js](ScorecardGS.js) thread `actor = {userId, email, name}` through to the audit row.
 
-**OAuth Client ID** (already created): `250461385382-o1jcqvvkom51s3l8qim8te5frr3ju52h.apps.googleusercontent.com`. Stored as `GOOGLE_OAUTH_CLIENT_ID` in [Config.js](Config.js). To regenerate, see Google Cloud Console → APIs & Services → Credentials.
+### Authorization data — the `Users` sheet (single-sheet)
 
-**Authorized JavaScript origins** for the OAuth client (must include the page that hosts the GIS button):
-- `https://script.google.com`
-- `https://docs.google.com`
-- `https://*.googleusercontent.com` (the Apps Script iframe sandbox)
-- `https://live.ctpbleague.com`, `https://ctpbleague.com`
-- `https://*.bkochanski.workers.dev` (Cloudflare preview URLs)
+As of the May 2026 merge, `User_Access` is gone. All authorization lives in **one row per (user, role) pair** in the `Users` sheet:
 
-**Authorization data lives in the sheet:**
-- `Users` tab: `user_id`, `email`, `name`, `active` — one row per person who can sign in.
-- `User_Access` tab: `user_id`, `role_type` (`captain` | `director` | `commissioner`), `team_id` (captain), `club_id` (director), `active`.
-- Director rows expand to all teams in the named club.
+| Column | Notes |
+|---|---|
+| `user_id` | Stable ID. Same user can have multiple rows (one per role/team/club assignment). |
+| `full_name` | Display name |
+| `email` | Lowercase, matches their Google account |
+| `active` | `TRUE` / blank-treated-as-truthy |
+| `pin` | Legacy — no longer used by current sign-in |
+| `role_type` | `commissioner` \| `director` \| `captain` |
+| `team_id` | For `captain` rows. Blank for `director`/`commissioner`. |
+| `club_id` | For `director` rows; expands to all teams in that club. Optional for `captain` (club-scoped fallback). |
 
-**To add a captain:**
-1. Add a row to `Users` (`active=TRUE`, email matches their Google account).
-2. Add a row to `User_Access` with `role_type=captain` + their `team_id`.
+[Auth.js](Auth.js) `resolveAccessByEmail_()` filters all active rows for the email and folds them into a single access object. Director rows expand to club teams; commissioner rows grant unrestricted team access.
 
-**Audit log:** writes are recorded in the `Audit_Log` sheet (schema in [Schema.js](Schema.js): `audit_id`, `entity_type`, `entity_id`, `action_type`, `old_value_json`, `new_value_json`, `changed_by_user_id`, `changed_at`, `reason`). If the sheet doesn't exist as a tab yet, create it with that header row — `appendAuditLog_()` silently skips if the sheet is missing.
+**To add a user:**
+- **Captain:** one row with `role_type=captain` + `team_id=<their team>`.
+- **Director:** one row with `role_type=director` + `club_id=<their club>` — they get every team in that club.
+- **Commissioner:** one row with `role_type=commissioner` (no team/club needed).
+- A user with multiple roles/teams gets multiple rows; access is the union.
 
-**Hub:** the client-side passcode gate (`cpbl2026`) in [public/app.js](public/app.js) still hides the admin nav as a courtesy. Real enforcement is server-side now via the GIS token check. Captain + Scorecard are iframed (no need for new-tab — GIS works inside iframes).
+### OAuth (legacy — kept for any future GIS use)
+
+Client ID still in [Config.js](Config.js) as `GOOGLE_OAUTH_CLIENT_ID = '250461385382-o1jcqvvkom51s3l8qim8te5frr3ju52h.apps.googleusercontent.com'`. Authorized origins include `script.google.com`, `docs.google.com`, `*.googleusercontent.com`, `ctpbleague.com`, `live.ctpbleague.com`, `*.bkochanski.workers.dev`. Not currently exercised by the email-only flow, but available if we re-introduce ID-token verification later.
+
+### Audit log
+
+Writes go to the `Audit_Log` sheet (schema in [Schema.js](Schema.js): `audit_id`, `entity_type`, `entity_id`, `action_type`, `old_value_json`, `new_value_json`, `changed_by_user_id`, `changed_at`, `reason`). If the sheet doesn't exist, `appendAuditLog_()` silently skips — saves never fail because of audit-log issues.
+
+### Hub gate
+
+The client-side passcode in [public/app.js](public/app.js) still hides the admin nav as a courtesy. Real enforcement is server-side via the email→Users-sheet check on every write. Production should eventually move the courtesy gate to Cloudflare Access.
 
 ---
 

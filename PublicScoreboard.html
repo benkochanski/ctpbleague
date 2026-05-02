@@ -1110,21 +1110,24 @@
     return m ? Number(m[1]) : 0;
   }
   // Earliest week with a match date >= today; otherwise the latest week.
+  // Compare YYYY-MM-DD strings to avoid UTC/local rollover bugs.
   function pickCurrentWeek(matches) {
     if (!matches || !matches.length) return 0;
-    const today = new Date(); today.setHours(0,0,0,0);
+    const t = new Date();
+    const todayStr = t.getFullYear() + '-' +
+      String(t.getMonth()+1).padStart(2,'0') + '-' +
+      String(t.getDate()).padStart(2,'0');
     const byWeek = {};
     for (const m of matches) {
       const w = extractWeekNum(m);
       if (!w) continue;
-      const d = new Date(m.match_date);
-      if (isNaN(d.getTime())) continue;
-      d.setHours(0,0,0,0);
-      if (!byWeek[w] || d < byWeek[w]) byWeek[w] = d;
+      const dStr = String(m.match_date || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dStr)) continue;
+      if (!byWeek[w] || dStr < byWeek[w]) byWeek[w] = dStr;
     }
     const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
     if (!weeks.length) return 0;
-    for (const w of weeks) { if (byWeek[w] >= today) return w; }
+    for (const w of weeks) { if (byWeek[w] >= todayStr) return w; }
     return weeks[weeks.length - 1];
   }
 
