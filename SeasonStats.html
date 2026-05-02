@@ -699,26 +699,32 @@
     return `<div class="ms-hd">Schedule</div>${rows}`;
   }
 
-  // Open game report in a new tab when a completed schedule row is clicked.
-  // Use the absolute GAS deployment URL since this page may be iframed and
-  // relative URLs would resolve against script.googleusercontent.com.
+  // Clicking a match row should open the live scoreboard for that match.
+  // When iframed in the hub, postMessage so the hub navigates to its
+  // scoreboard route. When standalone, fall back to window.open.
   const GAS_EXEC_URL_ = 'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
-  function openGameReport_(matchId) {
+  function openMatchScoreboard_(matchId) {
     if (!matchId) return;
-    const url = `${GAS_EXEC_URL_}?page=gamereport&matchId=${encodeURIComponent(matchId)}`;
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({ type: 'cpbl-nav', route: 'scoreboard', param: String(matchId) }, '*');
+        return;
+      } catch (e) { /* fall through */ }
+    }
+    const url = `${GAS_EXEC_URL_}?page=scoreboard&matchId=${encodeURIComponent(matchId)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   }
   document.addEventListener('click', e => {
     const row = e.target.closest('.ms-row.is-clickable[data-match-id]');
     if (!row) return;
-    openGameReport_(row.dataset.matchId);
+    openMatchScoreboard_(row.dataset.matchId);
   });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const row = e.target.closest('.ms-row.is-clickable[data-match-id]');
     if (!row) return;
     e.preventDefault();
-    openGameReport_(row.dataset.matchId);
+    openMatchScoreboard_(row.dataset.matchId);
   });
 
   // Hide the top series/schedule section so the player standings fills the page.

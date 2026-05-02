@@ -6,7 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connecticut Pickleball League — Match Display</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <script>window.INITIAL_MATCH_ID = '<?= (typeof initialMatchId !== "undefined") ? initialMatchId : "" ?>';</script>
+  <script>
+    window.INITIAL_MATCH_ID = '<?= (typeof initialMatchId !== "undefined") ? initialMatchId : "" ?>';
+    window.__GAS_EXEC_URL__ = <?!= JSON.stringify((typeof gasExecUrl !== 'undefined') ? gasExecUrl : '') ?>;
+  </script>
 
   <style>
     :root {
@@ -50,9 +53,6 @@
 
     /* ── Sticky top wrapper (header + meta + scoreboard) ── */
     #top-static {
-      position: sticky;
-      top: 0;
-      z-index: 50;
       background: var(--bg);
       box-shadow: 0 4px 20px rgba(8,30,67,.12);
     }
@@ -133,6 +133,29 @@
       padding: 12px 20px;
       align-items: start;
     }
+    /* 4K: keep the main column AND existing sidebar at their normal-res
+       widths — only the new rail is added to the right. */
+    .wide-rail { display: none; }
+    @media (min-width: 1800px) {
+      .page {
+        grid-template-columns: 880px 560px;
+        justify-content: start;
+      }
+      /* Anchor wide-rail right next to the sb-stats column (match stats),
+         aligned with the top of the scoreboard-strip. Its height doesn't
+         affect layout flow. The strip's padding is 8px top / 20px sides. */
+      .wide-rail {
+        display: grid;
+        grid-template-columns: 340px 360px;
+        gap: 10px;
+        align-items: start;
+        position: absolute;
+        top: 8px;
+        /* 20px strip padding + 880px main + 14px gap + 560px stats + 14px gap */
+        left: calc(20px + 880px + 14px + 560px + 14px);
+        width: 720px;
+      }
+    }
 
     .main-col { display: flex; flex-direction: column; gap: 10px; }
 
@@ -176,6 +199,16 @@
       padding: 8px 20px 10px;
       background: var(--bg);
       align-items: start;
+    }
+    /* 4K: lock the top strip to the same widths as the page grid below.
+       The third column is implicit — wide-rail is positioned absolutely so
+       its height doesn't push the strip row taller and shove .page down. */
+    @media (min-width: 1800px) {
+      .scoreboard-strip {
+        grid-template-columns: 880px 560px;
+        justify-content: start;
+        position: relative;
+      }
     }
     .sb-stats .side-panel { overflow: hidden; }
     .sb-stats #teamStandingsBody { overflow: visible; }
@@ -260,7 +293,14 @@
       padding: 6px 8px;
       background: var(--soft); border-bottom: 1px solid var(--border-s);
     }
-    .game-num-lbl { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); }
+    .game-num-lbl {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--navy);
+      text-transform: uppercase;
+    }
 
     .type-pill {
       font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
@@ -317,10 +357,6 @@
     /* ── Sidebar ── */
     .sidebar {
       display: flex; flex-direction: column; gap: 10px;
-      position: sticky;
-      top: var(--top-offset);
-      max-height: calc(100vh - var(--top-offset) - 14px);
-      overflow-y: auto;
     }
     .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
     .side-panel-head { padding: 9px 14px; border-bottom: 1px solid var(--border-s); background: linear-gradient(180deg, #fdfefe 0%, var(--soft) 100%); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -407,6 +443,34 @@
 
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
+    /* ── Other-match rounds scoreboard (rail) ── */
+    .om-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+    .om-card { border: 1px solid var(--border-s); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .12s, box-shadow .12s; background: #fff; }
+    .om-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(8,30,67,.10); }
+    .om-meta { padding: 5px 10px; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--soft); border-bottom: 1px solid var(--border-s); display: flex; justify-content: space-between; gap: 6px; }
+    .om-meta .om-status.live { color: var(--ok); }
+    .om-card .sb-table { width: 100%; }
+    .om-card .sb-table th, .om-card .sb-table td { padding: 2px 4px; font-size: 11px; line-height: 1.1; }
+    .om-card .sb-header-row th { font-size: 9px; padding: 3px 4px; }
+    .om-card .sb-team-inner { padding: 4px 6px; }
+    .om-card .sb-logo { width: 28px; height: 28px; border-radius: 7px; background: #0a1628; padding: 2px; }
+    .om-card .sb-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .om-card .sb-score-cell { font-size: 12px; }
+    .om-card .sb-total-cell { font-size: 14px; min-width: 30px; }
+    .om-card .sb-team-cell { width: 1%; white-space: nowrap; }
+
+    /* ── Division season standings table ── */
+    .ds-wrap { padding: 10px 12px; }
+    .ds-table { width: 100%; border-collapse: collapse; }
+    .ds-table th, .ds-table td { padding: 5px 6px; text-align: center; font-size: 11px; border-bottom: 1px solid var(--border-s); }
+    .ds-table th { color: var(--muted); font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; background: var(--soft); }
+    .ds-table th:first-child, .ds-table td:first-child { text-align: left; }
+    .ds-table tr:last-child td { border-bottom: none; }
+    .ds-team-cell { display: flex; align-items: center; gap: 6px; }
+    .ds-logo { width: 22px; height: 22px; border-radius: 5px; background: #0a1628; overflow: hidden; flex-shrink: 0; }
+    .ds-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .ds-name { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     /* Responsive */
     @media (max-width: 1100px) { /* game-grid-2 already single column */ }
     @media (max-width: 1000px) { .page { grid-template-columns: 1fr; } }
@@ -450,6 +514,28 @@
         </div>
       </div>
     </div>
+
+    <!-- 4K-only rail. Sits at the top of the right side, alongside the main scoreboard. -->
+    <aside class="wide-rail" id="wideRail" aria-label="Season stats and live scores">
+      <div class="side-panel">
+        <div class="side-panel-head">
+          <h3>Season Stats</h3>
+          <span class="panel-badge">Season</span>
+        </div>
+        <div class="side-body" id="divisionStatsBody">
+          <div class="empty-state"><div class="ico">📊</div>Loading…</div>
+        </div>
+      </div>
+      <div class="side-panel">
+        <div class="side-panel-head">
+          <h3>Live Scores</h3>
+          <span class="panel-badge">This Week</span>
+        </div>
+        <div class="side-body" id="otherMatchesBody">
+          <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 
@@ -552,13 +638,22 @@
         try {
           const resp    = JSON.parse(raw);
           const all  = Array.isArray(resp.rows) ? resp.rows : [];
-          const w2   = all.filter(m => extractWeekNum(m) === 2);
-          allMatches = w2.length ? w2 : all;
+          // Pinned to Week 3 (per request); fall back to all if none found.
+          const wkMs = all.filter(m => extractWeekNum(m) === 3);
+          allMatches = wkMs.length ? wkMs : all;
           if (!all.length) {
             populateDivisions([]);
             setMain(emptyHtml('🏓', 'No open matches available.')); return;
           }
           populateDivisions(allMatches);
+
+          // Default to Division 1 when present.
+          const div1Match = allMatches.find(m => extractDivNum(m) === 1);
+          if (div1Match) {
+            currentDivisionKey = divKey(div1Match);
+            const sel = document.getElementById('divisionSelect');
+            if (sel) sel.value = currentDivisionKey;
+          }
 
           // Honour INITIAL_MATCH_ID if provided
           const pinned = window.INITIAL_MATCH_ID;
@@ -640,7 +735,16 @@
   function renderDisplay(data) {
     if (!data || !data.match) { setMain(emptyHtml('📋', 'No scorecard data.')); return; }
     const match  = data.match;
-    const rounds = data.rounds || [];
+    const rawRounds = data.rounds || [];
+    // Use deduped only if there are duplicate round_numbers in the data;
+    // otherwise pass-through to avoid any chance of dropping games.
+    const numCount = {};
+    for (const r of rawRounds) {
+      const k = Number(r.round_number || 0);
+      numCount[k] = (numCount[k] || 0) + 1;
+    }
+    const hasDupes = Object.values(numCount).some(c => c > 1);
+    const rounds = hasDupes ? dedupeRounds_(rawRounds) : rawRounds;
 
     updateMetaBar(match);
     renderScoreboard(match, rounds);
@@ -652,6 +756,234 @@
     setMain(roundHtml ? `<div class="rounds-stack">${roundHtml}</div>` : emptyHtml('📋', 'No active round found.'));
     renderTeamStats();
     renderPlayerStats();
+    // 4K-only rail (hidden under 1800px). Render so the data is ready when
+    // the panel becomes visible — otherwise no-op for the user at normal res.
+    renderOtherMatches(match);
+    renderDivisionStats(match);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Other Matches sidebar — full Games Won bar per other current-week match.
+  // ──────────────────────────────────────────────────────────────────────────
+  function renderOtherMatches(currentMatch) {
+    const el = document.getElementById('otherMatchesBody');
+    if (!el) return;
+    const curWeek = extractWeekNum(currentMatch);
+    const others = (allMatches || []).filter(m =>
+      String(m.match_id) !== String(currentMatch.match_id) &&
+      (!curWeek || extractWeekNum(m) === curWeek)
+    );
+    if (!others.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No other matches this week.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="om-list" id="om-list">' +
+      others.map(m => `
+        <div class="om-card" data-match-id="${esc(String(m.match_id))}" onclick="window.goToOtherMatch && goToOtherMatch('${esc(String(m.match_id))}')">
+          <div class="om-meta">
+            <span>${esc(extractDivNum(m) ? 'Div ' + extractDivNum(m) : '')}</span>
+            <span class="om-status" id="om-status-${esc(m.match_id)}">Loading…</span>
+          </div>
+          <div id="om-body-${esc(m.match_id)}">
+            <div class="empty-state" style="padding:14px"><div class="ico">⌛</div></div>
+          </div>
+        </div>
+      `).join('') + '</div>';
+
+    // Fetch each other match's scorecard data in parallel and render its bar.
+    if (!window.__GAS_EXEC_URL__) return;
+    others.forEach(m => fetchAndRenderOtherMatch_(m));
+  }
+
+  function fetchAndRenderOtherMatch_(m) {
+    const id = String(m.match_id);
+    const url = window.__GAS_EXEC_URL__ + '?page=scorecarddata&matchId=' + encodeURIComponent(id);
+    fetch(url).then(r => r.text()).then(raw => {
+      let data;
+      try { data = JSON.parse(raw); } catch (e) { return; }
+      const rounds = (data && data.rounds) || [];
+      const match  = (data && data.match)  || m;
+      const body = document.getElementById('om-body-' + id);
+      const status = document.getElementById('om-status-' + id);
+      if (body) body.innerHTML = buildRoundsScoreboardTable_(match, rounds);
+      if (status) {
+        const allGames = rounds.flatMap(r => r.games || []);
+        const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
+        const isLive   = played.length > 0 && played.length < allGames.length;
+        const isFinal  = allGames.length > 0 && played.length === allGames.length;
+        status.textContent = isFinal ? 'Final' : isLive ? 'Live' : 'Pending';
+        status.classList.toggle('live', isLive);
+      }
+    }).catch(() => { /* leave loading state */ });
+  }
+
+  // Round-by-round scoreboard (R1..Rn + Total) — same shape as the main scoreboard.
+  function buildRoundsScoreboardTable_(match, rounds) {
+    rounds = dedupeRounds_(rounds);
+    const homeTotal = rounds.reduce((s, r) => s + (r.home_games_won || 0), 0);
+    const awayTotal = rounds.reduce((s, r) => s + (r.away_games_won || 0), 0);
+    const colHeaders = rounds.map((r, i) => `<th>R${r.round_number || (i + 1)}</th>`).join('');
+    const homeScores = rounds.map(r => {
+      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
+      const active = hw || aw || isRoundDone(r);
+      const cls = isRoundDone(r) ? (hw > aw ? 'sb-win' : 'sb-loss') : '';
+      return `<td class="sb-score-cell ${cls}">${active ? hw : '—'}</td>`;
+    }).join('');
+    const awayScores = rounds.map(r => {
+      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
+      const active = hw || aw || isRoundDone(r);
+      const cls = isRoundDone(r) ? (aw > hw ? 'sb-win' : 'sb-loss') : '';
+      return `<td class="sb-score-cell ${cls}">${active ? aw : '—'}</td>`;
+    }).join('');
+    return `
+      <table class="sb-table om-sb-table">
+        <thead><tr class="sb-header-row">
+          <th style="padding:4px 8px;"></th>
+          ${colHeaders}<th>Total</th>
+        </tr></thead>
+        <tbody>
+          <tr class="sb-row">
+            <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(match.home_team_name, 'sm')}</div></div></td>
+            ${homeScores}
+            <td class="sb-total-cell ${homeTotal > awayTotal ? 'sb-leader' : 'sb-trail'}">${homeTotal}</td>
+          </tr>
+          <tr class="sb-row">
+            <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(match.away_team_name, 'sm')}</div></div></td>
+            ${awayScores}
+            <td class="sb-total-cell ${awayTotal > homeTotal ? 'sb-leader' : 'sb-trail'}">${awayTotal}</td>
+          </tr>
+        </tbody>
+      </table>`;
+  }
+
+  window.goToOtherMatch = function (id) {
+    if (!id) return;
+    const m = allMatches.find(x => String(x.match_id) === String(id));
+    if (m) { currentDivisionKey = String(m.division_id || ''); syncDivDropdown(); }
+    currentMatchId = String(id);
+    loadMatch(currentMatchId);
+  };
+
+  // Build the Games Won (by type) bar — same shape as the main scoreboard widget.
+  function buildGamesBarTable_(match, rounds) {
+    const allGames = (rounds || []).flatMap(r => r.games || []);
+    const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
+
+    const gtypes  = ['womens','mens','mixed','coed'];
+    const glabels = { womens:"W", mens:"M", mixed:'Mx', coed:'Co' };
+    const stats = { all: { hW:0, aW:0, hD:0, aD:0 } };
+    for (const gt of gtypes) stats[gt] = { hW:0, aW:0, hD:0, aD:0, found:false };
+
+    for (const g of played) {
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      const gt = typeClass(g.game_type);
+      stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0;
+      stats.all.hD += hs-as;     stats.all.aD += as-hs;
+      if (stats[gt]) {
+        stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0;
+        stats[gt].hD += hs-as;     stats[gt].aD += as-hs;
+        stats[gt].found = true;
+      }
+    }
+    const scheduledTypes = new Set();
+    for (const g of allGames) { const gt = typeClass(g.game_type); if (gt) scheduledTypes.add(gt); }
+    const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found || scheduledTypes.has(gt))];
+
+    const headHtml = activeCols.map(col => {
+      const lbl = col === 'all' ? 'All' : glabels[col];
+      return `<th class="gw-col-${col}">${esc(lbl)}</th>`;
+    }).join('');
+    const cell = (col, isHome) => {
+      const s = stats[col]; const w = isHome ? s.hW : s.aW; const ow = isHome ? s.aW : s.hW; const d = isHome ? s.hD : s.aD;
+      const cls = w > ow ? 'gw-win' : w < ow ? 'gw-loss' : '';
+      return `<td class="gw-cell ${cls}"><span class="gw-num">${w}</span>${d > 0 ? `<span class="gw-diff">+${d}</span>` : ''}</td>`;
+    };
+    const hName = match.home_team_name || 'Home';
+    const aName = match.away_team_name || 'Away';
+    return `
+      <table class="gw-table">
+        <thead>
+          <tr class="gw-head">
+            <th class="gw-label">&nbsp;</th>
+            ${headHtml}
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="gw-row">
+            <td class="gw-team-cell"><div class="gw-team-inner"><div class="gw-logo">${buildLogoHtml(hName, 'sm')}</div></div></td>
+            ${activeCols.map(c => cell(c, true)).join('')}
+          </tr>
+          <tr class="gw-row">
+            <td class="gw-team-cell"><div class="gw-team-inner"><div class="gw-logo">${buildLogoHtml(aName, 'sm')}</div></div></td>
+            ${activeCols.map(c => cell(c, false)).join('')}
+          </tr>
+        </tbody>
+      </table>`;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Division Stats sidebar — season standings for the division being shown.
+  // ──────────────────────────────────────────────────────────────────────────
+  let __publicSiteData = null;
+  function renderDivisionStats(currentMatch) {
+    const el = document.getElementById('divisionStatsBody');
+    if (!el) return;
+    const divNum = extractDivNum(currentMatch);
+    if (!divNum) { el.innerHTML = ''; return; }
+
+    const render = () => {
+      const data = __publicSiteData;
+      if (!data) return;
+      const teams = (data.teams || []).filter(t => {
+        const m = String(t.division_id || '').match(/(\d+)/);
+        return m && Number(m[1]) === divNum;
+      });
+      const teamIds = new Set(teams.map(t => t.team_id));
+      // publicdata payload exposes the rows under "standings" (not "team_standings").
+      const standingsRows = data.standings || data.team_standings || [];
+      const standings = standingsRows.filter(s => teamIds.has(s.team_id));
+      if (!standings.length) {
+        el.innerHTML = '<div class="empty-state"><div class="ico">📊</div>No season stats yet.</div>';
+        return;
+      }
+      const teamById = {}; teams.forEach(t => { teamById[t.team_id] = t; });
+      const sorted = standings.slice().sort((a,b) =>
+        (b.match_wins - a.match_wins) ||
+        ((b.games_won - b.games_lost) - (a.games_won - a.games_lost)) ||
+        (b.games_won - a.games_won)
+      );
+      const rows = sorted.map(s => {
+        const t = teamById[s.team_id] || { team_name: s.team_id };
+        const diff = (s.games_won || 0) - (s.games_lost || 0);
+        return `
+          <tr>
+            <td>
+              <div class="ds-team-cell">
+                <div class="ds-logo">${buildLogoHtml(t.team_name, 'sm')}</div>
+                <div class="ds-name">${esc(t.team_name)}</div>
+              </div>
+            </td>
+            <td>${s.match_wins || 0}</td>
+            <td>${s.match_losses || 0}</td>
+            <td>${(s.games_won || 0)}-${(s.games_lost || 0)}</td>
+            <td>${diff >= 0 ? '+' : ''}${diff}</td>
+          </tr>`;
+      }).join('');
+      el.innerHTML = `
+        <div class="ds-wrap">
+          <table class="ds-table">
+            <thead><tr><th>Division ${divNum}</th><th>W</th><th>L</th><th>Games</th><th>+/-</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    };
+
+    if (__publicSiteData) { render(); return; }
+    if (!window.__GAS_EXEC_URL__) return;
+    fetch(window.__GAS_EXEC_URL__ + '?page=publicdata')
+      .then(r => r.text())
+      .then(raw => { try { __publicSiteData = JSON.parse(raw); } catch(e) {} render(); })
+      .catch(() => { /* leave loading state */ });
   }
 
   // ── Game ordering (women's first, then men's, then others) ───────────────
@@ -701,6 +1033,7 @@
     const sbMain = document.querySelector('.sb-main');
     // Rescue select from inside card before wiping innerHTML (prevents destruction on re-render)
     if (sel && card && card.contains(sel) && sbMain) sbMain.insertBefore(sel, card);
+    rounds = dedupeRounds_(rounds);
     if (!card || !rounds.length) { if (card) card.innerHTML = ''; return; }
     const homeTotal = rounds.reduce((s, r) => s + (r.home_games_won || 0), 0);
     const awayTotal = rounds.reduce((s, r) => s + (r.away_games_won || 0), 0);
@@ -777,16 +1110,16 @@
           <div class="team-row ${hWin ? 'winner' : aWin ? 'loser' : ''}">
             <div class="club-icon">${buildLogoHtml(match.home_team_name, 'sm')}</div>
             <div class="player-names">
-              <div class="player-name">${esc(p1h || match.home_team_name)}</div>
-              ${p2h ? '<div class="player-name-2">' + esc(p2h) + '</div>' : ''}
+              <div class="player-name">${p1h ? esc(p1h) : 'TBD'}</div>
+              <div class="player-name-2">${p2h ? esc(p2h) : 'TBD'}</div>
             </div>
             <span class="score-disp ${hScoreCls}">${hasH ? hNum : '—'}</span>
           </div>
           <div class="team-row ${aWin ? 'winner' : hWin ? 'loser' : ''}">
             <div class="club-icon">${buildLogoHtml(match.away_team_name, 'sm')}</div>
             <div class="player-names">
-              <div class="player-name">${esc(p1a || match.away_team_name)}</div>
-              ${p2a ? '<div class="player-name-2">' + esc(p2a) + '</div>' : ''}
+              <div class="player-name">${p1a ? esc(p1a) : 'TBD'}</div>
+              <div class="player-name-2">${p2a ? esc(p2a) : 'TBD'}</div>
             </div>
             <span class="score-disp ${aScoreCls}">${hasA ? aNum : '—'}</span>
           </div>
@@ -808,9 +1141,6 @@
     if (!data || !data.match) { el.innerHTML = '<div class="empty-state"><div class="ico">📊</div>No match loaded.</div>'; return; }
     const match    = data.match;
     const allGames = (data.rounds || []).flatMap(r => r.games || []);
-    if (!allGames.some(g => hasScore(g.home_score) && hasScore(g.away_score))) {
-      el.innerHTML = '<div class="empty-state"><div class="ico">📊</div>No scores yet.</div>'; return;
-    }
 
     const gtypes  = ['womens','mens','mixed','coed'];
     const glabels = { womens:"Women's", mens:"Men's", mixed:'Mixed', coed:'Coed' };
@@ -818,16 +1148,18 @@
     // Accumulate per-type stats
     const stats = { all: { hW:0, aW:0, hD:0, aD:0 } };
     for (const gt of gtypes) stats[gt] = { hW:0, aW:0, hD:0, aD:0, found:false };
+    const scheduledTypes = new Set();
     for (const g of allGames) {
+      const gt = typeClass(g.game_type);
+      if (gt) scheduledTypes.add(gt);
       if (!hasScore(g.home_score) || !hasScore(g.away_score)) continue;
       const hs = Number(g.home_score), as = Number(g.away_score);
-      const gt = typeClass(g.game_type);
       stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0; stats.all.hD += hs-as; stats.all.aD += as-hs;
       if (stats[gt]) { stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0; stats[gt].hD += hs-as; stats[gt].aD += as-hs; stats[gt].found = true; }
     }
 
-    // Only show columns for types that appear in this match
-    const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found)];
+    // Show columns for types that have any game (played or scheduled).
+    const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found || scheduledTypes.has(gt))];
 
     const colHeads = activeCols.map(col => {
       const lbl = col === 'all' ? 'All' : glabels[col];
@@ -874,32 +1206,37 @@
     const data = currentScorecardData;
     if (!data || !data.match) { el.innerHTML = ''; return; }
     const allGames = (data.rounds || []).flatMap(r => r.games || []);
-    if (!allGames.some(g => hasScore(g.home_score) && hasScore(g.away_score))) {
-      el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No scores yet.</div>'; return;
-    }
 
     const match = data.match;
     const homeName = match.home_team_name || 'Home';
     const awayName = match.away_team_name || 'Away';
 
     const pm = {};
-    const track = (name, isHome, hs, as, gameType) => {
-      if (!name) return;
+    const ensure = (name, isHome, gameType) => {
+      if (!name) return null;
       if (!pm[name]) pm[name] = { name, wins:0, losses:0, diff:0, isWomens:false, isMens:false, teamName: isHome ? homeName : awayName };
-      const p = pm[name];
       const tc = typeClass(gameType);
-      if (tc === 'womens') p.isWomens = true;
-      if (tc === 'mens')   p.isMens   = true;
-      if (isHome) { p.wins += hs>as?1:0; p.losses += as>hs?1:0; p.diff += hs-as; }
-      else        { p.wins += as>hs?1:0; p.losses += hs>as?1:0; p.diff += as-hs; }
+      if (tc === 'womens') pm[name].isWomens = true;
+      if (tc === 'mens')   pm[name].isMens   = true;
+      return pm[name];
     };
     for (const g of allGames) {
+      // Always register lineup names (so the stats table shows zeros pre-match).
+      ensure(g.home_player_1_name, true,  g.game_type);
+      ensure(g.home_player_2_name, true,  g.game_type);
+      ensure(g.away_player_1_name, false, g.game_type);
+      ensure(g.away_player_2_name, false, g.game_type);
       if (!hasScore(g.home_score) || !hasScore(g.away_score)) continue;
       const hs = Number(g.home_score), as = Number(g.away_score);
-      track(g.home_player_1_name, true, hs, as, g.game_type);
-      track(g.home_player_2_name, true, hs, as, g.game_type);
-      track(g.away_player_1_name, false, hs, as, g.game_type);
-      track(g.away_player_2_name, false, hs, as, g.game_type);
+      const tally = (name, isHome) => {
+        const p = pm[name]; if (!p) return;
+        if (isHome) { p.wins += hs>as?1:0; p.losses += as>hs?1:0; p.diff += hs-as; }
+        else        { p.wins += as>hs?1:0; p.losses += hs>as?1:0; p.diff += as-hs; }
+      };
+      tally(g.home_player_1_name, true);
+      tally(g.home_player_2_name, true);
+      tally(g.away_player_1_name, false);
+      tally(g.away_player_2_name, false);
     }
 
     const players = Object.values(pm);
@@ -990,10 +1327,57 @@
   function extractWeekNum(match) {
     const m = String(match?.match_id||'').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
   }
+  // Earliest week with a match on/after today; falls back to latest week.
+  function pickCurrentWeek(matches) {
+    if (!matches || !matches.length) return 0;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const byWeek = {};
+    for (const m of matches) {
+      const w = extractWeekNum(m);
+      if (!w) continue;
+      const d = new Date(m.match_date);
+      if (isNaN(d.getTime())) continue;
+      d.setHours(0,0,0,0);
+      if (!byWeek[w] || d < byWeek[w]) byWeek[w] = d;
+    }
+    const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
+    if (!weeks.length) return 0;
+    for (const w of weeks) { if (byWeek[w] >= today) return w; }
+    return weeks[weeks.length - 1];
+  }
   function divLabel(match)  { const n = extractDivNum(match); return n ? 'Division ' + n : 'Division'; }
   function isRoundDone(round) {
     const gs = round.games||[];
     return gs.length > 0 && gs.every(g => hasScore(g.home_score) && hasScore(g.away_score));
+  }
+  // Defensive: the server can return multiple round rows for the same
+  // round_number (e.g., split by game type). Merge by round_number so the
+  // result has one entry per round with all of that round's games.
+  function dedupeRounds_(rounds) {
+    if (!Array.isArray(rounds)) return [];
+    const byNum = new Map();
+    for (const r of rounds) {
+      const num = Number(r.round_number || 0);
+      const key = num || String(r.round_id || '').trim();
+      if (!key) continue;
+      const prev = byNum.get(key);
+      if (!prev) { byNum.set(key, { ...r, games: [...(r.games || [])] }); continue; }
+      // Merge games (dedupe by game_id), pick max of games_won totals,
+      // and keep the most "advanced" status.
+      const seenGameIds = new Set(prev.games.map(g => String(g.game_id)));
+      for (const g of (r.games || [])) {
+        const gid = String(g.game_id);
+        if (!seenGameIds.has(gid)) { prev.games.push(g); seenGameIds.add(gid); }
+      }
+      prev.home_games_won = Math.max(prev.home_games_won || 0, r.home_games_won || 0);
+      prev.away_games_won = Math.max(prev.away_games_won || 0, r.away_games_won || 0);
+      if ((prev.status || '') !== 'completed' && (r.status || '') === 'completed') prev.status = 'completed';
+    }
+    // Sort games within each merged round by game_number_in_round.
+    for (const r of byNum.values()) {
+      r.games.sort((a, b) => Number(a.game_number_in_round || 0) - Number(b.game_number_in_round || 0));
+    }
+    return Array.from(byNum.values()).sort((a,b) => Number(a.round_number||0) - Number(b.round_number||0));
   }
   function prettyType(type) {
     const t = String(type||'').trim().toLowerCase();

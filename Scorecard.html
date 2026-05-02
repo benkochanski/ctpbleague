@@ -49,13 +49,7 @@
     }
 
     /* ── App Header (matches lineup portal) ───────────────────────────────── */
-    .app-header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
-      box-shadow: 0 10px 28px rgba(10,35,71,.22);
-    }
+    .app-header { display: none; }
 
     .league-header {
       display: grid;
@@ -117,11 +111,30 @@
       position: sticky;
       top: var(--header-h);
       z-index: 45;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
     }
     .match-meta-bar {
       font-size: 13px; font-weight: 700; color: var(--text);
       letter-spacing: .05em; text-transform: uppercase;
+      flex: 1; min-width: 0;
     }
+    .meta-recorder {
+      font-size: 11px; font-weight: 700; letter-spacing: .04em;
+      color: var(--muted); text-transform: uppercase;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .meta-recorder strong { color: var(--ok); font-weight: 800; }
+    .meta-selector {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .meta-selector .cc-select { width: auto; min-width: 130px; padding: 4px 24px 4px 8px; font-size: 11px; }
+    .meta-selector .meta-refresh {
+      height: 28px; padding: 0 10px; border-radius: 7px;
+      background: var(--navy); color: #fff; border: none;
+      font-size: 10px; font-weight: 700; letter-spacing: .04em; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .meta-selector .meta-refresh:hover { opacity: .85; }
 
     .btn {
       height: 34px; padding: 0 14px; border-radius: 8px;
@@ -157,26 +170,29 @@
       border-radius: var(--r-lg);
       box-shadow: var(--sh);
       overflow: hidden;
+      width: fit-content;
+      max-width: 100%;
     }
 
     .sb-table {
-      width: 100%;
+      width: auto;
       border-collapse: collapse;
     }
     .sb-table th, .sb-table td {
-      padding: 4px 8px;
+      padding: 1px 4px;
       text-align: center;
       border-right: 1px solid var(--border-s);
+      line-height: 1.1;
     }
     .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
 
     .sb-header-row th {
       font-size: 10px; font-weight: 800; color: var(--muted);
-      letter-spacing: .08em; text-transform: uppercase;
+      letter-spacing: .06em; text-transform: uppercase;
       background: var(--soft); border-bottom: 1px solid var(--border-s);
-      padding: 3px 8px;
+      padding: 2px 4px;
     }
-    .sb-header-row th:first-child { text-align: left; padding-left: 10px; }
+    .sb-header-row th:first-child { text-align: left; padding-left: 8px; }
 
     .sb-row td { border-top: 1px solid var(--border-s); }
     .sb-row:first-of-type td { border-top: none; }
@@ -186,28 +202,30 @@
       padding: 0 !important;
     }
     .sb-team-inner {
-      display: flex; align-items: center; justify-content: center;
-      padding: 3px 8px;
+      display: flex; align-items: center; justify-content: flex-start;
+      padding: 6px 7px;
     }
     .sb-logo {
-      width: 44px; height: 44px; border-radius: 10px;
-      background: transparent; border: none;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #0a1628; border: none;
       display: flex; align-items: center; justify-content: center;
       overflow: hidden; flex-shrink: 0;
     }
-    .sb-logo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
+    .sb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
     .sb-score-cell {
       font-family: 'DM Mono', monospace;
       font-size: 13px; font-weight: 700; color: var(--text);
+      width: 46px; min-width: 46px;
     }
     .sb-score-cell.sb-win  { color: var(--ok); font-weight: 800; }
     .sb-score-cell.sb-loss { color: var(--muted); opacity: .65; }
 
     .sb-total-cell {
       font-family: 'DM Mono', monospace;
-      font-size: 18px; font-weight: 900; min-width: 48px;
+      font-size: 15px; font-weight: 900; min-width: 32px;
     }
+    .sb-team-cell { width: 1%; white-space: nowrap; }
     .sb-total-cell.sb-leader { background: var(--navy); color: var(--gold); }
     .sb-total-cell.sb-trail  { color: var(--muted); }
 
@@ -316,8 +334,8 @@
     .player-names { min-width: 0; display: flex; flex-direction: column; }
     .player-name   { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
     .player-name-2 { font-size: 13px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
-    .team-row.winner .player-name   { color: var(--ok); }
-    .team-row.winner .player-name-2 { color: #2c9e60; }
+    .team-row.winner .player-name,
+    .team-row.winner .player-name-2 { color: var(--ok); }
 
     .score-in {
       width: 38px; text-align: center;
@@ -477,10 +495,41 @@
       .game-grid-4 { grid-template-columns: 1fr; }
       .gcard { border-right: none !important; border-bottom: 1px solid var(--border-s); }
     }
+
+    /* ── Sign-in overlay (admin gate) ─────────────────────────────────────── */
+    #score-auth-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(8,31,67,.82); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #score-auth-overlay.hidden { display: none; }
+    #score-auth-box {
+      background: #fff; border-radius: 14px; padding: 36px 32px 28px;
+      width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,.35); text-align: center;
+    }
+    #score-auth-box h2 { margin: 0 0 6px; font-size: 20px; color: #081f43; font-family: 'Bebas Neue', sans-serif; letter-spacing: 1.2px; }
+    #score-auth-box p  { margin: 0 0 16px; font-size: 13px; color: #555; }
+    .sa-input {
+      width: 100%; box-sizing: border-box; font-size: 15px; text-align: left;
+      border: 2px solid #ccd; border-radius: 8px; padding: 10px 12px;
+      outline: none; transition: border-color .15s;
+    }
+    .sa-input:focus { border-color: #123a7c; }
+    .sa-btn {
+      margin-top: 14px; width: 100%; padding: 11px;
+      background: #123a7c; color: #fff; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    .sa-btn:hover { background: #0b7e39; }
+    .sa-btn:disabled { background: #aab; cursor: default; }
+    .sa-error { margin-top: 10px; font-size: 13px; color: #c0392b; min-height: 18px; }
   </style>
 </head>
 <body>
-<script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
+<script>
+  if (window.self !== window.top) document.documentElement.classList.add('embedded');
+  window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl || '') ?>;
+</script>
 
 <!-- ── App Header ─────────────────────────────────────────────────────────── -->
 <div class="app-header" id="app-header">
@@ -499,6 +548,11 @@
 </div>
 <div class="meta-strip">
   <div id="match-meta-bar" class="match-meta-bar">Loading&hellip;</div>
+  <div id="meta-recorder" class="meta-recorder" style="display:none"></div>
+  <div class="meta-selector">
+    <select class="cc-select" id="divisionSelect" onchange="handleDivisionChange()"></select>
+    <button class="meta-refresh" onclick="refreshCurrentMatch()">&#8635; Refresh</button>
+  </div>
 </div>
 
 <!-- ── Main page grid ─────────────────────────────────────────────────────── -->
@@ -515,17 +569,6 @@
 
   <!-- ── Control Centre ── -->
   <aside class="sidebar">
-
-    <!-- Scorecard Selector -->
-    <div class="side-panel">
-      <div class="side-panel-head">
-        <h3>Select Match</h3>
-      </div>
-      <div class="side-body">
-        <select class="cc-select" id="divisionSelect" onchange="handleDivisionChange()"></select>
-        <button class="cc-btn cc-btn-navy" onclick="refreshCurrentMatch()">&#8635; Refresh</button>
-      </div>
-    </div>
 
     <!-- Substitute Player -->
     <div class="side-panel">
@@ -611,7 +654,8 @@
   // ── Boot ──────────────────────────────────────────────────────────────────
   window.addEventListener('load', () => {
     loadBranding();
-    loadMatches();
+    if (window.__cpblScoreAuthed) loadMatches();
+    // else: auth gate (below) calls loadMatches() once the user signs in.
   });
   window.addEventListener('resize', updateStickyOffset);
 
@@ -625,17 +669,17 @@
 
   // ── Branding ──────────────────────────────────────────────────────────────
   function loadBranding() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    if (!window.__GAS_EXEC_URL__) return;
+    fetch(window.__GAS_EXEC_URL__ + '?page=scorebranding')
+      .then(r => r.text())
+      .then(raw => {
         try {
           currentBranding = JSON.parse(raw) || {};
           applyBranding(currentBranding);
           updateStickyOffset();
         } catch (e) { console.error(e); }
       })
-      .withFailureHandler(e => console.error(e))
-      .getScorecardBrandingV1();
+      .catch(e => console.error(e));
   }
 
   function applyBranding(b) {
@@ -648,18 +692,22 @@
     }
   }
 
-  // ── Load matches (Week 3 only) ─────────────────────────────────────────────
+  // ── Load matches (current week) ────────────────────────────────────────────
   function loadMatches() {
     setMain(loadingHtml());
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    if (!window.__GAS_EXEC_URL__) {
+      setMain(emptyHtml('⚠️', 'Server URL not configured.')); return;
+    }
+    fetch(window.__GAS_EXEC_URL__ + '?page=openmatches')
+      .then(r => r.text())
+      .then(raw => {
         try {
           const resp = JSON.parse(raw);
           const all  = Array.isArray(resp.rows) ? resp.rows : [];
-          // Filter to Week 3; fall back to all if none found (dev/test)
-          const w3 = all.filter(m => extractWeekNum(m) === 3);
-          allMatches = w3.length ? w3 : all;
+          // Filter to the current week; fall back to all if none found.
+          const wk   = pickCurrentWeek(all);
+          const wkMs = wk ? all.filter(m => extractWeekNum(m) === wk) : [];
+          allMatches = wkMs.length ? wkMs : all;
           if (!allMatches.length) {
             populateDivisions([]);
             setMain(emptyHtml('🏓', 'No matches available.')); return;
@@ -675,19 +723,21 @@
           console.error(err);
         }
       })
-      .withFailureHandler(err => {
-        setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err.message || err))));
-      })
-      .getOpenMatchesForScoreEntryV5();
+      .catch(err => {
+        setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err && err.message || err))));
+      });
   }
 
   // ── Load scorecard ────────────────────────────────────────────────────────
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
     setMain(loadingHtml('Loading scorecard…'));
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    if (!window.__GAS_EXEC_URL__) {
+      setMain(emptyHtml('⚠️', 'Server URL not configured.')); return;
+    }
+    fetch(window.__GAS_EXEC_URL__ + '?page=scorecarddata&matchId=' + encodeURIComponent(matchId))
+      .then(r => r.text())
+      .then(raw => {
         try {
           currentScorecardData = JSON.parse(raw);
           renderScorecard(currentScorecardData);
@@ -696,10 +746,9 @@
           console.error(err);
         }
       })
-      .withFailureHandler(err => {
-        setMain(emptyHtml('⚠️', 'Load error: ' + esc(String(err.message || err))));
-      })
-      .getScorecardDataV5(matchId);
+      .catch(err => {
+        setMain(emptyHtml('⚠️', 'Load error: ' + esc(String(err && err.message || err))));
+      });
   }
 
   function refreshCurrentMatch() { if (currentMatchId) loadMatch(currentMatchId); }
@@ -966,8 +1015,8 @@
           <div class="team-row ${hWin?'winner':aWin?'loser':''}" id="trow-home-${esc(gid)}">
             <div class="club-icon">${buildLogoHtml(match.home_team_name,'sm')}</div>
             <div class="player-names">
-              ${p1h ? '<div class="player-name">'+esc(p1h)+'</div>' : '<div class="player-name">&nbsp;</div>'}
-              ${p2h ? '<div class="player-name-2">'+esc(p2h)+'</div>' : ''}
+              <div class="player-name">${p1h ? esc(p1h) : 'TBD'}</div>
+              <div class="player-name-2">${p2h ? esc(p2h) : 'TBD'}</div>
             </div>
             <input class="score-in ${hWin?'win':aWin?'lose':''}" type="number" min="0"
               id="home-${esc(gid)}" value="${safeNum(game.home_score)}" placeholder="—"
@@ -977,8 +1026,8 @@
           <div class="team-row ${aWin?'winner':hWin?'loser':''}" id="trow-away-${esc(gid)}">
             <div class="club-icon">${buildLogoHtml(match.away_team_name,'sm')}</div>
             <div class="player-names">
-              ${p1a ? '<div class="player-name">'+esc(p1a)+'</div>' : '<div class="player-name">&nbsp;</div>'}
-              ${p2a ? '<div class="player-name-2">'+esc(p2a)+'</div>' : ''}
+              <div class="player-name">${p1a ? esc(p1a) : 'TBD'}</div>
+              <div class="player-name-2">${p2a ? esc(p2a) : 'TBD'}</div>
             </div>
             <input class="score-in ${aWin?'win':hWin?'lose':''}" type="number" min="0"
               id="away-${esc(gid)}" value="${safeNum(game.away_score)}" placeholder="—"
@@ -1030,7 +1079,13 @@
         setTick(gid, 'err', 'Error: ' + msg);
         toast('Save failed', 'err');
       })
-      .saveGameScoreFromUiV5({ gameId: gid, homeScore: h, awayScore: a, userId: '', reason: 'Autosaved from scorecard UI' });
+      .saveGameScoreFromUiV5({
+        gameId: gid, homeScore: h, awayScore: a,
+        userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
+        userEmail: window.cpblScoreEmail || '',
+        userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
+        reason: 'Autosaved from scorecard UI'
+      });
   }
 
   function resetGame(gid) {
@@ -1084,7 +1139,13 @@
         updateScoreboard();
       })
       .withFailureHandler(err => setTick(gid, 'warn', 'Reset locally: ' + (err?.message || err)))
-      .resetGameScoreV1({ gameId: gid, userId: '', reason: 'Reset from scorecard UI' });
+      .resetGameScoreV1({
+        gameId: gid,
+        userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
+        userEmail: window.cpblScoreEmail || '',
+        userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
+        reason: 'Reset from scorecard UI'
+      });
   }
 
   function updateLocalState(gid, h, a, resp) {
@@ -1152,6 +1213,25 @@
   }
   function extractWeekNum(match) {
     const m = String(match?.match_id || '').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
+  }
+  // Decide which week to surface: the earliest week whose match_date is on/after today.
+  // Fall back to the latest week with matches if everything is in the past.
+  function pickCurrentWeek(matches) {
+    if (!matches || !matches.length) return 0;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const byWeek = {};
+    for (const m of matches) {
+      const w = extractWeekNum(m);
+      if (!w) continue;
+      const d = new Date(m.match_date);
+      if (isNaN(d.getTime())) continue;
+      d.setHours(0,0,0,0);
+      if (!byWeek[w] || d < byWeek[w]) byWeek[w] = d;
+    }
+    const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
+    if (!weeks.length) return 0;
+    for (const w of weeks) { if (byWeek[w] >= today) return w; }
+    return weeks[weeks.length - 1];
   }
   function divLabel(match) { const n = extractDivNum(match); return n ? 'Division ' + n : 'Division'; }
   function isRoundDone(round) {
@@ -1254,6 +1334,186 @@
     setTimeout(() => { el.style.cssText = 'opacity:0;transition:opacity .3s'; }, 2200);
     setTimeout(() => el.remove(), 2500);
   }
+</script>
+
+<!-- ── Admin sign-in overlay ──────────────────────────────────────────────── -->
+<div id="score-auth-overlay">
+  <div id="score-auth-box">
+    <h2>Scorekeeping</h2>
+    <p>Admin sign-in. Enter the email registered with the league.</p>
+    <input id="sa-email" class="sa-input" type="email" placeholder="you@example.com"
+           autocomplete="email" onkeydown="if(event.key==='Enter')cpblScoreSignIn()">
+    <button id="sa-btn" class="sa-btn" onclick="cpblScoreSignIn()">Sign in</button>
+    <div id="sa-error" class="sa-error"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'cpbl_score_email';
+
+  // Any user listed (and active) in the Users sheet can keep score.
+  function isAdminRole(r) {
+    return !!(r && r.ok);
+  }
+
+  function dismiss() {
+    var ov = document.getElementById('score-auth-overlay');
+    if (ov) ov.classList.add('hidden');
+    window.__cpblScoreAuthed = true;
+    showRecorderBadge();
+    if (typeof loadMatches === 'function') loadMatches();
+  }
+
+  function showRecorderBadge() {
+    var el = document.getElementById('meta-recorder');
+    if (!el) return;
+    var u = window.cpblScoreUser || {};
+    var name = u.name || '';
+    if (!name) return;  // only show when we know the user's name
+    el.style.display = '';
+    el.innerHTML = 'Scores are being recorded by <strong>' + name.replace(/[<>&]/g, '') + '</strong>';
+    if (typeof updateStickyOffset === 'function') updateStickyOffset();
+  }
+
+  function showFresh(errMsg) {
+    var ov = document.getElementById('score-auth-overlay');
+    if (!ov) return;
+    var box = document.getElementById('score-auth-box');
+    if (box) {
+      box.innerHTML =
+        '<h2>Scorekeeping</h2>' +
+        '<p>Admin sign-in. Enter the email registered with the league.</p>' +
+        '<input id="sa-email" class="sa-input" type="email" placeholder="you@example.com"' +
+        ' autocomplete="email" onkeydown="if(event.key===\'Enter\')cpblScoreSignIn()">' +
+        '<button id="sa-btn" class="sa-btn" onclick="cpblScoreSignIn()">Sign in</button>' +
+        '<div id="sa-error" class="sa-error">' + (errMsg || '') + '</div>';
+    }
+    ov.classList.remove('hidden');
+    var inp = document.getElementById('sa-email');
+    if (inp) inp.focus();
+  }
+
+  window.cpblScoreSignIn = function () {
+    var email = (document.getElementById('sa-email').value || '').trim();
+    var errEl = document.getElementById('sa-error');
+    var btn   = document.getElementById('sa-btn');
+    if (!email || email.indexOf('@') < 1) {
+      errEl.textContent = 'Please enter a valid email address.'; return;
+    }
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = 'Signing in…';
+
+    if (!window.__GAS_EXEC_URL__) {
+      errEl.textContent = 'Server URL not configured.';
+      btn.disabled = false; btn.textContent = 'Sign in';
+      return;
+    }
+
+    // Direct fetch instead of google.script.run — avoids the iframe deadlock
+    // that affects Captain.html-style auth calls.
+    var url = window.__GAS_EXEC_URL__ + '?page=verifyemail&email=' + encodeURIComponent(email);
+    fetch(url, { method: 'GET' })
+      .then(function (r) { return r.text(); })
+      .then(function (raw) {
+        btn.disabled = false; btn.textContent = 'Sign in';
+        var result;
+        try { result = JSON.parse(raw); }
+        catch (e) { errEl.textContent = 'Unexpected response from server.'; return; }
+        if (!result.ok) {
+          errEl.textContent = result.error || 'Sign-in failed. Please try again.';
+          return;
+        }
+        if (!isAdminRole(result)) {
+          errEl.textContent = 'This email is not registered. Ask the commissioner to add you to the Users sheet.';
+          return;
+        }
+        window.cpblScoreEmail = email;
+        window.cpblScoreUser  = result;
+        try { sessionStorage.setItem(STORAGE_KEY, email); } catch(e) {}
+        dismiss();
+      })
+      .catch(function (err) {
+        btn.disabled = false; btn.textContent = 'Sign in';
+        errEl.textContent = 'Sign-in failed: ' + (err && err.message ? err.message : String(err));
+      });
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var saved = '';
+    var trusted = false;  // true if email came from a source we already verified
+
+    // Always look at the admin localStorage blob first — it carries the
+    // user's name + userId, which the URL param alone doesn't.
+    var adminBlob = null;
+    try { adminBlob = JSON.parse(localStorage.getItem('cpbl_admin_email') || 'null'); } catch(e) {}
+
+    // Priority 1: ?userEmail= URL param (admin landing page hands it off — already verified there).
+    try {
+      var qs = new URLSearchParams(window.location.search);
+      var qsEmail = (qs.get('userEmail') || '').trim();
+      if (qsEmail && qsEmail.indexOf('@') > 0) { saved = qsEmail; trusted = true; }
+    } catch(e) {}
+    // Priority 2: localStorage from the admin landing (cross-tab session, already verified).
+    if (!saved && adminBlob && adminBlob.email) {
+      saved = adminBlob.email; trusted = true;
+    }
+    // Priority 3: this page's own sessionStorage (verified previously in this tab).
+    if (!saved) {
+      try { saved = sessionStorage.getItem(STORAGE_KEY) || ''; } catch(e) {}
+      if (saved) trusted = true;
+    }
+    if (!saved) { showFresh(''); return; }
+
+    // If the email is coming from an already-trusted source, just use it.
+    // Saves a round-trip and avoids a possible fetch hang during boot.
+    if (trusted) {
+      window.cpblScoreEmail = saved;
+      // Pull name + userId from the admin blob if its email matches.
+      var matchedBlob = (adminBlob && adminBlob.email && adminBlob.email.toLowerCase() === saved.toLowerCase())
+        ? adminBlob : null;
+      window.cpblScoreUser  = matchedBlob
+        ? Object.assign({ ok: true }, matchedBlob)
+        : { ok: true, email: saved };
+      try { sessionStorage.setItem(STORAGE_KEY, saved); } catch(e) {}
+      dismiss();
+      return;
+    }
+
+    // Try to resume the saved session.
+    var box = document.getElementById('score-auth-box');
+    if (box) {
+      box.innerHTML =
+        '<h2>Scorekeeping</h2>' +
+        '<p style="color:#123a7c;font-weight:600;margin-top:8px">Restoring your session…</p>';
+    }
+
+    if (!window.__GAS_EXEC_URL__) {
+      showFresh('');
+      return;
+    }
+
+    var url = window.__GAS_EXEC_URL__ + '?page=verifyemail&email=' + encodeURIComponent(saved);
+    fetch(url, { method: 'GET' })
+      .then(function (r) { return r.text(); })
+      .then(function (raw) {
+        var result;
+        try { result = JSON.parse(raw); } catch(e) { result = null; }
+        if (result && result.ok && isAdminRole(result)) {
+          window.cpblScoreEmail = saved;
+          window.cpblScoreUser  = result;
+          dismiss();
+        } else {
+          try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+          showFresh('');
+        }
+      })
+      .catch(function () {
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+        showFresh('');
+      });
+  });
+}());
 </script>
 </body>
 </html>

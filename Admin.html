@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPBL Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'DM Sans',sans-serif;
+      background: linear-gradient(135deg, #081f43 0%, #123a7c 58%, #0b7e39 100%);
+      min-height:100vh;
+      color:#0d1f3c;
+      display:flex; align-items:center; justify-content:center;
+      padding:20px;
+    }
+    .card {
+      background:#fff; border-radius:16px; padding:36px 32px 28px;
+      width:100%; max-width:380px;
+      box-shadow:0 12px 40px rgba(0,0,0,.35);
+      text-align:center;
+    }
+    h1 {
+      font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:2px;
+      color:#081f43; margin-bottom:6px;
+    }
+    .sub { font-size:13px; color:#5a6e8a; margin-bottom:20px; letter-spacing:.04em; text-transform:uppercase; }
+    .who { font-size:13px; color:#0b7e39; font-weight:700; margin-bottom:20px; }
+    .who span { color:#5a6e8a; font-weight:500; }
+    .input {
+      width:100%; font-size:15px; text-align:left;
+      border:2px solid #ccd; border-radius:8px; padding:11px 12px;
+      outline:none; transition:border-color .15s;
+    }
+    .input:focus { border-color:#123a7c; }
+    .btn {
+      margin-top:14px; width:100%; padding:13px 14px;
+      background:#123a7c; color:#fff; border:none; border-radius:9px;
+      font-size:15px; font-weight:700; cursor:pointer; transition:background .15s, opacity .15s;
+      letter-spacing:.04em;
+    }
+    .btn:hover { background:#0b7e39; }
+    .btn:disabled { background:#aab; cursor:default; }
+    .btn-gold {
+      background:#ffd22e; color:#081f43;
+    }
+    .btn-gold:hover { background:#f3c400; color:#081f43; }
+    .btn-row { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+    .err { margin-top:12px; font-size:13px; color:#c0392b; min-height:18px; }
+    .link-btn {
+      margin-top:14px; background:none; border:none; color:#5a6e8a;
+      font-size:12px; cursor:pointer; text-decoration:underline; padding:0;
+    }
+    .link-btn:hover { color:#c0392b; }
+  </style>
+</head>
+<body>
+<script>
+  window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl || '') ?>;
+</script>
+
+<div class="card">
+  <h1>CPBL Admin</h1>
+  <div class="sub">Sign in to keep score or enter lineups</div>
+
+  <div id="login-view">
+    <input id="email" class="input" type="email" placeholder="you@example.com"
+           autocomplete="email" onkeydown="if(event.key==='Enter')signIn()">
+    <button id="signin-btn" class="btn" onclick="signIn()">Sign in</button>
+    <div id="err" class="err"></div>
+  </div>
+
+  <div id="menu-view" style="display:none">
+    <div class="who" id="who"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="goTo('scorecard')">Keep Score</button>
+      <button class="btn btn-gold" onclick="goTo('captain')">Enter Lineups</button>
+    </div>
+    <button class="link-btn" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<script>
+  var STORAGE_KEY = 'cpbl_admin_email';
+
+  function showMenu(result) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('menu-view').style.display  = '';
+    var who = document.getElementById('who');
+    var name = (result && result.name) ? result.name : '';
+    var email = (result && result.email) ? result.email : '';
+    who.innerHTML = (name ? name + ' ' : '') + '<span>' + email + '</span>';
+  }
+
+  function showLogin(msg) {
+    document.getElementById('menu-view').style.display = 'none';
+    document.getElementById('login-view').style.display = '';
+    document.getElementById('err').textContent = msg || '';
+  }
+
+  window.signIn = function () {
+    var email = (document.getElementById('email').value || '').trim();
+    var errEl = document.getElementById('err');
+    var btn   = document.getElementById('signin-btn');
+    if (!email || email.indexOf('@') < 1) {
+      errEl.textContent = 'Please enter a valid email address.'; return;
+    }
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = 'Signing in…';
+
+    if (!window.__GAS_EXEC_URL__) {
+      errEl.textContent = 'Server URL not configured.';
+      btn.disabled = false; btn.textContent = 'Sign in';
+      return;
+    }
+
+    var url = window.__GAS_EXEC_URL__ + '?page=verifyemail&email=' + encodeURIComponent(email);
+    fetch(url).then(function(r){ return r.text(); })
+      .then(function(raw){
+        btn.disabled = false; btn.textContent = 'Sign in';
+        var result;
+        try { result = JSON.parse(raw); } catch(e){ errEl.textContent = 'Unexpected response.'; return; }
+        if (!result.ok) { errEl.textContent = result.error || 'Sign-in failed.'; return; }
+        try {
+          // Store the full access result so Captain/Scorecard can use it
+          // without making their own verify call (which can hang Chrome).
+          var blob = Object.assign({}, result, {
+            email: result.email || email,
+            ts:    Date.now()
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
+        } catch(e) {}
+        showMenu(result);
+      })
+      .catch(function(err){
+        btn.disabled = false; btn.textContent = 'Sign in';
+        errEl.textContent = 'Sign-in failed: ' + (err && err.message ? err.message : String(err));
+      });
+  };
+
+  window.signOut = function () {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    showLogin('');
+    document.getElementById('email').value = '';
+    document.getElementById('email').focus();
+  };
+
+  window.goTo = function (page) {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) {}
+    if (!saved || !saved.email) { showLogin('Session expired. Please sign in again.'); return; }
+    var base = (window.__GAS_EXEC_URL__ || '').replace(/\?.*$/, '');
+    // Same-tab navigation; pass the verified email so subpages can auto-login.
+    window.location.href = base + '?page=' + encodeURIComponent(page)
+      + '&userEmail=' + encodeURIComponent(saved.email);
+  };
+
+  // Auto-resume from localStorage. Show the menu immediately based on the
+  // cached blob (no network call) — the user already verified previously.
+  document.addEventListener('DOMContentLoaded', function () {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) {}
+    if (!saved || !saved.email) return;
+    showMenu(saved);
+  });
+</script>
+</body>
+</html>

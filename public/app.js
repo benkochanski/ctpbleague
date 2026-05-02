@@ -23,15 +23,18 @@
                     url: `${GAS_BASE}?page=seasonstats`,
                     urlFn: divId => `${GAS_BASE}?page=seasonstats${divId ? `&division=${encodeURIComponent(divId)}` : ''}` },
     players:      { kind: 'iframe', label: 'Players',         url: `${GAS_BASE}?page=players` },
-    scoreboard:   { kind: 'iframe', label: 'Live Scoreboard', url: `${GAS_BASE}?page=scoreboard` },
+    scoreboard:   { kind: 'iframe', label: 'Live Scoreboard',
+                    urlFn: id => `${GAS_BASE}?page=scoreboard${id ? `&matchId=${encodeURIComponent(id)}` : ''}` },
     gamereport:   { kind: 'iframe', label: 'Game Report',     urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
     player:       { kind: 'iframe', label: 'Player Profile',  urlFn: name => `${GAS_BASE}?page=player&playerName=${encodeURIComponent(name || '')}`, hidden: true },
 
-    // Captain + Scorecard run a Google Identity Services sign-in inside the
-    // page itself; no deployment-level auth is needed, so they can stay iframed.
-    captain:      { kind: 'newtab', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`   },
+    // Admin = single entry point for league ops. Login happens once on the
+    // admin landing page; from there the user picks Captain / Scorekeeping.
+    // Routes are kept around so anything still linking to them works.
+    admin:        { kind: 'newtab', label: 'Admin',             url: `${GAS_BASE}?page=admin`     },
     display:      { kind: 'iframe', label: 'Match Display',     url: `${GAS_BASE}?page=display`   },
-    scorecard:    { kind: 'newtab', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard` },
+    captain:      { kind: 'newtab', label: 'Captain / Lineups', url: `${GAS_BASE}?page=captain`,   hidden: true },
+    scorecard:    { kind: 'newtab', label: 'Scorekeeping',      url: `${GAS_BASE}?page=scorecard`, hidden: true },
   };
 
   const app          = document.getElementById('app');
@@ -389,7 +392,7 @@
         ? m.winning_team_id === m.home_team_id
         : (m.home_games_won || 0) > (m.away_games_won || 0);
       matchCell = `
-        <button class="match-cell is-final is-compact" data-route="gamereport" data-param="${escapeHtml(m.match_id)}" title="View game report">
+        <button class="match-cell is-final is-compact" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
           <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-score">
             <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
@@ -400,11 +403,11 @@
         </button>`;
     } else {
       matchCell = `
-        <div class="match-cell is-upcoming is-compact">
+        <button class="match-cell is-upcoming is-compact" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
-        </div>`;
+        </button>`;
     }
 
     return `
@@ -722,7 +725,7 @@
         : (m.home_games_won || 0) > (m.away_games_won || 0);
 
       matchCell = `
-        <button class="match-cell is-final" data-route="gamereport" data-param="${escapeHtml(m.match_id)}" title="View game report">
+        <button class="match-cell is-final" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
           <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-score">
             <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
@@ -737,12 +740,12 @@
       const venue   = (m.venue || '').split(/\s+/)[0]; // first word: "Camp" or "Dill"
       const meta    = [timeStr, venue].filter(Boolean).join(' · ');
       matchCell = `
-        <div class="match-cell is-upcoming">
+        <button class="match-cell is-upcoming" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
           ${meta ? `<span class="m-status m-status-upcoming">${escapeHtml(meta)}</span>` : ''}
-        </div>`;
+        </button>`;
     }
 
     return `

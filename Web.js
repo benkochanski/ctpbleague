@@ -259,9 +259,44 @@ function doGet(e) {
   }
 
   if (page === 'scorecard') {
-    return HtmlService.createTemplateFromFile('Scorecard')
-      .evaluate()
+    const tSc = HtmlService.createTemplateFromFile('Scorecard');
+    tSc.gasExecUrl = ScriptApp.getService().getUrl();
+    return tSc.evaluate()
       .setTitle('CPBL Score Entry')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === 'verifyemail') {
+    const email = String(params.email || '').trim();
+    return ContentService
+      .createTextOutput(verifyPortalEmail(email))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'openmatches') {
+    return ContentService
+      .createTextOutput(getOpenMatchesForScoreEntryV5())
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'scorecarddata') {
+    const matchId = String(params.matchId || '').trim();
+    return ContentService
+      .createTextOutput(getScorecardDataV5(matchId))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'scorebranding') {
+    return ContentService
+      .createTextOutput(getScorecardBrandingV1())
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'admin') {
+    const tAd = HtmlService.createTemplateFromFile('Admin');
+    tAd.gasExecUrl = ScriptApp.getService().getUrl();
+    return tAd.evaluate()
+      .setTitle('CPBL Admin')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
@@ -316,6 +351,7 @@ function doGet(e) {
   if (page === 'display') {
     const tDp = HtmlService.createTemplateFromFile('MatchDisplay');
     tDp.initialMatchId = String(params.matchId || '').trim();
+    tDp.gasExecUrl     = ScriptApp.getService().getUrl();
     return tDp.evaluate()
       .setTitle('CPL Match Display')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

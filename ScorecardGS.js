@@ -207,11 +207,12 @@ function saveGameScoreFromUiV2(payload) {
     payload.homeScore,
     payload.awayScore,
     payload.userId || '',
-    payload.reason || 'Entered from scorecard UI'
+    payload.reason || 'Entered from scorecard UI',
+    { userId: payload.userId || '', email: payload.userEmail || '', name: payload.userName || '' }
   );
 }
 
-function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason) {
+function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason, actor) {
   const ss = getBackendSpreadsheet_();
 
   const gamesSheet = ss.getSheetByName('Match_Games');
@@ -259,6 +260,26 @@ function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason
   const matchSummary = recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId);
 
   try { refreshAllSummaries_(); } catch (e) { /* don't fail score save if rollup throws */ }
+
+  // Audit log: who entered this score?
+  try {
+    if (typeof appendAuditLog_ === 'function') {
+      appendAuditLog_({
+        access:       actor || { userId: changedByUserId || '' },
+        entityType:   'MatchGame',
+        entityId:     gameId,
+        actionType:   'score_save',
+        newValueJson: JSON.stringify({
+          home_score: Number(homeScore),
+          away_score: Number(awayScore),
+          winner_team_id: winnerTeamId,
+          match_id: matchId,
+          round_id: roundId
+        }),
+        reason: reason || ''
+      });
+    }
+  } catch (e) { /* never fail the save because of audit-log issues */ }
 
   return {
     success: true,
@@ -587,8 +608,9 @@ function testScorecardDataV2() {
  * payload: { gameId, userId?, reason? }
  */
 function resetGameScoreV1(payload) {
-  const { gameId, userId, reason } = payload || {};
+  const { gameId, userId, userEmail, userName, reason } = payload || {};
   if (!gameId) throw new Error('gameId is required.');
+  const actor = { userId: userId || '', email: userEmail || '', name: userName || '' };
 
   const ss           = getBackendSpreadsheet_();
   const gamesSheet   = ss.getSheetByName('Match_Games');
@@ -614,6 +636,20 @@ function resetGameScoreV1(payload) {
 
   const roundSummary = recalculateRoundFromGamesV2_(roundsSheet, gamesSheet, roundId, matchId);
   const matchSummary = recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId);
+
+  // Audit log: who reset this score?
+  try {
+    if (typeof appendAuditLog_ === 'function') {
+      appendAuditLog_({
+        access:       actor,
+        entityType:   'MatchGame',
+        entityId:     gameId,
+        actionType:   'score_reset',
+        newValueJson: JSON.stringify({ match_id: matchId, round_id: roundId }),
+        reason: reason || ''
+      });
+    }
+  } catch (e) { /* never fail the reset because of audit-log issues */ }
 
   return JSON.stringify({
     ok: true,

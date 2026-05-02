@@ -178,33 +178,89 @@
       border-radius: var(--r-lg);
       box-shadow: var(--sh);
       overflow: hidden;
+      width: fit-content;
+      max-width: 100%;
     }
 
-    .sb-table { width: 100%; border-collapse: collapse; }
-    .sb-table th, .sb-table td { padding: 9px 12px; text-align: center; border-right: 1px solid var(--border-s); }
+    .sb-table { width: auto; border-collapse: collapse; }
+    .sb-table th, .sb-table td {
+      padding: 1px 4px; text-align: center;
+      border-right: 1px solid var(--border-s);
+      line-height: 1.1;
+    }
     .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
     .sb-header-row th {
-      font-size: 11px; font-weight: 800; color: var(--muted);
-      letter-spacing: .08em; text-transform: uppercase;
+      font-size: 10px; font-weight: 800; color: var(--muted);
+      letter-spacing: .06em; text-transform: uppercase;
       background: var(--soft); border-bottom: 1px solid var(--border-s);
+      padding: 2px 4px;
     }
-    .sb-header-row th:first-child { text-align: left; padding-left: 14px; }
+    .sb-header-row th:first-child { text-align: left; padding-left: 8px; }
     .sb-row td { border-top: 1px solid var(--border-s); }
     .sb-row:first-of-type td { border-top: none; }
-    .sb-team-cell { text-align: left !important; padding: 0 !important; }
-    .sb-team-inner { display: flex; align-items: center; justify-content: center; padding: 8px 12px; }
+    .sb-team-cell { text-align: left !important; padding: 0 !important; width: 1%; white-space: nowrap; }
+    .sb-team-inner { display: flex; align-items: center; justify-content: flex-start; padding: 6px 7px; }
     .sb-logo {
-      width: 80px; height: 80px; border-radius: 18px; background: #0a1628;
+      width: 40px; height: 40px; border-radius: 10px; background: #0a1628;
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden; flex-shrink: 0; padding: 4px;
+      overflow: hidden; flex-shrink: 0;
     }
     .sb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .sb-score-cell { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--text); }
+    .sb-score-cell {
+      font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text);
+      width: 46px; min-width: 46px;
+    }
     .sb-score-cell.sb-win  { color: var(--ok); font-weight: 800; }
     .sb-score-cell.sb-loss { color: var(--muted); opacity: .65; }
-    .sb-total-cell { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 900; min-width: 60px; }
+    .sb-total-cell { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 900; min-width: 32px; }
     .sb-total-cell.sb-leader { background: var(--navy); color: var(--gold); }
     .sb-total-cell.sb-trail  { color: var(--muted); }
+
+    /* ── Games Won (by type) — compact card sitting beside the rounds tally ── */
+    .scoreboard-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+    .games-won-card {
+      background: var(--panel);
+      border: 1px solid var(--border-s);
+      border-radius: var(--r-lg);
+      box-shadow: var(--sh);
+      overflow: hidden;
+      width: fit-content;
+      max-width: 100%;
+    }
+    .games-won-card:empty { display: none; }
+    .gw-table { width: auto; border-collapse: collapse; }
+    .gw-table th, .gw-table td {
+      border-right: 1px solid var(--border-s);
+      text-align: center; padding: 1px 4px; line-height: 1.1;
+    }
+    .gw-table th:last-child, .gw-table td:last-child { border-right: none; }
+    .gw-head th {
+      font-size: 10px; font-weight: 800; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+      background: var(--soft); border-bottom: 1px solid var(--border-s);
+      padding: 4px 10px;
+    }
+    .gw-head th.gw-label { background: var(--soft); color: var(--muted); }
+    .gw-head th.gw-col-all    { background: var(--navy);  color: var(--gold); }
+    .gw-head th.gw-col-womens { background: #ef4f8b; color: #fff; }
+    .gw-head th.gw-col-mens   { background: #1f7cff; color: #fff; }
+    .gw-head th.gw-col-mixed  { background: var(--gold); color: var(--navy); }
+    .gw-head th.gw-col-coed   { background: var(--green); color: #fff; }
+    .gw-row td { border-top: 1px solid var(--border-s); }
+    .gw-row:first-of-type td { border-top: none; }
+    .gw-team-cell { padding: 0 !important; }
+    .gw-team-inner { display: flex; align-items: center; justify-content: flex-start; padding: 6px 7px; }
+    .gw-logo {
+      width: 40px; height: 40px; border-radius: 10px; background: #0a1628;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .gw-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .gw-num { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 900; line-height: 1.05; color: var(--text); display: block; }
+    .gw-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: var(--ok); display: block; margin-top: 2px; }
+    .gw-cell.gw-win  .gw-num { color: var(--ok); font-weight: 800; }
+    .gw-cell.gw-loss .gw-num { color: var(--muted); opacity: .7; }
+    .gw-cell { padding: 6px 12px !important; min-width: 56px; vertical-align: middle; }
 
     /* ── Rounds ── */
     .rounds-stack { display: flex; flex-direction: column; gap: 10px; }
@@ -290,10 +346,10 @@
     .club-icon img { width: 100%; height: 100%; object-fit: contain; }
 
     .player-names { min-width: 0; display: flex; flex-direction: column; }
-    .player-name  { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
-    .player-name-2 { font-size: 10px; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
-    .team-row.winner .player-name  { color: var(--ok); }
-    .team-row.winner .player-name-2 { color: #2c9e60; }
+    .player-name,
+    .player-name-2 { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
+    .team-row.winner .player-name,
+    .team-row.winner .player-name-2 { color: var(--ok); }
 
     .score-disp {
       font-family: 'DM Mono', monospace;
@@ -403,7 +459,10 @@
   <div>
     <!-- Sticky scoreboard -->
     <div class="scoreboard-wrap" id="scoreboard-wrap">
-      <div class="scoreboard-card" id="scoreboard-card"></div>
+      <div class="scoreboard-row">
+        <div class="scoreboard-card" id="scoreboard-card"></div>
+        <div class="games-won-card" id="games-won-card"></div>
+      </div>
     </div>
     <!-- Rounds -->
     <div id="main-content">
@@ -499,7 +558,18 @@
       .withSuccessHandler(raw => {
         try {
           const resp = JSON.parse(raw);
-          allMatches = (Array.isArray(resp.rows) ? resp.rows : []).filter(m => { const w = extractWeekNum(m); return w === 2 || w === ''; });
+          {
+            const allRows = Array.isArray(resp.rows) ? resp.rows : [];
+            // If a specific match was deep-linked (INITIAL_MATCH_ID set), don't
+            // filter by week — otherwise we'd drop the match the user clicked on.
+            if (window.INITIAL_MATCH_ID) {
+              allMatches = allRows;
+            } else {
+              const wk = pickCurrentWeek(allRows);
+              const wkMs = wk ? allRows.filter(m => { const w = extractWeekNum(m); return w === wk || w === ''; }) : [];
+              allMatches = wkMs.length ? wkMs : allRows;
+            }
+          }
           if (!allMatches.length) {
             populateDivisions([]);
             setMain(emptyHtml('🏓', 'No matches available.'));
@@ -713,6 +783,88 @@
           </tr>
         </tbody>
       </table>`;
+
+    renderGamesWonCard(match, rounds);
+  }
+
+  // ── Games Won by type (sits next to the rounds tally) ──────────────────────
+  function renderGamesWonCard(match, rounds) {
+    const card = document.getElementById('games-won-card');
+    if (!card) return;
+    const allGames = (rounds || []).flatMap(r => r.games || []);
+    const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
+
+    const gtypes  = ['womens','mens','mixed','coed'];
+    const glabels = { womens:"Women's", mens:"Men's", mixed:'Mixed', coed:'Coed' };
+
+    const stats = { all: { hW:0, aW:0, hD:0, aD:0 } };
+    for (const gt of gtypes) stats[gt] = { hW:0, aW:0, hD:0, aD:0, found:false };
+
+    for (const g of played) {
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      const gt = typeClass(g.game_type);
+      stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0;
+      stats.all.hD += hs-as;     stats.all.aD += as-hs;
+      if (stats[gt]) {
+        stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0;
+        stats[gt].hD += hs-as;     stats[gt].aD += as-hs;
+        stats[gt].found = true;
+      }
+    }
+
+    // Determine which type columns to show. If no games played yet, infer from
+    // the scheduled games so the card still appears with zeros pre-match.
+    const scheduledTypes = new Set();
+    for (const g of allGames) {
+      const gt = typeClass(g.game_type);
+      if (gt) scheduledTypes.add(gt);
+    }
+    const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found || scheduledTypes.has(gt))];
+
+    const headHtml = activeCols.map(col => {
+      const lbl = col === 'all' ? 'All' : glabels[col];
+      return `<th class="gw-col-${col}">${esc(lbl)}</th>`;
+    }).join('');
+
+    const cell = (col, isHome) => {
+      const s   = stats[col];
+      const w   = isHome ? s.hW : s.aW;
+      const ow  = isHome ? s.aW : s.hW;
+      const d   = isHome ? s.hD : s.aD;
+      const cls = w > ow ? 'gw-win' : w < ow ? 'gw-loss' : '';
+      return `<td class="gw-cell ${cls}">
+        <span class="gw-num">${w}</span>
+        ${d > 0 ? `<span class="gw-diff">+${d}</span>` : ''}
+      </td>`;
+    };
+
+    card.innerHTML = `
+      <table class="gw-table">
+        <thead>
+          <tr class="gw-head">
+            <th class="gw-label">Games Won</th>
+            ${headHtml}
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="gw-row">
+            <td class="gw-team-cell">
+              <div class="gw-team-inner">
+                <div class="gw-logo">${buildLogoHtml(match.home_team_name, 'sb')}</div>
+              </div>
+            </td>
+            ${activeCols.map(c => cell(c, true)).join('')}
+          </tr>
+          <tr class="gw-row">
+            <td class="gw-team-cell">
+              <div class="gw-team-inner">
+                <div class="gw-logo">${buildLogoHtml(match.away_team_name, 'sb')}</div>
+              </div>
+            </td>
+            ${activeCols.map(c => cell(c, false)).join('')}
+          </tr>
+        </tbody>
+      </table>`;
   }
 
   // ── Round render ───────────────────────────────────────────────────────────
@@ -785,16 +937,16 @@
           <div class="team-row ${homeRowCls}">
             <div class="club-icon">${buildLogoHtml(match.home_team_name, 'sm')}</div>
             <div class="player-names">
-              ${p1h ? `<div class="player-name">${esc(p1h)}</div>` : '<div class="player-name">&nbsp;</div>'}
-              ${p2h ? `<div class="player-name-2">${esc(p2h)}</div>` : ''}
+              <div class="player-name">${p1h ? esc(p1h) : 'TBD'}</div>
+              <div class="player-name-2">${p2h ? esc(p2h) : 'TBD'}</div>
             </div>
             <span class="score-disp ${hScoreCls}">${hScoreTxt}</span>
           </div>
           <div class="team-row ${awayRowCls}">
             <div class="club-icon">${buildLogoHtml(match.away_team_name, 'sm')}</div>
             <div class="player-names">
-              ${p1a ? `<div class="player-name">${esc(p1a)}</div>` : '<div class="player-name">&nbsp;</div>'}
-              ${p2a ? `<div class="player-name-2">${esc(p2a)}</div>` : ''}
+              <div class="player-name">${p1a ? esc(p1a) : 'TBD'}</div>
+              <div class="player-name-2">${p2a ? esc(p2a) : 'TBD'}</div>
             </div>
             <span class="score-disp ${aScoreCls}">${aScoreTxt}</span>
           </div>
@@ -956,6 +1108,24 @@
   function extractWeekNum(match) {
     const m = String(match?.match_id || '').match(/W(\d+)/i);
     return m ? Number(m[1]) : 0;
+  }
+  // Earliest week with a match date >= today; otherwise the latest week.
+  function pickCurrentWeek(matches) {
+    if (!matches || !matches.length) return 0;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const byWeek = {};
+    for (const m of matches) {
+      const w = extractWeekNum(m);
+      if (!w) continue;
+      const d = new Date(m.match_date);
+      if (isNaN(d.getTime())) continue;
+      d.setHours(0,0,0,0);
+      if (!byWeek[w] || d < byWeek[w]) byWeek[w] = d;
+    }
+    const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
+    if (!weeks.length) return 0;
+    for (const w of weeks) { if (byWeek[w] >= today) return w; }
+    return weeks[weeks.length - 1];
   }
 
   function divLabel(match) {

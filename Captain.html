@@ -1790,11 +1790,19 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     errEl.textContent = '';
     btn.disabled = true; btn.textContent = 'Signing in…';
 
-    google.script.run
-      .withSuccessHandler(function (raw) {
+    // Use direct fetch — google.script.run can freeze Chrome during sign-in.
+    var execUrl = window.__GAS_EXEC_URL__ || '';
+    if (!execUrl) {
+      errEl.textContent = 'Server URL not configured.';
+      btn.disabled = false; btn.textContent = 'Sign in';
+      return;
+    }
+    var url = execUrl + '?page=verifyemail&email=' + encodeURIComponent(email);
+    fetch(url).then(function(r){ return r.text(); })
+      .then(function (raw) {
         btn.disabled = false; btn.textContent = 'Sign in';
         var result;
-        try { result = typeof raw === 'string' ? JSON.parse(raw) : raw; }
+        try { result = JSON.parse(raw); }
         catch (e) { errEl.textContent = 'Unexpected response from server.'; return; }
         if (!result.ok) {
           errEl.textContent = result.error || 'Sign-in failed. Please try again.';
@@ -1804,7 +1812,6 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
         window.cpblPinUser = result;
         sessionStorage.setItem(STORAGE_KEY, email);
         showSignedIn(result.name || 'Captain');
-        // Show loading state in overlay — dismiss only after match data arrives.
         errEl.textContent = '';
         var loadingEl = document.getElementById('auth-loading-msg');
         if (!loadingEl) {
@@ -1828,16 +1835,40 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
           }
         });
       })
-      .withFailureHandler(function (err) {
+      .catch(function (err) {
         btn.disabled = false; btn.textContent = 'Sign in';
         errEl.textContent = 'Sign-in failed: ' + (err && err.message ? err.message : String(err));
-      })
-      .verifyPortalEmail(email);
+      });
   };
 
   document.addEventListener('DOMContentLoaded', function () {
     var savedEmail = '';
-    try { savedEmail = sessionStorage.getItem(STORAGE_KEY) || ''; } catch(e) {}
+    var trustedAccess = null;  // full access blob from admin handoff (skip verify if set)
+
+    // Priority 1: admin localStorage blob (full access info, already verified by Admin).
+    try {
+      var adminBlob = JSON.parse(localStorage.getItem('cpbl_admin_email') || 'null');
+      if (adminBlob && adminBlob.email) {
+        savedEmail = adminBlob.email;
+        trustedAccess = adminBlob;
+        try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
+      }
+    } catch(e) {}
+    // Priority 2: ?userEmail= URL param (email only, no access info).
+    if (!savedEmail) {
+      try {
+        var qs = new URLSearchParams(window.location.search);
+        var qsEmail = (qs.get('userEmail') || '').trim();
+        if (qsEmail && qsEmail.indexOf('@') > 0) {
+          savedEmail = qsEmail;
+          try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
+        }
+      } catch(e) {}
+    }
+    // Priority 3: this tab's sessionStorage.
+    if (!savedEmail) {
+      try { savedEmail = sessionStorage.getItem(STORAGE_KEY) || ''; } catch(e) {}
+    }
 
     if (savedEmail) {
       // Auto-resume: tell boot() to hold off on loading until we confirm the session.
@@ -1851,12 +1882,42 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
           '<p style="color:#123a7c;font-weight:600;margin-top:8px">Restoring your session…</p>';
       }
 
-      google.script.run
-        .withSuccessHandler(function(raw) {
+      // If we have a trusted access blob (handed off from Admin), use it directly
+      // — skip the verify call which can freeze Chrome.
+      if (trustedAccess && (trustedAccess.allowedTeamIds || trustedAccess.isCommissioner)) {
+        window.__CPBL_AUTO_SIGNING_IN__ = false;
+        window.cpblEmail   = savedEmail;
+        window.cpblPinUser = trustedAccess;
+        showSignedIn(trustedAccess.name || 'Captain');
+        if (typeof syncDivisionSelectorVisibility_ === 'function') syncDivisionSelectorVisibility_();
+        reloadForUser(trustedAccess, {
+          onSuccess: function() {
+            document.getElementById('pin-overlay').classList.add('hidden');
+            var lw = document.getElementById('middle-brand-logo-wrap');
+            if (lw) lw.style.visibility = '';
+          },
+          onFailure: function() {
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+            showFreshOverlay_();
+          }
+        });
+        return;
+      }
+
+      // Otherwise, verify via direct fetch (avoids google.script.run freeze).
+      var execUrl = window.__GAS_EXEC_URL__ || '';
+      if (!execUrl) {
+        window.__CPBL_AUTO_SIGNING_IN__ = false;
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
+        showFreshOverlay_();
+        return;
+      }
+      var url = execUrl + '?page=verifyemail&email=' + encodeURIComponent(savedEmail);
+      fetch(url).then(function(r){ return r.text(); })
+        .then(function(raw) {
           window.__CPBL_AUTO_SIGNING_IN__ = false;
           var result;
-          try { result = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { result = null; }
-
+          try { result = JSON.parse(raw); } catch(e) { result = null; }
           if (result && result.ok) {
             window.cpblEmail   = savedEmail;
             window.cpblPinUser = result;
@@ -1878,12 +1939,11 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
             showFreshOverlay_();
           }
         })
-        .withFailureHandler(function() {
+        .catch(function() {
           window.__CPBL_AUTO_SIGNING_IN__ = false;
           try { sessionStorage.removeItem(STORAGE_KEY); } catch(e) {}
           showFreshOverlay_();
-        })
-        .verifyPortalEmail(savedEmail);
+        });
 
     } else {
       // No saved session — show overlay after a short delay (original behaviour).
