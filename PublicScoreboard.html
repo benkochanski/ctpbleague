@@ -561,7 +561,10 @@
     stopPolling();
     const filtered = matchesForDiv(currentDivisionKey);
     if (filtered.length) {
-      currentMatchId = String(filtered[0].match_id);
+      // Try to stay on the same week as the current match; fall back to first.
+      const curWeek = extractWeekNum(allMatches.find(m => String(m.match_id) === currentMatchId) || {});
+      const sameWeek = curWeek && filtered.find(m => extractWeekNum(m) === curWeek);
+      currentMatchId = String((sameWeek || filtered[0]).match_id);
       loadMatch(currentMatchId);
       startPolling();
     } else {
