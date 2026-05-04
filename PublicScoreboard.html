@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connecticut Pickleball League — Live Scoreboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script>window.INITIAL_MATCH_ID = '<?= initialMatchId ?>';</script>
 
   <style>
@@ -34,8 +34,7 @@
       --r-lg: 18px;
       --sh:   0 6px 24px rgba(8,30,67,.09);
 
-      --header-h:   120px;
-      --top-offset: 120px;
+      --top-offset: 160px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,46 +44,50 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
+      font-size: 16px;
       min-height: 100vh;
+    }
+
+    /* ── Sticky top wrapper ── */
+    #top-static {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      box-shadow: 0 4px 20px rgba(8,30,67,.12);
     }
 
     /* ── Header ── */
     .app-header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
       background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
-      box-shadow: 0 10px 28px rgba(10,35,71,.22);
     }
 
     .league-header {
       display: grid;
       grid-template-columns: minmax(0,1fr) auto;
-      gap: 18px;
+      gap: 14px;
       align-items: center;
-      padding: 22px 26px;
+      padding: 12px 20px;
       border-bottom: 1px solid rgba(255,255,255,.14);
     }
 
-    /* When embedded in the hub iframe, hide the duplicate league brand. */
     html.embedded .league-brand { display: none; }
     html.embedded .league-header { grid-template-columns: 1fr; padding: 10px 16px; }
     html.embedded .header-right { justify-content: flex-end; }
-    .league-brand { display: flex; align-items: center; gap: 16px; }
+    .league-brand { display: flex; align-items: center; gap: 12px; }
 
     .league-logo-wrap {
-      width: 92px; height: 92px;
-      border-radius: 22px; background: #fff;
+      width: 56px; height: 56px;
+      border-radius: 14px; background: #fff;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+      box-shadow: 0 6px 16px rgba(0,0,0,.20);
       flex-shrink: 0; padding: 2px; overflow: hidden;
     }
     .league-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .league-logo-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--navy); }
+    .league-logo-fallback { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--navy); }
 
-    .league-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; letter-spacing: 1.8px; color: #fff; line-height: 1; }
-    .league-text p  { color: #d8e5fb; font-size: 12px; margin-top: 6px; letter-spacing: .12em; text-transform: uppercase; }
+    .league-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1.6px; color: #fff; line-height: 1; }
+    .league-text p  { color: #d8e5fb; font-size: 11px; margin-top: 4px; letter-spacing: .12em; text-transform: uppercase; }
 
     .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
@@ -92,19 +95,10 @@
       height: 34px; padding: 0 14px; border-radius: 8px;
       background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.28);
       font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
-      color: rgba(255,255,255,.90); cursor: pointer;
-      transition: background .15s;
+      color: rgba(255,255,255,.90); cursor: pointer; transition: background .15s;
     }
     .btn-action:hover { background: rgba(255,255,255,.22); }
 
-    .pill {
-      padding: 6px 14px; border-radius: 8px;
-      background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18);
-      font-size: 11px; font-weight: 700; letter-spacing: .05em;
-      text-transform: uppercase; color: rgba(255,255,255,.88);
-    }
-
-    /* Live badge */
     .live-badge {
       display: flex; align-items: center; gap: 6px;
       padding: 5px 12px; border-radius: 999px;
@@ -122,7 +116,13 @@
     }
     .live-text { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #8affc3; }
 
-    /* Updated badge */
+    .pill {
+      padding: 6px 14px; border-radius: 8px;
+      background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18);
+      font-size: 11px; font-weight: 700; letter-spacing: .05em;
+      text-transform: uppercase; color: rgba(255,255,255,.88);
+    }
+
     .updated-badge {
       display: none; align-items: center; gap: 5px;
       padding: 5px 12px; border-radius: 999px;
@@ -132,135 +132,90 @@
     .updated-badge.visible { display: flex; }
     .updated-label { opacity: .7; }
 
-    /* ── Toolbar ── */
-    .toolbar {
-      border-top: 1px solid rgba(255,255,255,.10);
-      padding: 8px 20px;
-      display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
-      background: rgba(0,0,0,.12);
+    /* ── Meta strip ── */
+    .meta-strip {
+      background: var(--panel); border-bottom: 1px solid var(--border-s);
+      padding: 7px 24px; box-shadow: 0 2px 8px rgba(8,30,67,.05);
+    }
+    .match-meta-bar { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: .04em; text-transform: uppercase; }
+
+    /* ── Scoreboard strip ── */
+    .scoreboard-strip {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 560px;
+      gap: 14px;
+      padding: 8px 20px 10px;
+      background: var(--bg);
+      align-items: start;
     }
 
-    .field { display: flex; flex-direction: column; gap: 3px; }
-    .field label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,.55); letter-spacing: .12em; text-transform: uppercase; }
-    .field select {
-      background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22);
-      border-radius: 8px; padding: 6px 28px 6px 10px;
-      font-size: 12px; color: #fff; height: 34px; outline: none; cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='rgba(255,255,255,.6)'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-      min-width: 170px;
+    /* ── Division select (lives inside scoreboard th) ── */
+    .sb-division-select {
+      width: 100%; background: var(--soft); border: 1.5px solid var(--border);
+      border-radius: 7px; padding: 5px 24px 5px 9px;
+      font-size: 13px; font-weight: 700; color: var(--text);
+      outline: none; cursor: pointer; appearance: none; height: 32px; box-sizing: border-box;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%235a6e8a'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 7px center;
     }
-    .field select option { background: var(--navy); color: #fff; }
-    .field select:focus { border-color: var(--gold); }
+    .sb-division-select:focus { border-color: var(--blue); background-color: #f0f5ff; }
+
+    /* ── Scoreboard card ── */
+    .scoreboard-card { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r); box-shadow: var(--sh); overflow: hidden; }
+    .sb-table { width: 100%; border-collapse: collapse; }
+    .sb-table th, .sb-table td { padding: 7px 12px; text-align: center; border-right: 1px solid var(--border-s); }
+    .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
+    .sb-header-row th { font-size: 12px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; background: var(--soft); border-bottom: 1px solid var(--border-s); }
+    .sb-header-row th:first-child { text-align: left; padding-left: 12px; }
+    .sb-row td { border-top: 1px solid var(--border-s); }
+    .sb-row:first-of-type td { border-top: none; }
+    .sb-team-cell { text-align: left !important; padding: 0 !important; }
+    .sb-team-inner { display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
+    .sb-logo { width: 100px; height: 62px; border-radius: 12px; background: transparent; border: none; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .sb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; }
+    .sb-score-cell { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text); }
+    .sb-score-cell.sb-win  { color: var(--ok); font-weight: 800; }
+    .sb-score-cell.sb-loss { color: var(--muted); opacity: .65; }
+    .sb-total-cell { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 900; min-width: 56px; }
+    .sb-total-cell.sb-leader { background: var(--navy); color: var(--gold); }
+    .sb-total-cell.sb-trail  { color: var(--muted); }
+
+    /* ── Team stats (ts2 scoreboard-style) ── */
+    .sb-stats .side-panel { overflow: hidden; }
+    .ts2-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .ts2-team-head { background: var(--soft); border-right: 1px solid var(--border-s); border-bottom: 1px solid var(--border-s); padding: 0 12px; width: 120px; height: 44px; vertical-align: middle; }
+    .ts2-col-head { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px; height: 44px; text-align: center; white-space: nowrap; border-left: 1px solid rgba(0,0,0,.14); border-bottom: 1px solid rgba(0,0,0,.14); vertical-align: middle; }
+    .ts2-col-head.ts2-col-all    { background: #081f43; color: #ffd22e; }
+    .ts2-col-head.ts2-col-womens { background: #123a7c; color: #ffffff; }
+    .ts2-col-head.ts2-col-mens   { background: #0b7e39; color: #ffffff; }
+    .ts2-col-head.ts2-col-mixed  { background: #ffd22e; color: #081f43; }
+    .ts2-col-head.ts2-col-coed   { background: #0d5229; color: #a3f0c0; }
+    .ts2-row td { border-top: 1px solid var(--border-s); }
+    .ts2-row:first-of-type td { border-top: none; }
+    .ts2-team-cell { padding: 0 !important; border-right: 1px solid var(--border-s); width: 120px; }
+    .ts2-meta-label { font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    .ts2-team-inner { display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
+    .ts2-logo { width: 100px; height: 62px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: transparent; flex-shrink: 0; }
+    .ts2-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; }
+    .ts2-score-cell { text-align: center; padding: 7px 12px; border-left: 1px solid var(--border-s); vertical-align: middle; }
+    .ts2-wins { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 900; display: block; line-height: 1.1; color: var(--text); }
+    .ts2-score-cell.ts2-win  .ts2-wins { color: var(--ok); font-weight: 800; }
+    .ts2-score-cell.ts2-loss .ts2-wins { color: var(--muted); opacity: .65; }
+    .ts2-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; display: block; margin-top: 1px; }
+    .ts2-diff.positive { color: var(--ok); }
+    .positive { color: var(--ok); }
+    .negative { color: var(--danger); }
 
     /* ── Layout ── */
     .page {
       display: grid;
-      grid-template-columns: minmax(0,1fr) 260px;
+      grid-template-columns: minmax(0,1fr) 560px;
       gap: 14px;
-      padding: 14px 16px;
+      padding: 12px 20px;
       align-items: start;
     }
 
-    /* ── Scoreboard (sticky in main column) ── */
-    .scoreboard-wrap {
-      position: sticky;
-      top: var(--top-offset);
-      z-index: 40;
-      background: var(--bg);
-      padding-bottom: 10px;
-    }
-
-    .scoreboard-card {
-      background: var(--panel);
-      border: 1px solid var(--border-s);
-      border-radius: var(--r-lg);
-      box-shadow: var(--sh);
-      overflow: hidden;
-      width: fit-content;
-      max-width: 100%;
-    }
-
-    .sb-table { width: auto; border-collapse: collapse; }
-    .sb-table th, .sb-table td {
-      padding: 1px 4px; text-align: center;
-      border-right: 1px solid var(--border-s);
-      line-height: 1.1;
-    }
-    .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
-    .sb-header-row th {
-      font-size: 10px; font-weight: 800; color: var(--muted);
-      letter-spacing: .06em; text-transform: uppercase;
-      background: var(--soft); border-bottom: 1px solid var(--border-s);
-      padding: 2px 4px;
-    }
-    .sb-header-row th:first-child { text-align: left; padding-left: 8px; }
-    .sb-row td { border-top: 1px solid var(--border-s); }
-    .sb-row:first-of-type td { border-top: none; }
-    .sb-team-cell { text-align: left !important; padding: 0 !important; width: 1%; white-space: nowrap; }
-    .sb-team-inner { display: flex; align-items: center; justify-content: flex-start; padding: 6px 7px; }
-    .sb-logo {
-      width: 40px; height: 40px; border-radius: 10px; background: #0a1628;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; flex-shrink: 0;
-    }
-    .sb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .sb-score-cell {
-      font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text);
-      width: 46px; min-width: 46px;
-    }
-    .sb-score-cell.sb-win  { color: var(--ok); font-weight: 800; }
-    .sb-score-cell.sb-loss { color: var(--muted); opacity: .65; }
-    .sb-total-cell { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 900; min-width: 32px; }
-    .sb-total-cell.sb-leader { background: var(--navy); color: var(--gold); }
-    .sb-total-cell.sb-trail  { color: var(--muted); }
-
-    /* ── Games Won (by type) — compact card sitting beside the rounds tally ── */
-    .scoreboard-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
-    .games-won-card {
-      background: var(--panel);
-      border: 1px solid var(--border-s);
-      border-radius: var(--r-lg);
-      box-shadow: var(--sh);
-      overflow: hidden;
-      width: fit-content;
-      max-width: 100%;
-    }
-    .games-won-card:empty { display: none; }
-    .gw-table { width: auto; border-collapse: collapse; }
-    .gw-table th, .gw-table td {
-      border-right: 1px solid var(--border-s);
-      text-align: center; padding: 1px 4px; line-height: 1.1;
-    }
-    .gw-table th:last-child, .gw-table td:last-child { border-right: none; }
-    .gw-head th {
-      font-size: 10px; font-weight: 800; letter-spacing: .06em;
-      text-transform: uppercase; color: var(--muted);
-      background: var(--soft); border-bottom: 1px solid var(--border-s);
-      padding: 4px 10px;
-    }
-    .gw-head th.gw-label { background: var(--soft); color: var(--muted); }
-    .gw-head th.gw-col-all    { background: var(--navy);  color: var(--gold); }
-    .gw-head th.gw-col-womens { background: #ef4f8b; color: #fff; }
-    .gw-head th.gw-col-mens   { background: #1f7cff; color: #fff; }
-    .gw-head th.gw-col-mixed  { background: var(--gold); color: var(--navy); }
-    .gw-head th.gw-col-coed   { background: var(--green); color: #fff; }
-    .gw-row td { border-top: 1px solid var(--border-s); }
-    .gw-row:first-of-type td { border-top: none; }
-    .gw-team-cell { padding: 0 !important; }
-    .gw-team-inner { display: flex; align-items: center; justify-content: flex-start; padding: 6px 7px; }
-    .gw-logo {
-      width: 40px; height: 40px; border-radius: 10px; background: #0a1628;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; flex-shrink: 0;
-    }
-    .gw-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .gw-num { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 900; line-height: 1.05; color: var(--text); display: block; }
-    .gw-diff { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: var(--ok); display: block; margin-top: 2px; }
-    .gw-cell.gw-win  .gw-num { color: var(--ok); font-weight: 800; }
-    .gw-cell.gw-loss .gw-num { color: var(--muted); opacity: .7; }
-    .gw-cell { padding: 6px 12px !important; min-width: 56px; vertical-align: middle; }
+    .main-col { display: flex; flex-direction: column; gap: 10px; }
 
     /* ── Rounds ── */
     .rounds-stack { display: flex; flex-direction: column; gap: 10px; }
@@ -271,149 +226,147 @@
     }
 
     .round-head {
-      padding: 7px 14px;
+      padding: 10px 18px;
       background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
     }
-    .round-head-left { display: flex; align-items: center; gap: 8px; }
+    .round-head-left { display: flex; align-items: center; gap: 10px; }
     .round-badge {
-      width: 24px; height: 24px; border-radius: 50%; background: var(--gold);
+      width: 32px; height: 32px; border-radius: 50%; background: var(--gold);
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--navy); flex-shrink: 0;
+      font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--navy); flex-shrink: 0;
     }
-    .round-label { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; color: #fff; }
-    .round-type-tags { display: flex; gap: 4px; }
-    .round-head-right { display: flex; align-items: center; gap: 8px; }
-    .round-score-display { font-family: 'DM Mono', monospace; font-size: 13px; color: rgba(255,255,255,.80); letter-spacing: .1em; }
+    .round-label { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: #fff; }
+    .round-type-tags { display: flex; gap: 5px; }
+    .round-head-right { display: flex; align-items: center; gap: 10px; }
+    .round-score-display { font-family: 'DM Mono', monospace; font-size: 17px; color: rgba(255,255,255,.80); letter-spacing: .1em; }
     .round-pill {
-      font-size: 9px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
-      padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+      padding: 3px 11px; border-radius: 999px;
       background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.20); color: rgba(255,255,255,.80);
     }
     .round-pill.done { background: rgba(11,126,57,.5); border-color: rgba(11,126,57,.65); color: #a7f3c0; }
 
-    /* ── Game grid ── */
-    .game-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); }
+    /* ── Round game stack: single column ── */
+    .game-grid-2 { display: flex; flex-direction: column; }
+    .game-grid-2 .gcard { border-bottom: 1px solid var(--border-s); }
+    .game-grid-2 .gcard:last-child { border-bottom: none; }
 
-    .gcard {
-      border-right: 1px solid var(--border-s);
-      padding: 10px 10px 8px;
-      display: flex; flex-direction: column; gap: 7px;
-      background: #fff;
-      transition: background .2s;
-      min-width: 0;
+    /* ── Game card ── */
+    .gcard { padding: 0; background: #fff; min-width: 0; }
+
+    .gcard-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 8px;
+      background: var(--soft); border-bottom: 1px solid var(--border-s);
     }
-    .gcard:last-child { border-right: none; }
-    .gcard.is-done { background: #fafffe; }
+    .game-num-lbl {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; font-weight: 700; letter-spacing: 1.5px;
+      color: var(--navy); text-transform: uppercase;
+    }
 
-    .gcard-head { display: flex; align-items: center; justify-content: space-between; }
-    .game-num-lbl { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); }
-
-    /* ── Type pills ── */
     .type-pill {
-      font-size: 8px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
-      padding: 2px 7px; border-radius: 999px; border: 1px solid transparent;
+      font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 999px; border: 1px solid transparent;
     }
-    .type-pill.womens { background: #ef4f8b12; color: #ef4f8b; border-color: #ef4f8b44; }
-    .type-pill.mens   { background: #1f7cff12; color: #1f7cff; border-color: #1f7cff44; }
-    .type-pill.mixed  { background: #6c4bff12; color: #6c4bff; border-color: #6c4bff44; }
-    .type-pill.coed   { background: #0b7e3912; color: #0b7e39; border-color: #0b7e3944; }
+    .type-pill.womens { background: #123a7c22; color: #123a7c; border-color: #123a7c55; }
+    .type-pill.mens   { background: #0b7e3922; color: #0b7e39; border-color: #0b7e3955; }
+    .type-pill.mixed  { background: #ffd22e44; color: #7a5c00; border-color: #ffd22eaa; }
+    .type-pill.coed   { background: #0d522922; color: #0d5229; border-color: #0d522966; }
     .type-pill.other  { background: #eef3f9;   color: #526983; border-color: #d8e2ee;   }
 
     /* ── Team rows ── */
-    .team-rows { display: flex; flex-direction: column; gap: 5px; }
+    .team-rows { display: flex; flex-direction: column; gap: 5px; padding: 7px 8px; }
+
     .team-row {
       display: grid;
-      grid-template-columns: 26px 1fr auto;
+      grid-template-columns: 40px 1fr auto;
       align-items: center;
-      gap: 6px; padding: 6px 7px;
-      border-radius: 8px;
+      gap: 7px; padding: 7px 8px;
+      border-radius: 10px;
       background: var(--soft); border: 1px solid var(--border-s);
-      transition: background .2s, border-color .2s;
       min-width: 0;
     }
     .team-row.winner { background: #edfaf3; border-color: #8dd8ad; }
     .team-row.loser  { background: #fafafa; border-color: #e4e9f1; opacity: .75; }
-    .team-row.pending { background: var(--soft); border-color: var(--border-s); }
 
     .club-icon {
-      width: 26px; height: 26px; border-radius: 7px;
-      background: #fff; border: 1px solid var(--border-s);
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #0a1628; border: 1px solid var(--border-s);
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Bebas Neue', sans-serif; font-size: 11px;
-      color: var(--navy); overflow: hidden; flex-shrink: 0;
+      overflow: hidden; flex-shrink: 0;
     }
     .club-icon img { width: 100%; height: 100%; object-fit: contain; }
 
     .player-names { min-width: 0; display: flex; flex-direction: column; }
-    .player-name,
-    .player-name-2 { font-size: 11px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
+    .player-name  { font-size: 19px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+    .player-name-2 { font-size: 19px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
     .team-row.winner .player-name,
     .team-row.winner .player-name-2 { color: var(--ok); }
 
     .score-disp {
       font-family: 'DM Mono', monospace;
-      font-size: 14px; font-weight: 500;
-      color: var(--text); flex-shrink: 0; min-width: 24px; text-align: center;
+      font-size: 36px; font-weight: 900;
+      color: var(--text); line-height: 1;
+      min-width: 44px; text-align: center; flex-shrink: 0;
     }
-    .score-disp.win     { color: var(--ok); font-weight: 700; }
-    .score-disp.lose    { color: var(--muted); opacity: .70; }
-    .score-disp.pending { color: var(--muted); opacity: .40; }
+    .score-disp.win  { color: var(--ok); }
+    .score-disp.lose { color: var(--muted); opacity: .55; }
+    .score-disp.blank { color: var(--border-s); font-size: 22px; }
 
     /* ── Sidebar ── */
-    .sidebar {
-      display: flex; flex-direction: column; gap: 10px;
-      position: sticky;
-      top: var(--top-offset);
-      max-height: calc(100vh - var(--top-offset) - 14px);
-      overflow-y: auto;
-    }
+    .sidebar { display: flex; flex-direction: column; gap: 10px; }
     .side-panel { background: var(--panel); border: 1px solid var(--border-s); border-radius: var(--r-lg); box-shadow: var(--sh); overflow: hidden; }
     .side-panel-head { padding: 9px 14px; border-bottom: 1px solid var(--border-s); background: linear-gradient(180deg, #fdfefe 0%, var(--soft) 100%); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .side-panel-head h3 { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.4px; color: #0a2958; }
+    .side-panel-head h3 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1.4px; color: #0a2958; }
+    .side-body { padding: 0; }
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
-    .side-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
 
-    .team-compare { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .team-compare th { padding: 5px 8px; text-align: center; font-weight: 800; color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--border-s); background: var(--soft); }
-    .team-compare th:first-child { text-align: left; }
-    .team-compare td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border-s); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; }
-    .team-compare td:first-child { text-align: left; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .team-compare tr:last-child td { border-bottom: none; }
-    .team-compare td.leader { color: var(--ok); }
-    .team-compare td.trailer { color: var(--muted); opacity: .7; }
+    /* ── Player stats ── */
+    .ps-section-head {
+      padding: 10px 18px;
+      background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ps-section-badge {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--gold);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--navy);
+    }
+    .ps-section-label {
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: #fff;
+    }
+    .ps-two-col { display: flex; align-items: stretch; }
+    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); overflow: hidden; }
+    .ps-col:last-child { border-right: none; }
 
-    .player-stats-team-label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding: 8px 0 2px; border-bottom: 1px solid var(--border-s); }
-    .player-stats-table { width: 100%; border-collapse: collapse; }
-    .player-stats-table th { padding: 4px; color: var(--muted); font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; text-align: right; border-bottom: 1px solid var(--border-s); }
-    .player-stats-table th:first-child { text-align: left; }
-    .player-stats-table td { padding: 5px 4px; border-bottom: 1px solid var(--border-s); text-align: right; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; }
-    .player-stats-table td:first-child { text-align: left; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .player-stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .player-stats-table th { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 5px; border-bottom: 1px solid var(--border-s); text-align: right; background: var(--soft); }
+    .player-stats-table th.ps-th-name { text-align: left; }
+    .player-stats-table td { padding: 5px 5px; border-bottom: 1px solid var(--border-s); text-align: right; vertical-align: middle; }
+    .player-stats-table td.ps-name { text-align: left; font-weight: 600; font-size: 14px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .player-stats-table tr:last-child td { border-bottom: none; }
-    .positive { color: var(--ok); }
-    .negative { color: var(--danger); }
+    .ps-rank { width: 22px; text-align: center !important; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--muted); padding: 5px 3px !important; }
+    .ps-logo-cell { width: 28px; padding: 3px 3px !important; text-align: center !important; }
+    .ps-logo-inner { width: 22px; height: 22px; border-radius: 5px; overflow: hidden; background: #0a1628; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+    .ps-logo-inner img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .mono { font-family: 'DM Mono', monospace; }
 
     .loading-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; color: var(--muted); font-size: 12px; }
     .spinner { width: 30px; height: 30px; border: 3px solid var(--border-s); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-state { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 12px; line-height: 1.7; }
-    .empty-state .ico { font-size: 26px; margin-bottom: 8px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .empty-state .ico { font-size: 28px; margin-bottom: 8px; }
 
     /* ── Responsive ── */
-    @media (max-width: 1300px) {
-      .game-grid-4 { grid-template-columns: repeat(2, 1fr); }
-      .gcard:nth-child(2n) { border-right: none; }
-      .gcard:nth-child(n+3) { border-top: 1px solid var(--border-s); }
-    }
-    @media (max-width: 1000px) { .page { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; overflow-y: visible; } }
-    @media (max-width: 700px)  { .header-top { flex-wrap: wrap; padding: 10px 14px; } .toolbar { padding: 8px 14px; } .page { padding: 10px 12px; } }
-    @media (max-width: 480px)  { .game-grid-4 { grid-template-columns: 1fr; } .gcard { border-right: none !important; border-bottom: 1px solid var(--border-s); } .gcard:nth-child(n+3) { border-top: none; } }
+    @media (max-width: 1000px) { .page { grid-template-columns: 1fr; } .scoreboard-strip { grid-template-columns: 1fr; } }
+    @media (max-width: 700px)  { .page { padding: 10px 12px; } .league-header { padding: 10px 14px; } }
 
     @media print {
-      .app-header { position: static; box-shadow: none; }
-      .toolbar, .sidebar, .btn-action, .live-badge, .updated-badge { display: none !important; }
+      #top-static { position: static; box-shadow: none; }
+      .sidebar, .btn-action, .live-badge, .updated-badge { display: none !important; }
       .page { grid-template-columns: 1fr; padding: 0; gap: 8px; }
-      .scoreboard-wrap { position: static; }
       body { background: #fff; }
     }
   </style>
@@ -421,80 +374,66 @@
 <body>
 <script>if (window.self !== window.top) document.documentElement.classList.add('embedded');</script>
 
-<!-- ── App Header ──────────────────────────────────────────────────────────── -->
-<div class="app-header" id="app-header">
-  <div class="league-header">
-    <div class="league-brand">
-      <div class="league-logo-wrap">
-        <img id="league-logo" alt="" style="display:none;">
-        <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+<div id="top-static">
+  <!-- ── Header ── -->
+  <div class="app-header" id="app-header">
+    <div class="league-header">
+      <div class="league-brand">
+        <div class="league-logo-wrap">
+          <img id="league-logo" alt="" style="display:none;">
+          <div id="league-logo-fallback" class="league-logo-fallback">CPL</div>
+        </div>
+        <div class="league-text">
+          <h1 id="league-title">Connecticut Pickleball League</h1>
+          <p>Live Scoreboard</p>
+        </div>
       </div>
-      <div class="league-text">
-        <h1 id="league-title">Connecticut Pickleball League</h1>
-        <p>Live Scoreboard</p>
+      <div class="header-right">
+        <div class="live-badge"><div class="live-dot"></div><span class="live-text">Live</span></div>
+        <div class="pill" id="hdr-match">Match: --</div>
+        <div class="updated-badge" id="last-updated-badge">
+          <span class="updated-label">Updated</span>
+          <span id="last-updated-time"></span>
+        </div>
+        <button class="btn-action" onclick="window.print()" title="Print scorecard">Print</button>
       </div>
-    </div>
-    <div class="header-right">
-      <div class="live-badge"><div class="live-dot"></div><span class="live-text">Live</span></div>
-      <div class="pill" id="match-meta-bar"></div>
-      <div class="updated-badge" id="last-updated-badge">
-        <span class="updated-label">Updated</span>
-        <span id="last-updated-time"></span>
-      </div>
-      <button class="btn-action" onclick="window.print()" title="Print scorecard">Print</button>
     </div>
   </div>
-  <div class="toolbar">
-    <div class="field">
-      <label for="divisionSelect">Division</label>
-      <select id="divisionSelect" onchange="handleDivisionChange()"></select>
+
+  <!-- ── Meta strip ── -->
+  <div class="meta-strip"><div class="match-meta-bar" id="match-meta-bar"></div></div>
+
+  <!-- ── Scoreboard strip ── -->
+  <div class="scoreboard-strip">
+    <div class="sb-main">
+      <!-- Division select is moved into the first th by JS after renderScoreboard -->
+      <select id="divisionSelect" class="sb-division-select" onchange="handleDivisionChange()"></select>
+      <div class="scoreboard-card" id="scoreboard-card"></div>
+    </div>
+    <div class="sb-stats">
+      <div class="side-panel">
+        <div class="side-body" id="teamStandingsBody">
+          <div class="empty-state"><div class="ico">📊</div>Loading…</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ── Page grid ───────────────────────────────────────────────────────────── -->
+<!-- ── Page grid ── -->
 <div class="page">
-
-  <!-- Left main column -->
-  <div>
-    <!-- Sticky scoreboard -->
-    <div class="scoreboard-wrap" id="scoreboard-wrap">
-      <div class="scoreboard-row">
-        <div class="scoreboard-card" id="scoreboard-card"></div>
-        <div class="games-won-card" id="games-won-card"></div>
-      </div>
-    </div>
-    <!-- Rounds -->
+  <div class="main-col">
     <div id="main-content">
       <div class="loading-state"><div class="spinner"></div><span>Loading&hellip;</span></div>
     </div>
   </div>
 
-  <!-- Right sidebar -->
-  <aside class="sidebar" id="sidebar">
-
-    <!-- Team Standings -->
+  <aside class="sidebar">
     <div class="side-panel">
-      <div class="side-panel-head">
-        <h3>Team Standings</h3>
-        <span class="panel-badge">Match</span>
-      </div>
-      <div class="side-body" id="team-stats-body">
-        <div class="empty-state"><div class="ico">📊</div>Loading standings&hellip;</div>
+      <div class="side-body" id="playerStatsBody">
+        <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
       </div>
     </div>
-
-    <!-- Player Stats -->
-    <div class="side-panel">
-      <div class="side-panel-head">
-        <h3>Player Stats</h3>
-        <span class="panel-badge">Match</span>
-      </div>
-      <div class="side-body" id="player-stats-body">
-        <div class="empty-state"><div class="ico">🏓</div>Loading player stats&hellip;</div>
-      </div>
-    </div>
-
   </aside>
 </div>
 
@@ -506,21 +445,21 @@
   let allMatches           = [];
   let currentDivisionKey   = '';
   let pollTimer            = null;
+  let playerGenders        = {};
 
   const POLL_MS = 30000;
 
   // ── Boot ───────────────────────────────────────────────────────────────────
   window.addEventListener('load', () => {
     loadBranding();
+    loadPlayerGenders();
     loadMatches();
     updateStickyOffset();
   });
   window.addEventListener('resize', updateStickyOffset);
 
-  // ── Sticky offset ──────────────────────────────────────────────────────────
   function updateStickyOffset() {
-    const h = document.getElementById('app-header')?.offsetHeight || 0;
-    document.documentElement.style.setProperty('--header-h',   h + 'px');
+    const h = document.getElementById('top-static')?.offsetHeight || 0;
     document.documentElement.style.setProperty('--top-offset', h + 'px');
   }
 
@@ -529,11 +468,8 @@
     if (!hasGas()) return;
     google.script.run
       .withSuccessHandler(raw => {
-        try {
-          currentBranding = JSON.parse(raw) || {};
-          applyBranding(currentBranding);
-          updateStickyOffset();
-        } catch (e) { console.error('Branding parse error:', e); }
+        try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); updateStickyOffset(); }
+        catch (e) { console.error('Branding parse error:', e); }
       })
       .withFailureHandler(e => console.error('Branding load error:', e))
       .getScorecardBrandingV1();
@@ -544,10 +480,20 @@
     const img = document.getElementById('league-logo');
     const fb  = document.getElementById('league-logo-fallback');
     if (b.leagueLogoUrl && img && fb) {
-      img.src = b.leagueLogoUrl;
-      img.style.display = 'block';
-      fb.style.display  = 'none';
+      img.src = b.leagueLogoUrl; img.style.display = 'block'; fb.style.display = 'none';
     }
+  }
+
+  // ── Player gender registry ─────────────────────────────────────────────────
+  function loadPlayerGenders() {
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { playerGenders = JSON.parse(raw) || {}; }
+        catch (e) { console.error('playerGenders parse error', e); }
+      })
+      .withFailureHandler(e => console.error('playerGenders load error', e))
+      .getPlayerGendersV1();
   }
 
   // ── Load matches ───────────────────────────────────────────────────────────
@@ -558,36 +504,27 @@
       .withSuccessHandler(raw => {
         try {
           const resp = JSON.parse(raw);
-          {
-            const allRows = Array.isArray(resp.rows) ? resp.rows : [];
-            // If a specific match was deep-linked (INITIAL_MATCH_ID set), don't
-            // filter by week — otherwise we'd drop the match the user clicked on.
-            if (window.INITIAL_MATCH_ID) {
-              allMatches = allRows;
-            } else {
-              const wk = pickCurrentWeek(allRows);
-              const wkMs = wk ? allRows.filter(m => { const w = extractWeekNum(m); return w === wk || w === ''; }) : [];
-              allMatches = wkMs.length ? wkMs : allRows;
-            }
-          }
+          allMatches = Array.isArray(resp.rows) ? resp.rows : [];
           if (!allMatches.length) {
             populateDivisions([]);
             setMain(emptyHtml('🏓', 'No matches available.'));
             return;
           }
           populateDivisions(allMatches);
+
           const pinned = window.INITIAL_MATCH_ID;
-          const filtered = matchesForDiv(currentDivisionKey);
           const pinnedMatch = pinned && allMatches.find(m => String(m.match_id) === pinned);
           if (pinnedMatch) {
             currentDivisionKey = String(pinnedMatch.division_id || '');
             syncDivDropdown();
             currentMatchId = pinned;
           } else {
+            const filtered = matchesForDiv(currentDivisionKey);
             currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
             syncDivDropdown();
           }
-          if (currentMatchId) loadMatch(currentMatchId);
+
+          if (currentMatchId) { loadMatch(currentMatchId); startPolling(); }
           else setMain(emptyHtml('🏓', 'No match for this division.'));
         } catch (err) {
           setMain(emptyHtml('⚠️', 'Failed to load match list.'));
@@ -597,7 +534,7 @@
       .withFailureHandler(err => {
         setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err?.message || err))));
       })
-      .getOpenMatchesForScoreEntryV5();
+      .getAllMatchesForScoreboardV1();
   }
 
   // ── Division handling ──────────────────────────────────────────────────────
@@ -610,10 +547,12 @@
     if (filtered.length) {
       currentMatchId = String(filtered[0].match_id);
       loadMatch(currentMatchId);
+      startPolling();
     } else {
       currentMatchId = '';
       setMain(emptyHtml('🏓', 'No match for this division.'));
-      document.getElementById('scoreboard-card').innerHTML = '';
+      const card = document.getElementById('scoreboard-card');
+      if (card) card.innerHTML = '';
     }
   }
 
@@ -623,18 +562,9 @@
     const seen = new Map();
     matches.forEach(m => { const k = divKey(m); if (!seen.has(k)) seen.set(k, divLabel(m)); });
     sel.innerHTML = '';
-    if (!seen.size) {
-      sel.innerHTML = '<option value="">No divisions</option>';
-      currentDivisionKey = '';
-      return;
-    }
-    seen.forEach((lbl, k) => {
-      const o = document.createElement('option');
-      o.value = k; o.textContent = lbl;
-      sel.appendChild(o);
-    });
-    if (!currentDivisionKey || !seen.has(currentDivisionKey))
-      currentDivisionKey = seen.keys().next().value;
+    if (!seen.size) { sel.innerHTML = '<option value="">No divisions</option>'; currentDivisionKey = ''; return; }
+    seen.forEach((lbl, k) => { const o = document.createElement('option'); o.value = k; o.textContent = lbl; sel.appendChild(o); });
+    if (!currentDivisionKey || !seen.has(currentDivisionKey)) currentDivisionKey = seen.keys().next().value;
     sel.value = currentDivisionKey;
   }
 
@@ -643,20 +573,16 @@
     if (d) d.value = currentDivisionKey;
   }
 
-  // ── Load match (scorecard + stats) ────────────────────────────────────────
+  // ── Load match ─────────────────────────────────────────────────────────────
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
-    setMain(loadingHtml('Loading scorecard…'));
     if (!hasGas()) return;
-
-    // Load scorecard
     google.script.run
       .withSuccessHandler(raw => {
         try {
           currentScorecardData = JSON.parse(raw);
-          renderScorecard(currentScorecardData);
+          renderDisplay(currentScorecardData);
           updateLastUpdated();
-          startPolling();
         } catch (err) {
           setMain(emptyHtml('⚠️', 'Render error: ' + esc(String(err?.message || err))));
           console.error(err);
@@ -666,86 +592,78 @@
         setMain(emptyHtml('⚠️', 'Load error: ' + esc(String(err?.message || err))));
       })
       .getScorecardDataV5(matchId);
-
-    // Load stats (silent on failure — getPublicMatchStatsV1 may not exist yet)
-    google.script.run
-      .withSuccessHandler(raw => {
-        try {
-          const parsed = JSON.parse(raw);
-          renderStats(parsed);
-        } catch (e) { console.error('Stats parse error:', e); }
-      })
-      .withFailureHandler(e => console.error('Stats load error (non-fatal):', e))
-      .getPublicMatchStatsV1(matchId);
   }
 
   // ── Polling ────────────────────────────────────────────────────────────────
   function startPolling() {
     stopPolling();
-    pollTimer = setInterval(() => {
-      if (currentMatchId) loadMatch(currentMatchId);
-    }, POLL_MS);
+    pollTimer = setInterval(() => { if (currentMatchId) loadMatch(currentMatchId); }, POLL_MS);
   }
-
   function stopPolling() {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
 
-  // ── Render scorecard ───────────────────────────────────────────────────────
-  function renderScorecard(data) {
-    if (!data || !data.match) {
-      setMain(emptyHtml('📋', 'No scorecard data.'));
-      return;
-    }
+  // ── Render display ────────────────────────────────────────────────────────
+  function renderDisplay(data) {
+    if (!data || !data.match) { setMain(emptyHtml('📋', 'No scorecard data.')); return; }
     const match  = data.match;
-    const rounds = data.rounds || [];
+    const rawRounds = data.rounds || [];
 
+    // Dedupe only if there are duplicate round_numbers
+    const numCount = {};
+    for (const r of rawRounds) {
+      const k = Number(r.round_number || 0);
+      numCount[k] = (numCount[k] || 0) + 1;
+    }
+    const hasDupes = Object.values(numCount).some(c => c > 1);
+    const rounds = hasDupes ? dedupeRounds_(rawRounds) : rawRounds;
+
+    updateMetaBar(match);
     renderScoreboard(match, rounds);
     updateStickyOffset();
 
+    const { cur } = detectRounds(rounds);
+    const withSorted = r => r ? { ...r, games: sortGamesForDisplay(r.games || []) } : r;
+    const roundHtml = cur ? renderRound(withSorted(cur), match) : '';
+    setMain(roundHtml ? `<div class="rounds-stack">${roundHtml}</div>` : emptyHtml('📋', 'No active round found.'));
+
+    renderTeamStats();
+    renderPlayerStats();
+  }
+
+  // ── Meta bar ───────────────────────────────────────────────────────────────
+  function updateMetaBar(match) {
+    const d = extractDivNum(match), w = extractWeekNum(match);
+    setText('hdr-match', d ? 'Div ' + d + (w ? ' · Week ' + w : '') : 'Match: ' + (match?.match_id || '--'));
     const meta = [
       fmtLongDate(match.match_date),
       fmtTime(match.start_time),
       match.venue ? 'at ' + match.venue : '',
-      extractDivNum(match)  ? 'Div '  + extractDivNum(match)  : '',
-      extractWeekNum(match) ? 'Week ' + extractWeekNum(match) : '',
+      d ? 'Div ' + d : '',
+      w ? 'Week ' + w : '',
     ].filter(Boolean).join(' · ');
-
-    const metaBar = document.getElementById('match-meta-bar');
-    if (metaBar) metaBar.textContent = meta || 'Match';
-
-    let gameOffset = 0;
-    const roundsHtml = rounds.length
-      ? '<div class="rounds-stack">' + rounds.map(r => {
-          const html = renderRound(r, match, gameOffset);
-          gameOffset += (r.games || []).length;
-          return html;
-        }).join('') + '</div>'
-      : emptyHtml('📋', 'No rounds found for this match.');
-
-    setMain(roundsHtml);
+    setText('match-meta-bar', meta);
   }
 
   // ── Scoreboard ─────────────────────────────────────────────────────────────
   function renderScoreboard(match, rounds) {
-    const card = document.getElementById('scoreboard-card');
-    if (!card) return;
-    if (!rounds.length) { card.innerHTML = ''; return; }
+    const card  = document.getElementById('scoreboard-card');
+    const sel   = document.getElementById('divisionSelect');
+    const sbMain = document.querySelector('.sb-main');
+    // Rescue select from inside card before wiping innerHTML
+    if (sel && card && card.contains(sel) && sbMain) sbMain.insertBefore(sel, card);
+    rounds = dedupeRounds_(rounds);
+    if (!card || !rounds.length) { if (card) card.innerHTML = ''; return; }
 
-    const homeTotal = match.home_rounds_won || 0;
-    const awayTotal = match.away_rounds_won || 0;
-
-    const colHeaders = rounds.map((r, i) =>
-      `<th>R${r.round_number || (i + 1)}</th>`
-    ).join('');
-
+    const homeTotal = rounds.reduce((s, r) => s + (r.home_games_won || 0), 0);
+    const awayTotal = rounds.reduce((s, r) => s + (r.away_games_won || 0), 0);
+    const colHeaders = rounds.map((r, i) => `<th>R${r.round_number || (i + 1)}</th>`).join('');
     const homeScores = rounds.map(r => {
       const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
       const active = hw || aw || isRoundDone(r);
       const cls = isRoundDone(r) ? (hw > aw ? 'sb-win' : 'sb-loss') : '';
       return `<td class="sb-score-cell ${cls}">${active ? hw : '—'}</td>`;
     }).join('');
-
     const awayScores = rounds.map(r => {
       const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
       const active = hw || aw || isRoundDone(r);
@@ -755,325 +673,267 @@
 
     card.innerHTML = `
       <table class="sb-table">
-        <thead>
-          <tr class="sb-header-row">
-            <th style="text-align:center;min-width:96px;"></th>
-            ${colHeaders}
-            <th>Total</th>
-          </tr>
-        </thead>
+        <thead><tr class="sb-header-row">
+          <th id="sb-div-th" style="padding:6px 10px;width:120px;height:44px;"></th>
+          ${colHeaders}<th>Total</th>
+        </tr></thead>
         <tbody>
           <tr class="sb-row">
-            <td class="sb-team-cell">
-              <div class="sb-team-inner">
-                <div class="sb-logo">${buildLogoHtml(match.home_team_name, 'sb')}</div>
-              </div>
-            </td>
+            <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(match.home_team_name, 'sb')}</div></div></td>
             ${homeScores}
             <td class="sb-total-cell ${homeTotal > awayTotal ? 'sb-leader' : 'sb-trail'}">${homeTotal}</td>
           </tr>
           <tr class="sb-row">
-            <td class="sb-team-cell">
-              <div class="sb-team-inner">
-                <div class="sb-logo">${buildLogoHtml(match.away_team_name, 'sb')}</div>
-              </div>
-            </td>
+            <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(match.away_team_name, 'sb')}</div></div></td>
             ${awayScores}
             <td class="sb-total-cell ${awayTotal > homeTotal ? 'sb-leader' : 'sb-trail'}">${awayTotal}</td>
           </tr>
         </tbody>
       </table>`;
 
-    renderGamesWonCard(match, rounds);
+    // Move division dropdown into the blank first header cell
+    const divTh = document.getElementById('sb-div-th');
+    if (divTh && sel) divTh.appendChild(sel);
+    updateStickyOffset();
   }
 
-  // ── Games Won by type (sits next to the rounds tally) ──────────────────────
-  function renderGamesWonCard(match, rounds) {
-    const card = document.getElementById('games-won-card');
-    if (!card) return;
-    const allGames = (rounds || []).flatMap(r => r.games || []);
-    const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
+  // ── Round detection ────────────────────────────────────────────────────────
+  function detectRounds(rounds) {
+    if (!rounds || !rounds.length) return { cur: null, nxt: null };
+    let cur = null;
+    for (const r of rounds) {
+      const gs = r.games || [];
+      const anyScore = gs.some(g => hasScore(g.home_score));
+      const allDone  = gs.length > 0 && gs.every(g => hasScore(g.home_score) && hasScore(g.away_score));
+      if (anyScore && !allDone) { cur = r; break; }
+    }
+    if (!cur) {
+      for (const r of rounds) {
+        if (!(r.games || []).some(g => hasScore(g.home_score))) { cur = r; break; }
+      }
+    }
+    if (!cur) cur = rounds[rounds.length - 1];
+    return { cur };
+  }
+
+  // ── Game ordering ──────────────────────────────────────────────────────────
+  function sortGamesForDisplay(games) {
+    const pri = g => { const tc = typeClass(g.game_type); return tc==='womens'?0:tc==='mens'?1:tc==='mixed'?2:tc==='coed'?3:4; };
+    return [...games].sort((a,b) => pri(a)-pri(b) || (a.game_number_in_round||0)-(b.game_number_in_round||0));
+  }
+
+  // ── Round render ───────────────────────────────────────────────────────────
+  function renderRound(round, match) {
+    const games = round.games || [];
+    const isDone = isRoundDone(round);
+    const hw = round.home_games_won || 0;
+    const aw = round.away_games_won || 0;
+    const showScore = hw || aw || isDone;
+    return `
+      <div class="round-block">
+        <div class="round-head">
+          <div class="round-head-left">
+            <div class="round-badge">${esc(String(round.round_number || ''))}</div>
+            <span class="round-label">Round ${esc(String(round.round_number || ''))}</span>
+          </div>
+          <div class="round-head-right">
+            ${showScore ? `<span class="round-score-display">${hw} – ${aw}</span>` : ''}
+            <span class="round-pill ${isDone ? 'done' : ''}">${isDone ? 'Complete' : esc(round.status || 'Pending')}</span>
+          </div>
+        </div>
+        <div class="game-grid-2">${games.map(g => renderGameCard(g, match)).join('')}</div>
+      </div>`;
+  }
+
+  // ── Game card ──────────────────────────────────────────────────────────────
+  function renderGameCard(game, match) {
+    const hasH = hasScore(game.home_score), hasA = hasScore(game.away_score);
+    const done = hasH && hasA;
+    const hNum = done ? Number(game.home_score) : null;
+    const aNum = done ? Number(game.away_score) : null;
+    const hWin = done && hNum > aNum, aWin = done && aNum > hNum;
+    const p1h = game.home_player_1_name || '', p2h = game.home_player_2_name || '';
+    const p1a = game.away_player_1_name || '', p2a = game.away_player_2_name || '';
+    const hScoreCls = !hasH ? 'blank' : hWin ? 'win' : aWin ? 'lose' : '';
+    const aScoreCls = !hasA ? 'blank' : aWin ? 'win' : hWin ? 'lose' : '';
+    const courtLabel = game.court_number
+      ? `Court ${esc(String(game.court_number))}`
+      : game.court
+        ? `Court ${esc(String(game.court))}`
+        : `Court ${esc(String(game.game_number_in_round || ''))}`;
+    return `
+      <div class="gcard">
+        <div class="gcard-head">
+          <span class="game-num-lbl">${courtLabel}</span>
+          <span class="type-pill ${typeClass(game.game_type)}">${esc(prettyType(game.game_type))}</span>
+        </div>
+        <div class="team-rows">
+          <div class="team-row ${hWin ? 'winner' : aWin ? 'loser' : ''}">
+            <div class="club-icon">${buildLogoHtml(match.home_team_name, 'sm')}</div>
+            <div class="player-names">
+              <div class="player-name">${p1h ? esc(p1h) : 'TBD'}</div>
+              <div class="player-name-2">${p2h ? esc(p2h) : 'TBD'}</div>
+            </div>
+            <span class="score-disp ${hScoreCls}">${hasH ? hNum : '—'}</span>
+          </div>
+          <div class="team-row ${aWin ? 'winner' : hWin ? 'loser' : ''}">
+            <div class="club-icon">${buildLogoHtml(match.away_team_name, 'sm')}</div>
+            <div class="player-names">
+              <div class="player-name">${p1a ? esc(p1a) : 'TBD'}</div>
+              <div class="player-name-2">${p2a ? esc(p2a) : 'TBD'}</div>
+            </div>
+            <span class="score-disp ${aScoreCls}">${hasA ? aNum : '—'}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Team Stats (games won by type, ts2 style) ─────────────────────────────
+  function renderTeamStats() {
+    const el = document.getElementById('teamStandingsBody');
+    const data = currentScorecardData;
+    if (!data || !data.match) { el.innerHTML = '<div class="empty-state"><div class="ico">📊</div>No match loaded.</div>'; return; }
+    const match    = data.match;
+    const allGames = (data.rounds || []).flatMap(r => r.games || []);
 
     const gtypes  = ['womens','mens','mixed','coed'];
     const glabels = { womens:"Women's", mens:"Men's", mixed:'Mixed', coed:'Coed' };
 
     const stats = { all: { hW:0, aW:0, hD:0, aD:0 } };
     for (const gt of gtypes) stats[gt] = { hW:0, aW:0, hD:0, aD:0, found:false };
-
-    for (const g of played) {
-      const hs = Number(g.home_score), as = Number(g.away_score);
-      const gt = typeClass(g.game_type);
-      stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0;
-      stats.all.hD += hs-as;     stats.all.aD += as-hs;
-      if (stats[gt]) {
-        stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0;
-        stats[gt].hD += hs-as;     stats[gt].aD += as-hs;
-        stats[gt].found = true;
-      }
-    }
-
-    // Determine which type columns to show. If no games played yet, infer from
-    // the scheduled games so the card still appears with zeros pre-match.
     const scheduledTypes = new Set();
     for (const g of allGames) {
       const gt = typeClass(g.game_type);
       if (gt) scheduledTypes.add(gt);
+      if (!hasScore(g.home_score) || !hasScore(g.away_score)) continue;
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0; stats.all.hD += hs-as; stats.all.aD += as-hs;
+      if (stats[gt]) { stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0; stats[gt].hD += hs-as; stats[gt].aD += as-hs; stats[gt].found = true; }
     }
+
     const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found || scheduledTypes.has(gt))];
 
-    const headHtml = activeCols.map(col => {
+    const colHeads = activeCols.map(col => {
       const lbl = col === 'all' ? 'All' : glabels[col];
-      return `<th class="gw-col-${col}">${esc(lbl)}</th>`;
+      return `<th class="ts2-col-head ts2-col-${col}">${esc(lbl)}</th>`;
     }).join('');
 
-    const cell = (col, isHome) => {
-      const s   = stats[col];
-      const w   = isHome ? s.hW : s.aW;
-      const ow  = isHome ? s.aW : s.hW;
-      const d   = isHome ? s.hD : s.aD;
-      const cls = w > ow ? 'gw-win' : w < ow ? 'gw-loss' : '';
-      return `<td class="gw-cell ${cls}">
-        <span class="gw-num">${w}</span>
-        ${d > 0 ? `<span class="gw-diff">+${d}</span>` : ''}
+    const scoreCell = (col, isHome) => {
+      const s       = stats[col];
+      const wins    = isHome ? s.hW : s.aW;
+      const diff    = isHome ? s.hD : s.aD;
+      const oppWins = isHome ? s.aW : s.hW;
+      const cellCls = wins > oppWins ? 'ts2-win' : wins < oppWins ? 'ts2-loss' : '';
+      return `<td class="ts2-score-cell ${cellCls}">
+        <span class="ts2-wins">${wins}</span>
+        ${diff > 0 ? `<span class="ts2-diff positive">+${diff}</span>` : ''}
       </td>`;
     };
 
-    card.innerHTML = `
-      <table class="gw-table">
-        <thead>
-          <tr class="gw-head">
-            <th class="gw-label">Games Won</th>
-            ${headHtml}
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="gw-row">
-            <td class="gw-team-cell">
-              <div class="gw-team-inner">
-                <div class="gw-logo">${buildLogoHtml(match.home_team_name, 'sb')}</div>
-              </div>
-            </td>
-            ${activeCols.map(c => cell(c, true)).join('')}
-          </tr>
-          <tr class="gw-row">
-            <td class="gw-team-cell">
-              <div class="gw-team-inner">
-                <div class="gw-logo">${buildLogoHtml(match.away_team_name, 'sb')}</div>
-              </div>
-            </td>
-            ${activeCols.map(c => cell(c, false)).join('')}
-          </tr>
-        </tbody>
-      </table>`;
-  }
-
-  // ── Round render ───────────────────────────────────────────────────────────
-  function renderRound(round, match, gameOffset) {
-    const games  = round.games || [];
-    const isDone = isRoundDone(round);
-    const hw     = round.home_games_won || 0;
-    const aw     = round.away_games_won || 0;
-
-    const types    = [...new Set(games.map(g => prettyType(g.game_type)).filter(Boolean))];
-    const typeTags = types.map(t =>
-      `<span class="type-pill ${typeClass(t)}">${esc(t)}</span>`
-    ).join('');
-
-    const showScore = hw || aw || isDone;
-    const scorePart = showScore
-      ? `<span class="round-score-display">${hw} – ${aw}</span>`
-      : '';
-
-    return `
-      <div class="round-block" id="round-${esc(String(round.round_id || ''))}">
-        <div class="round-head">
-          <div class="round-head-left">
-            <div class="round-badge">${esc(String(round.round_number || ''))}</div>
-            <span class="round-label">Round ${esc(String(round.round_number || ''))}</span>
-            ${typeTags ? '<div class="round-type-tags">' + typeTags + '</div>' : ''}
-          </div>
-          <div class="round-head-right">
-            ${scorePart}
-            <span class="round-pill ${isDone ? 'done' : ''}">${isDone ? 'Complete' : esc(round.status || 'Pending')}</span>
-          </div>
-        </div>
-        <div class="game-grid-4">${games.map((g, i) => renderGame(g, match, gameOffset + i + 1)).join('')}</div>
-      </div>`;
-  }
-
-  // ── Game render (read-only) ────────────────────────────────────────────────
-  function renderGame(game, match, globalGameNum) {
-    const hasH = hasScore(game.home_score);
-    const hasA = hasScore(game.away_score);
-    const done = hasH && hasA;
-    const hNum = done ? Number(game.home_score) : null;
-    const aNum = done ? Number(game.away_score) : null;
-    const hWin = done && hNum > aNum;
-    const aWin = done && aNum > hNum;
-
-    const p1h = game.home_player_1_name || '';
-    const p2h = game.home_player_2_name || '';
-    const p1a = game.away_player_1_name || '';
-    const p2a = game.away_player_2_name || '';
-
-    const homeRowCls  = done ? (hWin ? 'winner' : 'loser') : 'pending';
-    const awayRowCls  = done ? (aWin ? 'winner' : 'loser') : 'pending';
-    const hScoreCls   = done ? (hWin ? 'win' : 'lose')   : 'pending';
-    const aScoreCls   = done ? (aWin ? 'win' : 'lose')   : 'pending';
-    const hScoreTxt   = done ? esc(String(game.home_score)) : '—';
-    const aScoreTxt   = done ? esc(String(game.away_score)) : '—';
-
-    const labelNum = globalGameNum != null
-      ? globalGameNum
-      : (game.game_number_in_round || '');
-
-    return `
-      <div class="gcard ${done ? 'is-done' : ''}">
-        <div class="gcard-head">
-          <span class="game-num-lbl">G${esc(String(labelNum))}</span>
-          <span class="type-pill ${typeClass(game.game_type)}">${esc(prettyType(game.game_type))}</span>
-        </div>
-        <div class="team-rows">
-          <div class="team-row ${homeRowCls}">
-            <div class="club-icon">${buildLogoHtml(match.home_team_name, 'sm')}</div>
-            <div class="player-names">
-              <div class="player-name">${p1h ? esc(p1h) : 'TBD'}</div>
-              <div class="player-name-2">${p2h ? esc(p2h) : 'TBD'}</div>
-            </div>
-            <span class="score-disp ${hScoreCls}">${hScoreTxt}</span>
-          </div>
-          <div class="team-row ${awayRowCls}">
-            <div class="club-icon">${buildLogoHtml(match.away_team_name, 'sm')}</div>
-            <div class="player-names">
-              <div class="player-name">${p1a ? esc(p1a) : 'TBD'}</div>
-              <div class="player-name-2">${p2a ? esc(p2a) : 'TBD'}</div>
-            </div>
-            <span class="score-disp ${aScoreCls}">${aScoreTxt}</span>
-          </div>
-        </div>
-      </div>`;
-  }
-
-  // ── Stats render ───────────────────────────────────────────────────────────
-  // getPublicMatchStatsV1 shape: { ok, matchId, homeStats, awayStats, homePlayers, awayPlayers }
-  function renderStats(stats) {
-    if (!stats || !stats.ok) return;
-    renderTeamStats(stats.homeStats, stats.awayStats);
-    renderPlayerStats(stats.homePlayers, stats.awayPlayers,
-      stats.homeStats?.team_name, stats.awayStats?.team_name);
-  }
-
-  function renderTeamStats(home, away) {
-    const el = document.getElementById('team-stats-body');
-    if (!el) return;
-    if (!home && !away) {
-      el.innerHTML = '<div class="empty-state"><div class="ico">📊</div>No standings data yet.</div>';
-      return;
-    }
-    home = home || {}; away = away || {};
-
-    const homeName = esc(home.team_name || 'Home');
-    const awayName = esc(away.team_name || 'Away');
-
-    function cmp(hv, av) {
-      const h = Number(hv) || 0, a = Number(av) || 0;
-      return h > a ? ['leader','trailer'] : a > h ? ['trailer','leader'] : ['',''];
-    }
-
-    function row(label, hVal, aVal, higherIsBetter) {
-      const hv = hVal ?? '—', av = aVal ?? '—';
-      let hCls = '', aCls = '';
-      if (hVal != null && aVal != null) {
-        const h = Number(hVal), a = Number(aVal);
-        if (!isNaN(h) && !isNaN(a)) {
-          if (higherIsBetter === false) {
-            hCls = h < a ? 'leader' : h > a ? 'trailer' : '';
-            aCls = a < h ? 'leader' : a > h ? 'trailer' : '';
-          } else {
-            [hCls, aCls] = cmp(h, a);
-          }
-        }
-      }
-      return `<tr>
-        <td>${label}</td>
-        <td class="${hCls}">${esc(String(hv))}</td>
-        <td class="${aCls}">${esc(String(av))}</td>
-      </tr>`;
-    }
-
-    function fmtWL(w, l) {
-      if (w == null && l == null) return null;
-      return `${w ?? 0}–${l ?? 0}`;
-    }
-
-    function fmtPM(pts) {
-      if (pts == null) return null;
-      const n = Number(pts);
-      return isNaN(n) ? String(pts) : (n > 0 ? '+' + n : String(n));
-    }
+    const homeName = match.home_team_name || 'Home';
+    const awayName = match.away_team_name || 'Away';
 
     el.innerHTML = `
-      <table class="team-compare">
-        <thead>
-          <tr>
-            <th></th>
-            <th title="${homeName}">${homeName.length > 10 ? homeName.substring(0,10)+'…' : homeName}</th>
-            <th title="${awayName}">${awayName.length > 10 ? awayName.substring(0,10)+'…' : awayName}</th>
-          </tr>
-        </thead>
+      <table class="ts2-table">
+        <thead><tr>
+          <th class="ts2-team-head"><span class="ts2-meta-label">Games Won</span></th>
+          ${colHeads}
+        </tr></thead>
         <tbody>
-          ${row('Match W–L',  fmtWL(home.match_wins,  home.match_losses),  fmtWL(away.match_wins,  away.match_losses))}
-          ${row('Rounds W–L', fmtWL(home.rounds_won,  home.rounds_lost),   fmtWL(away.rounds_won,  away.rounds_lost))}
-          ${row('Games W–L',  fmtWL(home.games_won,   home.games_lost),    fmtWL(away.games_won,   away.games_lost))}
-          ${row('Point +/–',  fmtPM(home.point_diff),                      fmtPM(away.point_diff))}
-          ${row('Rank', home.standings_rank ?? null, away.standings_rank ?? null, false)}
+          <tr class="ts2-row">
+            <td class="ts2-team-cell"><div class="ts2-team-inner"><div class="ts2-logo">${buildLogoHtml(homeName, 'sb')}</div></div></td>
+            ${activeCols.map(col => scoreCell(col, true)).join('')}
+          </tr>
+          <tr class="ts2-row">
+            <td class="ts2-team-cell"><div class="ts2-team-inner"><div class="ts2-logo">${buildLogoHtml(awayName, 'sb')}</div></div></td>
+            ${activeCols.map(col => scoreCell(col, false)).join('')}
+          </tr>
         </tbody>
       </table>`;
   }
 
-  function renderPlayerStats(homePlayers, awayPlayers, homeName, awayName) {
-    const el = document.getElementById('player-stats-body');
-    if (!el) return;
-    if (!homePlayers?.length && !awayPlayers?.length) {
-      el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No player stats yet.</div>';
-      return;
+  // ── Player Stats (by gender, sorted wins↓ losses↑ diff↓) ─────────────────
+  function renderPlayerStats() {
+    const el = document.getElementById('playerStatsBody');
+    const data = currentScorecardData;
+    if (!data || !data.match) { el.innerHTML = ''; return; }
+    const allGames = (data.rounds || []).flatMap(r => r.games || []);
+    const match = data.match;
+    const homeName = match.home_team_name || 'Home';
+    const awayName = match.away_team_name || 'Away';
+
+    const pm = {};
+    const ensure = (name, isHome, gameType) => {
+      if (!name) return null;
+      if (!pm[name]) pm[name] = { name, wins:0, losses:0, diff:0, isWomens:false, isMens:false, teamName: isHome ? homeName : awayName };
+      const tc = typeClass(gameType);
+      if (tc === 'womens') pm[name].isWomens = true;
+      if (tc === 'mens')   pm[name].isMens   = true;
+      return pm[name];
+    };
+    for (const g of allGames) {
+      ensure(g.home_player_1_name, true,  g.game_type);
+      ensure(g.home_player_2_name, true,  g.game_type);
+      ensure(g.away_player_1_name, false, g.game_type);
+      ensure(g.away_player_2_name, false, g.game_type);
+      if (!hasScore(g.home_score) || !hasScore(g.away_score)) continue;
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      const tally = (name, isHome) => {
+        const p = pm[name]; if (!p) return;
+        if (isHome) { p.wins += hs>as?1:0; p.losses += as>hs?1:0; p.diff += hs-as; }
+        else        { p.wins += as>hs?1:0; p.losses += hs>as?1:0; p.diff += as-hs; }
+      };
+      tally(g.home_player_1_name, true);
+      tally(g.home_player_2_name, true);
+      tally(g.away_player_1_name, false);
+      tally(g.away_player_2_name, false);
     }
 
-    function fmtPM(v) {
-      const n = Number(v);
-      if (isNaN(n)) return { txt: '—', cls: '' };
-      return { txt: (n > 0 ? '+' : '') + n, cls: n > 0 ? 'positive' : n < 0 ? 'negative' : '' };
+    const players = Object.values(pm);
+    if (!players.length) { el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No player data.</div>'; return; }
+
+    // Apply gender registry — authoritative over game-type inference
+    for (const p of players) {
+      const g = (playerGenders[p.name] || '').toLowerCase();
+      if (g === 'w') p.isWomens = true;
+      else if (g === 'm') p.isWomens = false;
     }
 
-    function buildTable(players) {
-      return players.map(p => {
-        const pm = fmtPM(p.point_diff);
-        return `<tr>
-          <td>${esc(p.player_name || '—')}</td>
-          <td>${esc(String(p.games_played ?? '—'))}</td>
-          <td>${esc(String(p.wins ?? 0))}–${esc(String(p.losses ?? 0))}</td>
-          <td class="${pm.cls}">${pm.txt}</td>
-        </tr>`;
-      }).join('');
-    }
+    const sortFn = (a,b) => b.wins-a.wins || a.losses-b.losses || b.diff-a.diff;
+    const womenPlayers = players.filter(p =>  p.isWomens).sort(sortFn);
+    const menPlayers   = players.filter(p => !p.isWomens).sort(sortFn);
 
-    let html = '';
-    if (homePlayers?.length) {
-      html += `<div class="player-stats-team-label">${esc(homeName || 'Home')}</div>
+    const buildRows = list => list.map((p, i) => {
+      const ds = p.diff > 0 ? '+' + p.diff : String(p.diff);
+      const logoHtml = `<div class="ps-logo-inner">${buildLogoHtml(p.teamName, 'sm')}</div>`;
+      return `<tr>
+        <td class="ps-rank">${i + 1}</td>
+        <td class="ps-logo-cell">${logoHtml}</td>
+        <td class="ps-name">${esc(p.name)}</td>
+        <td class="mono">${p.wins}–${p.losses}</td>
+        <td class="mono ${p.diff>0?'positive':p.diff<0?'negative':''}">${esc(ds)}</td>
+      </tr>`;
+    }).join('');
+
+    const buildSection = (label, list) => {
+      if (!list.length) return '';
+      const badge = label === 'Women' ? 'W' : 'M';
+      return `<div class="ps-section-head">
+          <div class="ps-section-badge">${badge}</div>
+          <span class="ps-section-label">${esc(label)}</span>
+        </div>
         <table class="player-stats-table">
-          <thead><tr><th>Player</th><th>GP</th><th>W–L</th><th>+/–</th></tr></thead>
-          <tbody>${buildTable(homePlayers)}</tbody>
+          <thead><tr><th class="ps-rank"></th><th class="ps-logo-cell"></th><th class="ps-th-name">Player</th><th>W–L</th><th>+/–</th></tr></thead>
+          <tbody>${buildRows(list)}</tbody>
         </table>`;
-    }
-    if (awayPlayers?.length) {
-      html += `<div class="player-stats-team-label">${esc(awayName || 'Away')}</div>
-        <table class="player-stats-table">
-          <thead><tr><th>Player</th><th>GP</th><th>W–L</th><th>+/–</th></tr></thead>
-          <tbody>${buildTable(awayPlayers)}</tbody>
-        </table>`;
-    }
+    };
 
-    el.innerHTML = html || '<div class="empty-state"><div class="ico">🏓</div>No player stats yet.</div>';
+    const womenHtml = buildSection('Women', womenPlayers);
+    const menHtml   = buildSection('Men',   menPlayers);
+    const html = (womenHtml || menHtml)
+      ? `<div class="ps-two-col"><div class="ps-col">${womenHtml}</div><div class="ps-col">${menHtml}</div></div>`
+      : '';
+    el.innerHTML = html || '<div class="empty-state"><div class="ico">🏓</div>No player data.</div>';
   }
 
   // ── Last updated ───────────────────────────────────────────────────────────
@@ -1084,6 +944,25 @@
     const now = new Date();
     time.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     badge.classList.add('visible');
+  }
+
+  // ── Logo builder ───────────────────────────────────────────────────────────
+  function buildLogoHtml(teamName, size) {
+    const t = String(teamName || '').toLowerCase();
+    const dynLogos  = currentBranding?.clubLogos || {};
+    const legacyMap = {};
+    if (currentBranding?.campLogoUrl) legacyMap['camp'] = currentBranding.campLogoUrl;
+    if (currentBranding?.dillLogoUrl) legacyMap['dill'] = currentBranding.dillLogoUrl;
+    const logos = Object.keys(dynLogos).length ? dynLogos : legacyMap;
+    for (const [kw, url] of Object.entries(logos)) {
+      if (url && t.includes(kw.toLowerCase()))
+        return `<img src="${esc(url)}" alt="${esc(teamName)}" style="width:100%;height:100%;object-fit:contain;">`;
+    }
+    const initials = String(teamName || 'TM').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+    const palette  = ['#123a7c','#0b7e39','#7c3a12','#3a127c','#127c3a','#7c6012'];
+    const idx      = Math.abs(String(teamName).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % palette.length;
+    const fs       = size === 'lg' ? '14' : (size === 'sb' ? '13' : '11');
+    return `<span style="font-family:'Bebas Neue',sans-serif;font-size:${fs}px;color:#fff;background:${palette[idx]};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:inherit;">${esc(initials)}</span>`;
   }
 
   // ── Data helpers ───────────────────────────────────────────────────────────
@@ -1109,27 +988,6 @@
     const m = String(match?.match_id || '').match(/W(\d+)/i);
     return m ? Number(m[1]) : 0;
   }
-  // Earliest week with a match date >= today; otherwise the latest week.
-  // Compare YYYY-MM-DD strings to avoid UTC/local rollover bugs.
-  function pickCurrentWeek(matches) {
-    if (!matches || !matches.length) return 0;
-    const t = new Date();
-    const todayStr = t.getFullYear() + '-' +
-      String(t.getMonth()+1).padStart(2,'0') + '-' +
-      String(t.getDate()).padStart(2,'0');
-    const byWeek = {};
-    for (const m of matches) {
-      const w = extractWeekNum(m);
-      if (!w) continue;
-      const dStr = String(m.match_date || '').slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dStr)) continue;
-      if (!byWeek[w] || dStr < byWeek[w]) byWeek[w] = dStr;
-    }
-    const weeks = Object.keys(byWeek).map(Number).sort((a,b) => a-b);
-    if (!weeks.length) return 0;
-    for (const w of weeks) { if (byWeek[w] >= todayStr) return w; }
-    return weeks[weeks.length - 1];
-  }
 
   function divLabel(match) {
     const n = extractDivNum(match);
@@ -1139,6 +997,30 @@
   function isRoundDone(round) {
     const gs = round.games || [];
     return gs.length > 0 && gs.every(g => hasScore(g.home_score) && hasScore(g.away_score));
+  }
+
+  function dedupeRounds_(rounds) {
+    if (!Array.isArray(rounds)) return [];
+    const byNum = new Map();
+    for (const r of rounds) {
+      const num = Number(r.round_number || 0);
+      const key = num || String(r.round_id || '').trim();
+      if (!key) continue;
+      const prev = byNum.get(key);
+      if (!prev) { byNum.set(key, { ...r, games: [...(r.games || [])] }); continue; }
+      const seenGameIds = new Set(prev.games.map(g => String(g.game_id)));
+      for (const g of (r.games || [])) {
+        const gid = String(g.game_id);
+        if (!seenGameIds.has(gid)) { prev.games.push(g); seenGameIds.add(gid); }
+      }
+      prev.home_games_won = Math.max(prev.home_games_won || 0, r.home_games_won || 0);
+      prev.away_games_won = Math.max(prev.away_games_won || 0, r.away_games_won || 0);
+      if ((prev.status || '') !== 'completed' && (r.status || '') === 'completed') prev.status = 'completed';
+    }
+    for (const r of byNum.values()) {
+      r.games.sort((a, b) => Number(a.game_number_in_round || 0) - Number(b.game_number_in_round || 0));
+    }
+    return Array.from(byNum.values()).sort((a, b) => Number(a.round_number || 0) - Number(b.round_number || 0));
   }
 
   function prettyType(type) {
@@ -1159,25 +1041,6 @@
     return 'other';
   }
 
-  // ── Logo builder ────────────────────────────────────────────────────────────
-  function buildLogoHtml(teamName, size) {
-    const t = String(teamName || '').toLowerCase();
-    const dynLogos  = currentBranding?.clubLogos || {};
-    const legacyMap = {};
-    if (currentBranding?.campLogoUrl) legacyMap['camp'] = currentBranding.campLogoUrl;
-    if (currentBranding?.dillLogoUrl) legacyMap['dill'] = currentBranding.dillLogoUrl;
-    const logos = Object.keys(dynLogos).length ? dynLogos : legacyMap;
-    for (const [kw, url] of Object.entries(logos)) {
-      if (url && t.includes(kw.toLowerCase()))
-        return `<img src="${esc(url)}" alt="${esc(teamName)}" style="width:100%;height:100%;object-fit:contain;">`;
-    }
-    const initials = String(teamName || 'TM').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
-    const palette  = ['#123a7c','#0b7e39','#7c3a12','#3a127c','#127c3a','#7c6012'];
-    const idx      = Math.abs(String(teamName).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % palette.length;
-    const fs       = size === 'sb' ? '13' : '10';
-    return `<span style="font-family:'Bebas Neue',sans-serif;font-size:${fs}px;color:#fff;background:${palette[idx]};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:inherit;">${esc(initials)}</span>`;
-  }
-
   // ── Format helpers ─────────────────────────────────────────────────────────
   function fmtLongDate(raw) {
     if (!raw) return '';
@@ -1187,10 +1050,7 @@
       return new Date(y, mo - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     }
     const isoDate = s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
-    if (isoDate) {
-      return new Date(+isoDate[1], +isoDate[2] - 1, +isoDate[3])
-        .toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    }
+    if (isoDate) return new Date(+isoDate[1], +isoDate[2] - 1, +isoDate[3]).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     const d = new Date(s);
     if (isNaN(d)) return s;
     return d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -1201,40 +1061,24 @@
     const s = String(raw).trim();
     const hm = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
     if (hm) {
-      const dt = new Date();
-      dt.setHours(+hm[1], +hm[2], 0, 0);
+      const dt = new Date(); dt.setHours(+hm[1], +hm[2], 0, 0);
       return dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }
     const d = new Date(s);
     if (!isNaN(d)) {
-      const dt = new Date();
-      dt.setHours(d.getUTCHours(), d.getUTCMinutes(), 0, 0);
+      const dt = new Date(); dt.setHours(d.getUTCHours(), d.getUTCMinutes(), 0, 0);
       return dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }
     return s;
   }
 
   // ── DOM helpers ─────────────────────────────────────────────────────────────
-  function setMain(html) {
-    const el = document.getElementById('main-content');
-    if (el) el.innerHTML = html;
-  }
-  function setText(id, t) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t;
-  }
-  function loadingHtml(msg) {
-    return `<div class="loading-state"><div class="spinner"></div><span>${esc(msg || 'Loading…')}</span></div>`;
-  }
-  function emptyHtml(ico, m) {
-    return `<div class="empty-state"><div class="ico">${ico}</div>${esc(m)}</div>`;
-  }
-  function hasGas() {
-    return typeof google !== 'undefined' && google.script && google.script.run;
-  }
-  function esc(s) {
-    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
+  function setMain(html) { const el = document.getElementById('main-content'); if (el) el.innerHTML = html; }
+  function setText(id, t) { const el = document.getElementById(id); if (el) el.textContent = t; }
+  function loadingHtml(msg) { return `<div class="loading-state"><div class="spinner"></div><span>${esc(msg || 'Loading…')}</span></div>`; }
+  function emptyHtml(ico, m) { return `<div class="empty-state"><div class="ico">${ico}</div>${esc(m)}</div>`; }
+  function hasGas() { return typeof google !== 'undefined' && google.script && google.script.run; }
+  function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 </script>
 </body>
 </html>
