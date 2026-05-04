@@ -622,10 +622,10 @@
     renderScoreboard(match, rounds);
     updateStickyOffset();
 
-    const { cur } = detectRounds(rounds);
-    const withSorted = r => r ? { ...r, games: sortGamesForDisplay(r.games || []) } : r;
-    const roundHtml = cur ? renderRound(withSorted(cur), match) : '';
-    setMain(roundHtml ? `<div class="rounds-stack">${roundHtml}</div>` : emptyHtml('📋', 'No active round found.'));
+    const allRoundsHtml = rounds.length
+      ? rounds.map(r => renderRound({ ...r, games: sortGamesForDisplay(r.games || []) }, match)).join('')
+      : '';
+    setMain(allRoundsHtml ? `<div class="rounds-stack">${allRoundsHtml}</div>` : emptyHtml('📋', 'No rounds found.'));
 
     renderTeamStats();
     renderPlayerStats();
