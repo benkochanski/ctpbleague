@@ -203,9 +203,16 @@
         padding: 10px 24px 12px;
       }
     }
-    .sb-stats { display: flex; flex-direction: column; gap: 10px; }
+    .sb-stats { position: relative; }
     .sb-stats .side-panel { overflow: hidden; }
     .sb-stats #teamStandingsBody { overflow: visible; }
+    /* Live scores hangs below the Games Won panel without affecting grid row height */
+    .sb-stats-livescores {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0; right: 0;
+      z-index: 10;
+    }
 
     /* ── Dropdown inside scoreboard header ── */
     .sb-division-select {
@@ -633,13 +640,15 @@
           <div class="empty-state"><div class="ico">📊</div>Loading…</div>
         </div>
       </div>
-      <div class="side-panel">
-        <div class="side-panel-head">
-          <h3>Live Scores</h3>
-          <span class="panel-badge">This Week</span>
-        </div>
-        <div class="side-body" id="otherMatchesBody">
-          <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+      <div class="sb-stats-livescores">
+        <div class="side-panel">
+          <div class="side-panel-head">
+            <h3>Live Scores</h3>
+            <span class="panel-badge">This Week</span>
+          </div>
+          <div class="side-body" id="otherMatchesBody">
+            <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+          </div>
         </div>
       </div>
     </div>
