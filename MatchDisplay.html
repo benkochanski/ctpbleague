@@ -163,8 +163,20 @@
     .livescores-rail .om-list { flex: 1; }
     .livescores-rail .om-card { flex: 1; display: flex; flex-direction: column; }
     .livescores-rail .om-card .sb-table { flex: 1; }
+    /* Live Scores head badge mirrors round-head badge */
+    .livescores-rail .ls-head-left { display: flex; align-items: center; gap: 10px; }
+    .livescores-rail .ls-badge {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--gold);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--navy);
+    }
     @media (min-width: 1800px) {
-      .page > .player-stats-panel { grid-column: 1 / -1; margin-top: 10px; }
+      .livescores-rail .ls-head-left { gap: 14px; }
+      .livescores-rail .ls-badge { width: 56px; height: 56px; font-size: 30px; }
+    }
+    @media (min-width: 3800px) {
+      .livescores-rail .ls-head-left { gap: 18px; }
+      .livescores-rail .ls-badge { width: 80px; height: 80px; font-size: 44px; }
     }
 
     /* ── Match banner ── */
@@ -716,11 +728,19 @@
     <div id="main-content">
       <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
     </div>
+    <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
+      <div class="side-body" id="playerStatsBody">
+        <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+      </div>
+    </div>
   </div>
   <aside class="livescores-rail" id="liveScoresRail" aria-label="Live scores">
     <div class="side-panel">
       <div class="side-panel-head">
-        <h3>Live Scores</h3>
+        <div class="ls-head-left">
+          <div class="ls-badge">⚡</div>
+          <h3>Live Scores</h3>
+        </div>
         <span class="panel-badge">This Week</span>
       </div>
       <div class="side-body" id="otherMatchesBody">
@@ -728,11 +748,6 @@
       </div>
     </div>
   </aside>
-  <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
-    <div class="side-body" id="playerStatsBody">
-      <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
-    </div>
-  </div>
 </div>
 
 <script>
