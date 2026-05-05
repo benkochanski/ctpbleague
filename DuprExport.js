@@ -44,26 +44,8 @@ function duprBuildPlayerLookup_() {
   return map;
 }
 
-function duprGetEventName_(weekNum) {
-  // Try to get active season name from Seasons sheet.
-  try {
-    const ss = getBackendSpreadsheet_();
-    const sheet = ss.getSheetByName('Seasons');
-    if (sheet) {
-      const data = sheet.getDataRange().getValues();
-      const h    = data[0].map(x => String(x).trim().toLowerCase());
-      const nameIdx   = h.indexOf('season_name');
-      const statusIdx = h.indexOf('status');
-      for (let i = 1; i < data.length; i++) {
-        const status = String(data[i][statusIdx] || '').trim().toLowerCase();
-        if (status === 'active' && nameIdx >= 0) {
-          const sName = String(data[i][nameIdx] || '').trim();
-          if (sName) return sName + ' — Week ' + weekNum;
-        }
-      }
-    }
-  } catch (e) {}
-  return 'Connecticut Pickleball League — Week ' + weekNum;
+function duprGetEventName_() {
+  return 'Connecticut Pickleball League Match';
 }
 
 // ── Core generator ────────────────────────────────────────────────────────────
@@ -94,7 +76,10 @@ function generateDuprCsvForWeek_(weekNum) {
       const rawDate = data[i][dateIdx];
       let dateStr = '';
       if (rawDate instanceof Date) {
-        dateStr = Utilities.formatDate(rawDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+        // Add 12 hours before formatting to avoid off-by-one-day issues caused by
+        // midnight-UTC vs midnight-local timezone differences in GAS date handling.
+        const noon = new Date(rawDate.getTime() + 12 * 60 * 60 * 1000);
+        dateStr = Utilities.formatDate(noon, 'America/New_York', 'yyyy-MM-dd');
       } else {
         dateStr = String(rawDate || '').slice(0, 10);
       }
@@ -112,7 +97,7 @@ function generateDuprCsvForWeek_(weekNum) {
   const gh    = gData[0].map(x => String(x).trim().toLowerCase());
   const gc    = name => gh.indexOf(name);
 
-  const eventName = duprGetEventName_(weekNum);
+  const eventName = duprGetEventName_();
   const HEADER = 'matchType,scoreType,event,date,' +
     'playerA1,playerA1DuprId,playerA2,playerA2DuprId,' +
     'playerB1,playerB1DuprId,playerB2,playerB2DuprId,' +
@@ -130,6 +115,8 @@ function generateDuprCsvForWeek_(weekNum) {
     // Skip unscored games
     if (hScore === '' || hScore === null || hScore === undefined) continue;
     if (aScore === '' || aScore === null || aScore === undefined) continue;
+    // Skip games where neither team reached 6 points (incomplete/forfeit)
+    if (Number(hScore) < 6 && Number(aScore) < 6) continue;
 
     // Player IDs → names + DUPR IDs via Players sheet lookup
     const id1h = String(row[gc('home_player_1_id')] || '').trim();

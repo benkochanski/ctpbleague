@@ -281,6 +281,9 @@ function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason
     }
   } catch (e) { /* never fail the save because of audit-log issues */ }
 
+  // Auto-export DUPR CSV when the last game of the week is entered.
+  try { duprCheckAndExportIfWeekComplete_(matchId); } catch (e) { /* never fail the save */ }
+
   return {
     success: true,
     game_id: gameId,
@@ -559,6 +562,42 @@ function getOpenMatchesForScoreEntryV5() {
     source: 'getOpenMatchesForScoreEntryV5',
     rows: rows
   });
+}
+
+// Same as V5 but includes completed matches so the public scoreboard can
+// deep-link into any match (past or present).
+function getAllMatchesForScoreboardV1() {
+  const ss = getBackendSpreadsheet_();
+  const matchesSheet = ss.getSheetByName('Matches');
+  const teamsSheet   = ss.getSheetByName('Teams');
+  if (!matchesSheet || !teamsSheet) throw new Error('Missing Matches or Teams sheet.');
+  const matchesTable = getTableScorecard_(matchesSheet);
+  const teamsTable   = getTableScorecard_(teamsSheet);
+  const teamsById    = {};
+  teamsTable.rows.forEach(r => {
+    const obj = rowToObjectScorecard_(teamsTable, r.rowNumber);
+    if (obj && obj.team_id) teamsById[String(obj.team_id).trim()] = obj;
+  });
+  const rows = matchesTable.rows
+    .map(r => rowToObjectScorecard_(matchesTable, r.rowNumber))
+    .filter(m => m && m.match_id && m.home_team_id && m.away_team_id)
+    .map(m => {
+      const homeKey = String(m.home_team_id).trim();
+      const awayKey = String(m.away_team_id).trim();
+      return {
+        match_id:        String(m.match_id).trim(),
+        match_date:      m.match_date,
+        status:          String(m.status || 'scheduled').trim(),
+        division_id:     String(m.division_id || '').trim(),
+        home_team_id:    homeKey,
+        away_team_id:    awayKey,
+        home_team_name:  stripDivisionSuffix_(teamsById[homeKey]?.team_name || homeKey),
+        away_team_name:  stripDivisionSuffix_(teamsById[awayKey]?.team_name || awayKey),
+        home_games_won:  Number(m.home_games_won || 0),
+        away_games_won:  Number(m.away_games_won || 0)
+      };
+    });
+  return JSON.stringify({ ok: true, source: 'getAllMatchesForScoreboardV1', rows });
 }
 
 function getScorecardDataV5(matchId) {

@@ -279,6 +279,12 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (page === 'allmatches') {
+    return ContentService
+      .createTextOutput(getAllMatchesForScoreboardV1())
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (page === 'scorecarddata') {
     const matchId = String(params.matchId || '').trim();
     return ContentService
@@ -329,6 +335,21 @@ function doGet(e) {
   if (page === 'publicdata') {
     return ContentService
       .createTextOutput(JSON.stringify(getPublicSiteData_()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'previewdupr') {
+    const weekNum = Number(params.week || 0);
+    return ContentService
+      .createTextOutput(previewDuprCsv(weekNum))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'exportdupr') {
+    const weekNum = Number(params.week || 0);
+    const force   = params.force === '1';
+    return ContentService
+      .createTextOutput(exportDuprCsvManual(weekNum, force))
       .setMimeType(ContentService.MimeType.JSON);
   }
 

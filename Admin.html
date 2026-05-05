@@ -5,27 +5,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CPBL Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
     body {
       font-family:'DM Sans',sans-serif;
       background: linear-gradient(135deg, #081f43 0%, #123a7c 58%, #0b7e39 100%);
-      min-height:100vh;
-      color:#0d1f3c;
-      display:flex; align-items:center; justify-content:center;
-      padding:20px;
+      min-height:100vh; color:#0d1f3c;
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:28px 16px 40px;
+      gap:16px;
     }
+
+    /* ── Auth card ── */
     .card {
-      background:#fff; border-radius:16px; padding:36px 32px 28px;
+      background:#fff; border-radius:16px; padding:32px 28px 24px;
       width:100%; max-width:380px;
       box-shadow:0 12px 40px rgba(0,0,0,.35);
       text-align:center;
     }
-    h1 {
-      font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:2px;
-      color:#081f43; margin-bottom:6px;
-    }
+    h1 { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:2px; color:#081f43; margin-bottom:6px; }
     .sub { font-size:13px; color:#5a6e8a; margin-bottom:20px; letter-spacing:.04em; text-transform:uppercase; }
     .who { font-size:13px; color:#0b7e39; font-weight:700; margin-bottom:20px; }
     .who span { color:#5a6e8a; font-weight:500; }
@@ -43,9 +42,7 @@
     }
     .btn:hover { background:#0b7e39; }
     .btn:disabled { background:#aab; cursor:default; }
-    .btn-gold {
-      background:#ffd22e; color:#081f43;
-    }
+    .btn-gold { background:#ffd22e; color:#081f43; }
     .btn-gold:hover { background:#f3c400; color:#081f43; }
     .btn-row { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
     .err { margin-top:12px; font-size:13px; color:#c0392b; min-height:18px; }
@@ -54,6 +51,79 @@
       font-size:12px; cursor:pointer; text-decoration:underline; padding:0;
     }
     .link-btn:hover { color:#c0392b; }
+
+    /* ── DUPR export panel ── */
+    .dupr-panel {
+      display:none;
+      background:#fff; border-radius:16px; padding:24px 24px 20px;
+      width:100%; max-width:900px;
+      box-shadow:0 12px 40px rgba(0,0,0,.35);
+    }
+    .dupr-panel.visible { display:block; }
+
+    .dupr-header {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      flex-wrap:wrap; margin-bottom:18px;
+    }
+    .dupr-title { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:1.5px; color:#081f43; }
+    .dupr-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+    .week-label { font-size:12px; font-weight:700; color:#5a6e8a; text-transform:uppercase; letter-spacing:.08em; }
+    .week-select {
+      border:2px solid #ccd6e8; border-radius:8px; padding:7px 28px 7px 10px;
+      font-size:14px; font-weight:700; color:#0d1f3c; background:#f2f6fc;
+      outline:none; cursor:pointer; appearance:none; height:38px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%235a6e8a'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 9px center;
+    }
+    .week-select:focus { border-color:#123a7c; }
+
+    .btn-sm {
+      padding:8px 18px; border:none; border-radius:8px;
+      font-size:13px; font-weight:700; cursor:pointer; letter-spacing:.04em;
+      transition:opacity .15s, background .15s;
+    }
+    .btn-sm:hover { opacity:.87; }
+    .btn-sm:disabled { opacity:.45; cursor:default; }
+    .btn-preview { background:#123a7c; color:#fff; }
+    .btn-export  { background:#0b7e39; color:#fff; }
+    .btn-download { background:#ffd22e; color:#081f43; }
+
+    .dupr-status { font-size:13px; color:#5a6e8a; min-height:20px; margin-bottom:6px; }
+    .dupr-status.ok  { color:#0b7e39; }
+    .dupr-status.err { color:#c0392b; }
+
+    /* ── Preview table ── */
+    .preview-wrap {
+      overflow-x:auto; margin-top:14px;
+      border:1px solid #dde5f3; border-radius:10px;
+    }
+    .preview-table {
+      width:100%; border-collapse:collapse; font-size:12px;
+    }
+    .preview-table th {
+      background:#081f43; color:#ffd22e;
+      font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:.8px;
+      padding:7px 10px; text-align:left; white-space:nowrap; border-right:1px solid #1a3560;
+    }
+    .preview-table th:last-child { border-right:none; }
+    .preview-table td {
+      padding:6px 10px; border-bottom:1px solid #e8eef7; border-right:1px solid #e8eef7;
+      white-space:nowrap; font-family:'DM Mono',monospace; font-size:11px; color:#0d1f3c;
+    }
+    .preview-table td:last-child { border-right:none; }
+    .preview-table tr:last-child td { border-bottom:none; }
+    .preview-table tr:nth-child(even) td { background:#f7faff; }
+    .preview-table td.td-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; }
+    .preview-table td.td-score { font-weight:800; color:#081f43; text-align:center; }
+    .preview-table td.td-score.win { color:#0b7e39; }
+    .preview-table td.td-muted { color:#8a9bb5; font-size:10px; }
+
+    .row-count { font-size:12px; color:#5a6e8a; margin-top:8px; text-align:right; }
+
+    .export-row { display:flex; align-items:center; gap:10px; margin-top:16px; flex-wrap:wrap; }
+    .export-note { font-size:12px; color:#5a6e8a; line-height:1.5; flex:1; min-width:200px; }
+    .drive-link { font-size:13px; font-weight:700; color:#123a7c; word-break:break-all; }
   </style>
 </head>
 <body>
@@ -61,6 +131,7 @@
   window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl || '') ?>;
 </script>
 
+<!-- ── Auth card ── -->
 <div class="card">
   <h1>CPBL Admin</h1>
   <div class="sub">Sign in to keep score or enter lineups</div>
@@ -82,40 +153,84 @@
   </div>
 </div>
 
+<!-- ── DUPR Export panel (commissioners only) ── -->
+<div class="dupr-panel" id="dupr-panel">
+  <div class="dupr-header">
+    <div class="dupr-title">DUPR Results Export</div>
+    <div class="dupr-controls">
+      <span class="week-label">Week</span>
+      <select id="week-select" class="week-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+      </select>
+      <button class="btn-sm btn-preview" id="preview-btn" onclick="loadPreview()">Preview</button>
+    </div>
+  </div>
+
+  <div class="dupr-status" id="dupr-status"></div>
+
+  <div id="preview-area" style="display:none">
+    <div class="preview-wrap">
+      <table class="preview-table" id="preview-table"></table>
+    </div>
+    <div class="row-count" id="row-count"></div>
+
+    <div class="export-row">
+      <div class="export-note">
+        Saves a CSV to <strong>CPBL DUPR Exports</strong> in Google Drive and emails it to all commissioners.
+      </div>
+      <button class="btn-sm btn-download" id="download-btn" onclick="downloadCsv()">⬇ Download CSV</button>
+      <button class="btn-sm btn-export" id="export-btn" onclick="runExport()">Export to Drive &amp; Email</button>
+    </div>
+    <div id="export-result" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
 <script>
   var STORAGE_KEY = 'cpbl_admin_email';
+  var _currentCsv = '';
+  var _currentWeek = 1;
 
+  /* ── Auth ── */
   function showMenu(result) {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('menu-view').style.display  = '';
-    var who = document.getElementById('who');
-    var name = (result && result.name) ? result.name : '';
+    var who  = document.getElementById('who');
+    var name  = (result && result.name)  ? result.name  : '';
     var email = (result && result.email) ? result.email : '';
     who.innerHTML = (name ? name + ' ' : '') + '<span>' + email + '</span>';
+
+    // Show DUPR panel only for commissioners
+    var isComm = result && (result.isCommissioner === true || result.isCommissioner === 'true');
+    var panel  = document.getElementById('dupr-panel');
+    if (isComm) panel.classList.add('visible');
   }
 
   function showLogin(msg) {
-    document.getElementById('menu-view').style.display = 'none';
+    document.getElementById('menu-view').style.display  = 'none';
     document.getElementById('login-view').style.display = '';
     document.getElementById('err').textContent = msg || '';
+    document.getElementById('dupr-panel').classList.remove('visible');
   }
 
   window.signIn = function () {
     var email = (document.getElementById('email').value || '').trim();
     var errEl = document.getElementById('err');
     var btn   = document.getElementById('signin-btn');
-    if (!email || email.indexOf('@') < 1) {
-      errEl.textContent = 'Please enter a valid email address.'; return;
-    }
+    if (!email || email.indexOf('@') < 1) { errEl.textContent = 'Please enter a valid email address.'; return; }
     errEl.textContent = '';
     btn.disabled = true; btn.textContent = 'Signing in…';
-
     if (!window.__GAS_EXEC_URL__) {
       errEl.textContent = 'Server URL not configured.';
-      btn.disabled = false; btn.textContent = 'Sign in';
-      return;
+      btn.disabled = false; btn.textContent = 'Sign in'; return;
     }
-
     var url = window.__GAS_EXEC_URL__ + '?page=verifyemail&email=' + encodeURIComponent(email);
     fetch(url).then(function(r){ return r.text(); })
       .then(function(raw){
@@ -124,12 +239,7 @@
         try { result = JSON.parse(raw); } catch(e){ errEl.textContent = 'Unexpected response.'; return; }
         if (!result.ok) { errEl.textContent = result.error || 'Sign-in failed.'; return; }
         try {
-          // Store the full access result so Captain/Scorecard can use it
-          // without making their own verify call (which can hang Chrome).
-          var blob = Object.assign({}, result, {
-            email: result.email || email,
-            ts:    Date.now()
-          });
+          var blob = Object.assign({}, result, { email: result.email || email, ts: Date.now() });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
         } catch(e) {}
         showMenu(result);
@@ -152,19 +262,112 @@
     try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) {}
     if (!saved || !saved.email) { showLogin('Session expired. Please sign in again.'); return; }
     var base = (window.__GAS_EXEC_URL__ || '').replace(/\?.*$/, '');
-    // Same-tab navigation; pass the verified email so subpages can auto-login.
-    window.location.href = base + '?page=' + encodeURIComponent(page)
-      + '&userEmail=' + encodeURIComponent(saved.email);
+    window.location.href = base + '?page=' + encodeURIComponent(page) + '&userEmail=' + encodeURIComponent(saved.email);
   };
 
-  // Auto-resume from localStorage. Show the menu immediately based on the
-  // cached blob (no network call) — the user already verified previously.
   document.addEventListener('DOMContentLoaded', function () {
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) {}
     if (!saved || !saved.email) return;
     showMenu(saved);
   });
+
+  /* ── DUPR Preview ── */
+  window.loadPreview = function () {
+    var week = Number(document.getElementById('week-select').value);
+    _currentWeek = week;
+    _currentCsv  = '';
+    setStatus('Loading Week ' + week + ' data…', '');
+    document.getElementById('preview-area').style.display = 'none';
+    document.getElementById('export-result').innerHTML = '';
+    document.getElementById('preview-btn').disabled = true;
+
+    var url = window.__GAS_EXEC_URL__ + '?page=previewdupr&week=' + week;
+    fetch(url).then(function(r){ return r.text(); })
+      .then(function(raw){
+        document.getElementById('preview-btn').disabled = false;
+        var data;
+        try { data = JSON.parse(raw); } catch(e){ setStatus('Unexpected response from server.', 'err'); return; }
+        if (!data.ok) { setStatus(data.error || 'No data found.', 'err'); return; }
+        _currentCsv = data.csv || '';
+        renderPreview(data);
+        setStatus(data.rowCount + ' game' + (data.rowCount !== 1 ? 's' : '') + ' ready for export.', 'ok');
+      })
+      .catch(function(e){ document.getElementById('preview-btn').disabled = false; setStatus('Request failed: ' + e.message, 'err'); });
+  };
+
+  function renderPreview(data) {
+    var rows = data.rows || [];
+    var headers = data.headers || [];
+    if (!rows.length) { setStatus('No scored games found for this week.', 'err'); return; }
+
+    // Render every column exactly as it appears in the export file
+    var html = '<thead><tr>' + headers.map(function(h) {
+      return '<th>' + esc(h) + '</th>';
+    }).join('') + '</tr></thead><tbody>';
+
+    rows.forEach(function(r) {
+      html += '<tr>' + headers.map(function(h) {
+        var val = r[h] != null ? r[h] : '';
+        return '<td>' + esc(String(val)) + '</td>';
+      }).join('') + '</tr>';
+    });
+    html += '</tbody>';
+
+    document.getElementById('preview-table').innerHTML = html;
+    document.getElementById('row-count').textContent = rows.length + ' game rows · Event: ' + (rows[0] ? rows[0].event : '');
+    document.getElementById('preview-area').style.display = '';
+  }
+
+  /* ── Download CSV locally ── */
+  window.downloadCsv = function () {
+    if (!_currentCsv) { setStatus('Preview a week first.', 'err'); return; }
+    var fileName = 'CPBL_Week' + _currentWeek + '_DUPR.csv';
+    var blob = new Blob([_currentCsv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  /* ── Export to Drive + email ── */
+  window.runExport = function () {
+    if (!_currentCsv) { setStatus('Preview a week first.', 'err'); return; }
+    var week = _currentWeek;
+    var btn  = document.getElementById('export-btn');
+    var res  = document.getElementById('export-result');
+    btn.disabled = true; btn.textContent = 'Exporting…';
+    res.innerHTML = '';
+
+    var url = window.__GAS_EXEC_URL__ + '?page=exportdupr&week=' + week + '&force=1';
+    fetch(url).then(function(r){ return r.text(); })
+      .then(function(raw){
+        btn.disabled = false; btn.textContent = 'Export to Drive & Email';
+        var data;
+        try { data = JSON.parse(raw); } catch(e){ res.innerHTML = '<span style="color:#c0392b">Unexpected response.</span>'; return; }
+        if (!data.ok) { res.innerHTML = '<span style="color:#c0392b">' + esc(data.error || 'Export failed.') + '</span>'; return; }
+        res.innerHTML = '✅ Saved <strong>' + esc(data.fileName) + '</strong> (' + data.rowCount + ' rows) · '
+          + '<a class="drive-link" href="' + esc(data.fileUrl) + '" target="_blank">Open in Drive</a>';
+      })
+      .catch(function(e){
+        btn.disabled = false; btn.textContent = 'Export to Drive & Email';
+        res.innerHTML = '<span style="color:#c0392b">Export failed: ' + esc(e.message) + '</span>';
+      });
+  };
+
+  /* ── Helpers ── */
+  function setStatus(msg, cls) {
+    var el = document.getElementById('dupr-status');
+    el.textContent = msg;
+    el.className = 'dupr-status' + (cls ? ' ' + cls : '');
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
 </body>
 </html>
