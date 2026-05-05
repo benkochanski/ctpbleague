@@ -131,23 +131,11 @@
       display: block;
       padding: 12px 20px;
     }
-    /* Wide-rail: absolutely positioned beyond the sidebar, shown on large screens only. */
-    .wide-rail { display: none; }
     @media (min-width: 1800px) {
       .page {
         padding: 14px 24px;
       }
       .main-col { max-width: 1060px; }
-      .wide-rail {
-        display: grid;
-        grid-template-columns: 350px 370px;
-        gap: 12px;
-        align-items: start;
-        position: absolute;
-        top: 8px;
-        left: calc(24px + 1060px + 16px + 680px + 16px);
-        width: 732px;
-      }
     }
 
     .main-col { display: flex; flex-direction: column; gap: 10px; max-width: 100%; min-width: 0; }
@@ -453,7 +441,7 @@
 
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
-    /* ── Live Scores panel — mirrors Games Won table (sb-table styling) ── */
+    /* ── Live Scores panel — uses identical sb-table styling as main scoreboard ── */
     .livescores-rail .side-panel { border: 1px solid var(--border-s); border-radius: var(--r); overflow: hidden; background: var(--panel); }
     .om-card { background: #fff; transition: opacity .35s ease; }
     .om-card.om-fade { opacity: 0; }
@@ -464,16 +452,11 @@
       display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
     .om-meta-bar .om-status.live { color: var(--ok); }
-    .om-card .sb-table { width: 100%; table-layout: auto; }
-    .om-card .sb-team-cell { width: 120px; }
-
     @media (min-width: 1800px) {
       .om-meta-bar { font-size: 14px; padding: 7px 16px; }
-      .om-card .sb-team-cell { width: 150px; }
     }
     @media (min-width: 3800px) {
       .om-meta-bar { font-size: 18px; padding: 10px 20px; }
-      .om-card .sb-team-cell { width: 206px; }
     }
 
     /* ── Division season standings table ── */
@@ -494,8 +477,6 @@
       .main-col      { max-width: 1360px; }
       .page-rounds   { max-width: 1360px; }
       .scoreboard-strip { grid-template-columns: 1360px 840px 840px; gap: 20px; padding: 12px 30px 14px; }
-      .wide-rail     { grid-template-columns: 420px 460px; gap: 14px;
-                       left: calc(30px + 1360px + 20px + 840px + 20px); width: 894px; }
       /* text + element scale ~1.4× */
       .player-name, .player-name-2 { font-size: 26px; }
       .score-disp    { font-size: 54px; min-width: 66px; }
@@ -544,8 +525,6 @@
       .main-col      { max-width: 1700px; }
       .page-rounds   { max-width: 1700px; }
       .scoreboard-strip { grid-template-columns: 1700px 1060px 1060px; gap: 26px; padding: 14px 40px 18px; }
-      .wide-rail     { grid-template-columns: 450px 500px; gap: 16px;
-                       left: calc(40px + 1700px + 26px + 1060px + 26px); width: 966px; }
       /* text + element scale ~2× */
       .player-name, .player-name-2 { font-size: 38px; line-height: 1.25; }
       .score-disp    { font-size: 76px; min-width: 92px; }
@@ -658,18 +637,6 @@
       </div>
     </aside>
 
-    <!-- 4K-only rail. Sits at the top of the right side, alongside the main scoreboard. -->
-    <aside class="wide-rail" id="wideRail" aria-label="Season stats">
-      <div class="side-panel">
-        <div class="side-panel-head">
-          <h3>Season Stats</h3>
-          <span class="panel-badge">Season</span>
-        </div>
-        <div class="side-body" id="divisionStatsBody">
-          <div class="empty-state"><div class="ico">📊</div>Loading…</div>
-        </div>
-      </div>
-    </aside>
   </div>
 </div>
 
@@ -887,10 +854,7 @@
     setMain(roundHtml ? `<div class="rounds-stack">${roundHtml}</div>` : emptyHtml('📋', 'No active round found.'));
     renderTeamStats();
     renderPlayerStats();
-    // 4K-only rail (hidden under 1800px). Render so the data is ready when
-    // the panel becomes visible — otherwise no-op for the user at normal res.
     renderOtherMatches(match);
-    renderDivisionStats(match);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
