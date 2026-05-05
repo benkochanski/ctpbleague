@@ -203,6 +203,7 @@
         padding: 10px 24px 12px;
       }
     }
+    .sb-stats { display: flex; flex-direction: column; gap: 10px; }
     .sb-stats .side-panel { overflow: hidden; }
     .sb-stats #teamStandingsBody { overflow: visible; }
 
@@ -632,19 +633,6 @@
           <div class="empty-state"><div class="ico">📊</div>Loading…</div>
         </div>
       </div>
-    </div>
-
-    <!-- 4K-only rail. Sits at the top of the right side, alongside the main scoreboard. -->
-    <aside class="wide-rail" id="wideRail" aria-label="Season stats and live scores">
-      <div class="side-panel">
-        <div class="side-panel-head">
-          <h3>Season Stats</h3>
-          <span class="panel-badge">Season</span>
-        </div>
-        <div class="side-body" id="divisionStatsBody">
-          <div class="empty-state"><div class="ico">📊</div>Loading…</div>
-        </div>
-      </div>
       <div class="side-panel">
         <div class="side-panel-head">
           <h3>Live Scores</h3>
@@ -652,6 +640,19 @@
         </div>
         <div class="side-body" id="otherMatchesBody">
           <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4K-only rail. Sits at the top of the right side, alongside the main scoreboard. -->
+    <aside class="wide-rail" id="wideRail" aria-label="Season stats">
+      <div class="side-panel">
+        <div class="side-panel-head">
+          <h3>Season Stats</h3>
+          <span class="panel-badge">Season</span>
+        </div>
+        <div class="side-body" id="divisionStatsBody">
+          <div class="empty-state"><div class="ico">📊</div>Loading…</div>
         </div>
       </div>
     </aside>
