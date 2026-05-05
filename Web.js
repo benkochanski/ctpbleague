@@ -371,8 +371,9 @@ function doGet(e) {
 
   if (page === 'display') {
     const tDp = HtmlService.createTemplateFromFile('MatchDisplay');
-    tDp.initialMatchId = String(params.matchId || '').trim();
-    tDp.gasExecUrl     = ScriptApp.getService().getUrl();
+    tDp.initialMatchId   = String(params.matchId || '').trim();
+    tDp.initialRound     = String(params.round   || '').trim();
+    tDp.gasExecUrl       = ScriptApp.getService().getUrl();
     return tDp.evaluate()
       .setTitle('CPL Match Display')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

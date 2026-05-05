@@ -135,11 +135,34 @@
       .page {
         padding: 14px 24px;
       }
-      .main-col { max-width: 1060px; }
+      .main-col { max-width: 1756px; }
     }
 
     .main-col { display: flex; flex-direction: column; gap: 10px; max-width: 100%; min-width: 0; }
     .livescores-rail { min-width: 0; }
+
+    /* ── New layout: round + (Games Won, Women/Men stats) side-by-side, Live Scores below ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1fr);
+      gap: 10px;
+      align-items: start;
+    }
+    .main-grid > .stats-col { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .main-grid > .round-col { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    @media (min-width: 1800px) {
+      .main-grid {
+        grid-template-columns: 1060px 680px;
+        gap: 16px;
+      }
+    }
+    @media (min-width: 2500px) {
+      .main-grid { grid-template-columns: 1360px 840px; gap: 20px; }
+    }
+    @media (min-width: 3800px) {
+      .main-grid { grid-template-columns: 1700px 1060px; gap: 26px; }
+    }
+    .livescores-section { min-width: 0; }
 
     /* ── Match banner ── */
     .match-banner {
@@ -170,10 +193,11 @@
     .score-chip.leader .v { color: var(--ok); }
 
     /* ── Meta strip ── */
-    .meta-strip { background: var(--panel); border-bottom: 1px solid var(--border-s); padding: 7px 24px; box-shadow: 0 2px 8px rgba(8,30,67,.05); }
-    .match-meta-bar { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: .04em; text-transform: uppercase; }
+    .meta-strip { background: var(--panel); border-bottom: 1px solid var(--border-s); padding: 10px 24px; box-shadow: 0 2px 8px rgba(8,30,67,.05); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .match-meta-bar { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .05em; text-transform: uppercase; }
+    .meta-strip .sb-division-select { width: auto; min-width: 180px; }
 
-    /* ── Scoreboard strip (inside sticky top, mirrors .page grid) ── */
+    /* ── Scoreboard strip (inside sticky top) — main scoreboard + Games Won ── */
     .scoreboard-strip {
       display: grid;
       grid-template-columns: minmax(0,1fr) 560px;
@@ -182,17 +206,19 @@
       background: var(--bg);
       align-items: start;
     }
-    .scoreboard-strip > .livescores-rail { display: none; }
-    /* Lock top strip to same grid widths as .page below. */
     @media (min-width: 1800px) {
       .scoreboard-strip {
-        grid-template-columns: 1060px 680px 680px;
+        grid-template-columns: 1060px 680px;
         justify-content: start;
-        position: relative;
         gap: 16px;
         padding: 10px 24px 12px;
       }
-      .scoreboard-strip > .livescores-rail { display: block; }
+    }
+    @media (min-width: 2500px) {
+      .scoreboard-strip { grid-template-columns: 1360px 840px; gap: 20px; padding: 12px 30px 14px; }
+    }
+    @media (min-width: 3800px) {
+      .scoreboard-strip { grid-template-columns: 1700px 1060px; gap: 26px; padding: 14px 40px 18px; }
     }
     .sb-stats .side-panel { overflow: hidden; }
     .sb-stats #teamStandingsBody { overflow: visible; }
@@ -213,8 +239,19 @@
     .sb-table { width: 100%; border-collapse: collapse; }
     .sb-table th, .sb-table td { padding: 7px 12px; text-align: center; border-right: 1px solid var(--border-s); }
     .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
-    .sb-header-row th { font-size: 16px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; background: var(--soft); border-bottom: 1px solid var(--border-s); height: 44px; vertical-align: middle; }
-    .sb-header-row th:first-child { text-align: left; padding-left: 12px; }
+    .sb-table thead {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
+    }
+    .sb-header-row th {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; font-weight: 400;
+      color: #fff; letter-spacing: 2px; text-transform: uppercase;
+      background: transparent;
+      border-bottom: 1px solid var(--border-s);
+      height: 60px; vertical-align: middle;
+    }
+    .sb-header-row th:first-child { text-align: left; padding-left: 14px; }
+    .sb-header-row th.sb-corner-label { text-align: center; padding: 0 12px; width: 130px; white-space: nowrap; }
     .sb-row td { border-top: 1px solid var(--border-s); height: 86px; vertical-align: middle; }
     .sb-row:first-of-type td { border-top: none; }
     .sb-team-cell { text-align: left !important; padding: 0 !important; }
@@ -238,7 +275,7 @@
 
     .round-head {
       padding: 10px 18px;
-      background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
     }
     .round-head-left { display: flex; align-items: center; gap: 10px; }
@@ -376,19 +413,32 @@
 
     /* ── Team stats — scoreboard-style columns per game type ── */
     .ts2-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .ts2-team-head { background: var(--soft); border-right: 1px solid var(--border-s); border-bottom: 1px solid var(--border-s); padding: 0 12px; width: 120px; height: 44px; vertical-align: middle; }
-    .ts2-col-head { font-size: 16px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px; height: 44px; text-align: center; white-space: nowrap; border-left: 1px solid rgba(0,0,0,.14); border-bottom: 1px solid rgba(0,0,0,.14); vertical-align: middle; }
-    .ts2-col-head.ts2-col-all    { background: #081f43; color: #ffd22e; }
-    .ts2-col-head.ts2-col-womens { background: #123a7c; color: #ffffff; }
-    .ts2-col-head.ts2-col-mens   { background: #0b7e39; color: #ffffff; }
-    .ts2-col-head.ts2-col-mixed  { background: #ffd22e; color: #081f43; }
-    .ts2-col-head.ts2-col-coed   { background: #0d5229; color: #a3f0c0; }
+    .ts2-table thead {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
+    }
+    .ts2-team-head {
+      font-family: 'Bebas Neue', sans-serif;
+      background: transparent;
+      color: #fff;
+      border-bottom: 1px solid var(--border-s);
+      padding: 0 14px; width: 150px; height: 60px; vertical-align: middle;
+    }
+    .ts2-col-head {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
+      color: #fff;
+      background: transparent;
+      padding: 0 14px; height: 60px; min-width: 130px;
+      text-align: center; white-space: nowrap;
+      border-bottom: 1px solid var(--border-s);
+      vertical-align: middle;
+    }
     .ts2-row td { border-top: 1px solid var(--border-s); }
     .ts2-row:first-of-type td { border-top: none; }
     .ts2-team-cell { padding: 0 !important; border-right: 1px solid var(--border-s); width: 120px; }
     .ts2-meta-head { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
     .ts2-meta-logo { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
-    .ts2-meta-label { font-size: 13px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    .ts2-meta-label { font-family: 'Bebas Neue', sans-serif; font-size: 30px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: #fff; white-space: nowrap; }
     .ts2-team-inner { display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
     .ts2-logo { width: 100px; height: 62px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: transparent; flex-shrink: 0; }
     .ts2-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; }
@@ -405,7 +455,7 @@
     /* ── Player stats section heads (match round-header height/style exactly) ── */
     .ps-section-head {
       padding: 10px 18px;
-      background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
       display: flex; align-items: center; gap: 10px;
     }
     .ps-section-badge {
@@ -416,10 +466,10 @@
     .ps-section-label {
       font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 2px; color: #fff;
     }
-    /* ── Player stats side-by-side layout ── */
-    .ps-two-col { display: flex; align-items: stretch; }
-    .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); overflow: hidden; }
-    .ps-col:last-child { border-right: none; }
+    /* ── Player stats — single visible section, rotates between Women/Men ── */
+    .ps-two-col { display: block; }
+    .ps-col { min-width: 0; overflow: hidden; }
+    .ps-col.ps-hidden { display: none; }
 
     .player-stats-table { width: 100%; border-collapse: collapse; font-size: 19px; }
     .player-stats-table th { font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 10px; border-bottom: 1px solid var(--border-s); text-align: right; background: var(--soft); }
@@ -441,54 +491,27 @@
 
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
-    /* ── Live Scores panel — proportional 62% scale of main scoreboard ── */
-    .livescores-rail .side-panel { border: 1px solid var(--border-s); border-radius: var(--r); overflow: hidden; background: var(--panel); }
-    .om-card { background: #fff; transition: opacity .35s ease; }
-    .om-card.om-fade { opacity: 0; }
+    /* ── Live Scores panel — identical sb-table styling to top scoreboard ── */
+    .livescores-section .side-panel { border: 1px solid var(--border-s); border-radius: var(--r); overflow: hidden; background: var(--panel); box-shadow: var(--sh); }
+    .om-card { background: #fff; cursor: pointer; }
+    .om-card-stack { position: relative; }
+    .om-card-stack > .om-card { display: none; }
+    .om-card-stack > .om-card.om-active { display: block; }
     .om-meta-bar {
-      padding: 5px 12px; font-size: 11px; font-weight: 800; letter-spacing: .08em;
-      text-transform: uppercase; color: var(--muted); background: var(--soft);
+      padding: 10px 18px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; font-weight: 400; letter-spacing: 2px;
+      text-transform: uppercase; color: #fff;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 58%, var(--green) 100%);
       border-bottom: 1px solid var(--border-s);
       display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
-    .om-meta-bar .om-status.live { color: var(--ok); }
-
-    /* Scale sb-table contents inside Live Scores so they fit the narrower column */
-    .om-card .sb-table th, .om-card .sb-table td { padding: 5px 8px; }
-    .om-card .sb-header-row th { font-size: 11px; height: 30px; }
-    .om-card .sb-row td { height: 54px; }
-    .om-card .sb-team-inner { padding: 4px 6px; }
-    .om-card .sb-logo { width: 62px; height: 38px; }
-    .om-card .sb-score-cell { font-size: 22px; }
-    .om-card .sb-total-cell { font-size: 22px; min-width: 36px; }
-
-    @media (min-width: 1800px) {
-      .om-meta-bar { font-size: 14px; padding: 7px 16px; }
-      .om-card .sb-table th, .om-card .sb-table td { padding: 5px 10px; }
-      .om-card .sb-header-row th { font-size: 13px; height: 36px; }
-      .om-card .sb-row td { height: 70px; }
-      .om-card .sb-team-inner { padding: 4px 6px; }
-      .om-card .sb-logo { width: 88px; height: 55px; }
-      .om-card .sb-score-cell { font-size: 34px; }
-      .om-card .sb-total-cell { font-size: 34px; min-width: 48px; }
-    }
+    .om-meta-bar .om-status.live { color: var(--gold); }
     @media (min-width: 2500px) {
-      .om-card .sb-table th, .om-card .sb-table td { padding: 6px 12px; }
-      .om-card .sb-header-row th { font-size: 14px; height: 40px; }
-      .om-card .sb-row td { height: 80px; }
-      .om-card .sb-logo { width: 100px; height: 62px; }
-      .om-card .sb-score-cell { font-size: 38px; }
-      .om-card .sb-total-cell { font-size: 38px; min-width: 54px; }
+      .om-meta-bar { font-size: 42px; letter-spacing: 2px; padding: 13px 24px; }
     }
     @media (min-width: 3800px) {
-      .om-meta-bar { font-size: 18px; padding: 10px 20px; }
-      .om-card .sb-table th, .om-card .sb-table td { padding: 7px 12px; }
-      .om-card .sb-header-row th { font-size: 17px; height: 56px; }
-      .om-card .sb-row td { height: 95px; }
-      .om-card .sb-team-inner { padding: 8px 12px; }
-      .om-card .sb-logo { width: 124px; height: 78px; }
-      .om-card .sb-score-cell { font-size: 47px; }
-      .om-card .sb-total-cell { font-size: 47px; min-width: 64px; }
+      .om-meta-bar { font-size: 62px; letter-spacing: 3px; padding: 20px 32px; }
     }
 
     /* ── Division season standings table ── */
@@ -505,10 +528,12 @@
 
     /* ── QHD / 2K (2500px+) ── */
     @media (min-width: 2500px) {
-      .page          { padding: 16px 30px; grid-template-columns: 1360px 840px; grid-template-rows: auto auto; gap: 20px; }
-      .main-col      { max-width: 1360px; }
+      .page          { padding: 16px 30px; }
+      .main-col      { max-width: 2220px; }
       .page-rounds   { max-width: 1360px; }
-      .scoreboard-strip { grid-template-columns: 1360px 840px 840px; gap: 20px; padding: 12px 30px 14px; }
+      .scoreboard-strip { padding: 12px 30px 14px; }
+      .meta-strip    { padding: 14px 32px; }
+      .match-meta-bar { font-size: 26px; letter-spacing: .06em; }
       /* text + element scale ~1.4× */
       .player-name, .player-name-2 { font-size: 26px; }
       .score-disp    { font-size: 54px; min-width: 66px; }
@@ -530,11 +555,12 @@
       .sb-total-cell { font-size: 54px; min-width: 76px; }
       .sb-logo       { width: 140px; height: 86px; }
       .sb-table th, .sb-table td { padding: 8px 14px; }
-      .sb-header-row th { font-size: 20px; height: 54px; }
+      .sb-header-row th { font-size: 42px; height: 82px; letter-spacing: 2px; }
       .sb-row td       { height: 110px; }
       .ts2-wins      { font-size: 54px; }
-      .ts2-col-head  { height: 54px; font-size: 20px; }
-      .ts2-team-head { height: 54px; width: 150px; }
+      .ts2-col-head  { height: 82px; font-size: 42px; letter-spacing: 2px; min-width: 170px; }
+      .ts2-team-head { height: 82px; width: 200px; }
+      .ts2-meta-label { font-size: 42px; letter-spacing: 2px; }
       .ts2-row td    { height: 110px; }
       .ts2-team-cell { width: 150px; }
       .ts2-logo      { width: 140px; height: 86px; }
@@ -553,10 +579,10 @@
 
     /* ── 4K (3800px+) ── */
     @media (min-width: 3800px) {
-      .page          { padding: 20px 40px; grid-template-columns: 1700px 1060px; grid-template-rows: auto auto; gap: 26px; }
-      .main-col      { max-width: 1700px; }
+      .page          { padding: 20px 40px; }
+      .main-col      { max-width: 2786px; }
       .page-rounds   { max-width: 1700px; }
-      .scoreboard-strip { grid-template-columns: 1700px 1060px 1060px; gap: 26px; padding: 14px 40px 18px; }
+      .scoreboard-strip { padding: 14px 40px 18px; }
       /* text + element scale ~2× */
       .player-name, .player-name-2 { font-size: 38px; line-height: 1.25; }
       .score-disp    { font-size: 76px; min-width: 92px; }
@@ -580,25 +606,25 @@
       .sb-logo       { width: 200px; height: 124px; }
       .sb-team-inner { padding: 12px 18px; }
       .sb-table th, .sb-table td { padding: 11px 18px; }
-      .sb-header-row th { font-size: 26px; padding: 11px 18px; height: 90px; }
+      .sb-header-row th { font-size: 62px; padding: 14px 20px; height: 124px; letter-spacing: 3px; }
       .sb-row td        { height: 152px; }
       .ts2-wins      { font-size: 76px; }
       .ts2-diff      { font-size: 16px; margin-top: 3px; }
-      .ts2-col-head  { height: 90px; font-size: 26px; }
-      .ts2-team-head { height: 90px; width: 206px; }
+      .ts2-col-head  { height: 124px; font-size: 62px; letter-spacing: 3px; min-width: 230px; }
+      .ts2-team-head { height: 124px; width: 250px; }
       .ts2-row td    { height: 152px; }
       .ts2-team-cell { width: 206px; }
       .ts2-logo      { width: 190px; height: 116px; }
       .ts2-score-cell { padding: 12px 18px; }
       .ts2-meta-logo { width: 48px; height: 48px; }
-      .ts2-meta-label { font-size: 18px; }
+      .ts2-meta-label { font-size: 62px; letter-spacing: 3px; }
       .vs-teams      { font-size: 34px; }
       .vs-meta       { font-size: 14px; }
       .match-banner  { padding: 20px 28px; }
       .score-chip .k { font-size: 12px; }
       .score-chip .v { font-size: 26px; }
-      .meta-strip    { padding: 11px 38px; }
-      .match-meta-bar { font-size: 22px; }
+      .meta-strip    { padding: 18px 40px; }
+      .match-meta-bar { font-size: 34px; letter-spacing: .06em; }
       .league-text h1 { font-size: 42px; }
       .league-text p  { font-size: 16px; }
       .league-logo-wrap { width: 84px; height: 84px; border-radius: 20px; }
@@ -647,11 +673,12 @@
       </div>
     </div>
   </div>
-  <div class="meta-strip"><div class="match-meta-bar" id="match-meta-bar"></div></div>
+  <div class="meta-strip">
+    <div class="match-meta-bar" id="match-meta-bar"></div>
+    <select id="divisionSelect" class="sb-division-select" onchange="handleDivisionChange()"></select>
+  </div>
   <div class="scoreboard-strip">
     <div class="sb-main">
-      <!-- select is moved into the first th by JS after renderScoreboard -->
-      <select id="divisionSelect" class="sb-division-select" onchange="handleDivisionChange()"></select>
       <div class="scoreboard-card" id="scoreboard-card"></div>
     </div>
     <div class="sb-stats">
@@ -661,25 +688,30 @@
         </div>
       </div>
     </div>
-    <aside class="livescores-rail" id="liveScoresRail" aria-label="Live scores">
-      <div class="side-panel">
-        <div class="side-body" id="otherMatchesBody">
-          <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
-        </div>
-      </div>
-    </aside>
-
   </div>
 </div>
 
 <div class="page">
   <div class="main-col">
-    <div id="main-content">
-      <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
-    </div>
-    <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
-      <div class="side-body" id="playerStatsBody">
-        <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+    <div class="main-grid">
+      <div class="round-col">
+        <div id="main-content">
+          <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
+        </div>
+        <section class="livescores-section" aria-label="Live scores">
+          <div class="side-panel">
+            <div class="side-body" id="otherMatchesBody">
+              <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="stats-col">
+        <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
+          <div class="side-body" id="playerStatsBody">
+            <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -815,12 +847,17 @@
   }
 
   // ── Load scorecard ────────────────────────────────────────────────────────
+  let __lastScorecardRaw = '';
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
     if (!hasGas()) return;
     google.script.run
       .withSuccessHandler(raw => {
         try {
+          // Skip the rebuild (which would flicker every <img>) when the payload
+          // hasn't changed since the last poll.
+          if (raw === __lastScorecardRaw) return;
+          __lastScorecardRaw = raw;
           currentScorecardData = JSON.parse(raw);
           renderDisplay(currentScorecardData);
         } catch (err) {
@@ -903,70 +940,143 @@
       String(m.match_id) !== String(currentMatch.match_id) &&
       (!curWeek || extractWeekNum(m) === curWeek)
     );
-    liveScoresState.matches = others;
-    liveScoresState.idx = 0;
 
-    if (!others.length) {
-      el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No other matches this week.</div>';
-      if (liveScoresState.rotateTimer) { clearInterval(liveScoresState.rotateTimer); liveScoresState.rotateTimer = null; }
-      return;
+    // Skip a full rebuild if the set of other matches hasn't changed —
+    // we want the existing <img> elements to stay in the DOM so they don't reload.
+    const sig = others.map(m => String(m.match_id)).join('|');
+    if (sig !== liveScoresState.sig) {
+      liveScoresState.matches = others;
+      liveScoresState.idx = 0;
+      liveScoresState.sig = sig;
+
+      if (!others.length) {
+        el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No other matches this week.</div>';
+        if (liveScoresState.rotateTimer) { clearInterval(liveScoresState.rotateTimer); liveScoresState.rotateTimer = null; }
+        return;
+      }
+
+      // Build all cards once. Logos live inside <img> elements that we will not replace.
+      el.innerHTML = `<div class="om-card-stack">${others.map((m, i) => renderLiveScoreCardHtml_(m, i)).join('')}</div>`;
+      applyLiveScoreActiveCard_();
     }
 
-    renderCurrentLiveScoreCard_();
+    if (!others.length) return;
 
     // Fetch each other match's scorecard data in parallel; cache for rotation.
     if (window.__GAS_EXEC_URL__) {
       others.forEach(m => fetchAndCacheOtherMatch_(m));
     }
 
-    // (Re)start rotation timer
+    // (Re)start the shared 30s rotation tick (drives both live-scores
+    // advance and the Women/Men player-stats toggle so they stay in sync).
     if (liveScoresState.rotateTimer) clearInterval(liveScoresState.rotateTimer);
-    if (others.length > 1) {
-      liveScoresState.rotateTimer = setInterval(() => {
+    liveScoresState.rotateTimer = setInterval(() => {
+      if (liveScoresState.matches.length > 1) {
         liveScoresState.idx = (liveScoresState.idx + 1) % liveScoresState.matches.length;
-        renderCurrentLiveScoreCard_(true);
-      }, LIVE_SCORES_ROTATE_MS);
-    }
-  }
-
-  function renderCurrentLiveScoreCard_(animate) {
-    const el = document.getElementById('otherMatchesBody');
-    if (!el || !liveScoresState.matches.length) return;
-    const m = liveScoresState.matches[liveScoresState.idx];
-    const cached = liveScoresState.data[m.match_id];
-    const placeholderRounds = Array.from({ length: 9 }, (_, i) => ({
-      round_number: i + 1, home_games_won: 0, away_games_won: 0, status: 'scheduled', games: []
-    }));
-    const match = (cached && cached.match) || m;
-    const rounds = (cached && cached.rounds) || placeholderRounds;
-    const allGames = (cached ? rounds.flatMap(r => r.games || []) : []);
-    const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
-    const isLive   = played.length > 0 && played.length < allGames.length;
-    const isFinal  = allGames.length > 0 && played.length === allGames.length;
-    const statusText = !cached ? 'Loading…' : isFinal ? 'Final' : isLive ? 'Live' : 'Pending';
-    const divLabel = extractDivNum(m) ? 'DIV ' + extractDivNum(m) : '';
-    const counter = `${liveScoresState.idx + 1} / ${liveScoresState.matches.length}`;
-
-    const html = `
-      <div class="om-card" data-match-id="${esc(String(m.match_id))}" onclick="window.goToOtherMatch && goToOtherMatch('${esc(String(m.match_id))}')">
-        <div class="om-meta-bar">
-          <span>${esc(divLabel)} · <span class="om-status${isLive ? ' live' : ''}">${esc(statusText)}</span></span>
-          <span>${esc(counter)}</span>
-        </div>
-        <div>${buildRoundsScoreboardTable_(match, rounds)}</div>
-      </div>
-    `;
-
-    if (animate) {
-      const existing = el.querySelector('.om-card');
-      if (existing) {
-        existing.classList.add('om-fade');
-        setTimeout(() => { el.innerHTML = html; }, 320);
-        return;
+        applyLiveScoreActiveCard_();
       }
-    }
-    el.innerHTML = html;
+      __psShowMen = !__psShowMen;
+      applyPlayerStatsVisibility_();
+    }, LIVE_SCORES_ROTATE_MS);
   }
+
+  // One-time HTML for a single match's live-score card.
+  // The team logos are rendered into stable cells exactly once per match —
+  // patchLiveScoreCardData_ only touches the score/total/header text afterward
+  // so the <img> elements stay in the DOM and never reload.
+  const OM_PLACEHOLDER_COLS = 9;
+  function renderLiveScoreCardHtml_(m, idx) {
+    const divLabel = extractDivNum(m) ? 'Div ' + extractDivNum(m) : '';
+    const cols = Array.from({ length: OM_PLACEHOLDER_COLS }, (_, i) =>
+      `<th data-cell="head-r${i+1}">R${i+1}</th>`).join('');
+    const homeCells = Array.from({ length: OM_PLACEHOLDER_COLS }, (_, i) =>
+      `<td class="sb-score-cell" data-cell="home-r${i+1}">—</td>`).join('');
+    const awayCells = Array.from({ length: OM_PLACEHOLDER_COLS }, (_, i) =>
+      `<td class="sb-score-cell" data-cell="away-r${i+1}">—</td>`).join('');
+    return `
+      <div class="om-card" data-match-id="${esc(String(m.match_id))}" data-idx="${idx}" onclick="window.goToOtherMatch && goToOtherMatch('${esc(String(m.match_id))}')">
+        <table class="sb-table om-sb-table">
+          <thead><tr class="sb-header-row">
+            <th class="sb-corner-label" data-cell="div-label">${esc(divLabel)}</th>
+            ${cols}<th>Total</th>
+          </tr></thead>
+          <tbody>
+            <tr class="sb-row">
+              <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(m.home_team_name, 'sb')}</div></div></td>
+              ${homeCells}
+              <td class="sb-total-cell" data-cell="home-total">0</td>
+            </tr>
+            <tr class="sb-row">
+              <td class="sb-team-cell"><div class="sb-team-inner"><div class="sb-logo">${buildLogoHtml(m.away_team_name, 'sb')}</div></div></td>
+              ${awayCells}
+              <td class="sb-total-cell" data-cell="away-total">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function applyLiveScoreActiveCard_() {
+    const cards = document.querySelectorAll('#otherMatchesBody .om-card');
+    if (!cards.length) return;
+    cards.forEach((c, i) => {
+      c.classList.toggle('om-active', i === liveScoresState.idx);
+    });
+  }
+
+  function patchLiveScoreCardData_(id, match, rounds) {
+    const card = document.querySelector(`#otherMatchesBody .om-card[data-match-id="${cssEsc_(id)}"]`);
+    if (!card) return;
+    rounds = dedupeRounds_(rounds);
+    const allGames = rounds.flatMap(r => r.games || []);
+    const played   = allGames.filter(g => hasScore(g.home_score) && hasScore(g.away_score));
+    const divLabel = extractDivNum(match) ? 'Div ' + extractDivNum(match) : '';
+
+    const setCell = (key, text, cls) => {
+      const node = card.querySelector(`[data-cell="${key}"]`);
+      if (!node) return;
+      if (node.textContent !== String(text)) node.textContent = text;
+      if (cls !== undefined) {
+        // sb-score-cell base class always preserved
+        node.className = node.className.replace(/\s*\bsb-(win|loss)\b/g, '');
+        if (cls) node.classList.add(cls);
+      }
+    };
+
+    setCell('div-label', divLabel);
+
+    let homeTotal = 0, awayTotal = 0;
+    for (let i = 0; i < OM_PLACEHOLDER_COLS; i++) {
+      const r = rounds[i];
+      const headNode = card.querySelector(`[data-cell="head-r${i+1}"]`);
+      if (headNode) headNode.textContent = r ? `R${r.round_number || (i+1)}` : `R${i+1}`;
+      if (!r) {
+        setCell(`home-r${i+1}`, '—', '');
+        setCell(`away-r${i+1}`, '—', '');
+        continue;
+      }
+      const { hw, aw } = roundWins_(r);
+      const active = hasRoundStarted_(r);
+      const done = active && isRoundDone(r);
+      setCell(`home-r${i+1}`, active ? hw : '—', done ? (hw > aw ? 'sb-win' : 'sb-loss') : '');
+      setCell(`away-r${i+1}`, active ? aw : '—', done ? (aw > hw ? 'sb-win' : 'sb-loss') : '');
+      homeTotal += hw; awayTotal += aw;
+    }
+    const homeTotalNode = card.querySelector('[data-cell="home-total"]');
+    const awayTotalNode = card.querySelector('[data-cell="away-total"]');
+    if (homeTotalNode) {
+      homeTotalNode.textContent = homeTotal;
+      homeTotalNode.classList.toggle('sb-leader', homeTotal > awayTotal);
+      homeTotalNode.classList.toggle('sb-trail',  homeTotal <= awayTotal);
+    }
+    if (awayTotalNode) {
+      awayTotalNode.textContent = awayTotal;
+      awayTotalNode.classList.toggle('sb-leader', awayTotal > homeTotal);
+      awayTotalNode.classList.toggle('sb-trail',  awayTotal <= homeTotal);
+    }
+  }
+
+  function cssEsc_(s) { return String(s).replace(/"/g, '\\"'); }
 
   function fetchAndCacheOtherMatch_(m) {
     const id = String(m.match_id);
@@ -974,12 +1084,12 @@
     fetch(url).then(r => r.text()).then(raw => {
       let data;
       try { data = JSON.parse(raw); } catch (e) { return; }
+      const prev = liveScoresState.data[id];
+      if (prev && prev._raw === raw) return; // no-op when nothing changed
       const rounds = (data && data.rounds) || [];
       const match  = (data && data.match)  || m;
-      liveScoresState.data[id] = { match, rounds };
-      // If this is the currently-displayed match, refresh in place
-      const cur = liveScoresState.matches[liveScoresState.idx];
-      if (cur && String(cur.match_id) === id) renderCurrentLiveScoreCard_();
+      liveScoresState.data[id] = { match, rounds, _raw: raw };
+      patchLiveScoreCardData_(id, match, rounds);
     }).catch(() => { /* leave placeholder */ });
   }
 
@@ -1201,31 +1311,30 @@
   // ── Scoreboard (identical to Scorecard) ──────────────────────────────────
   function renderScoreboard(match, rounds) {
     const card = document.getElementById('scoreboard-card');
-    const sel  = document.getElementById('divisionSelect');
-    const sbMain = document.querySelector('.sb-main');
-    // Rescue select from inside card before wiping innerHTML (prevents destruction on re-render)
-    if (sel && card && card.contains(sel) && sbMain) sbMain.insertBefore(sel, card);
     rounds = dedupeRounds_(rounds);
     if (!card || !rounds.length) { if (card) card.innerHTML = ''; return; }
-    const homeTotal = rounds.reduce((s, r) => s + (r.home_games_won || 0), 0);
-    const awayTotal = rounds.reduce((s, r) => s + (r.away_games_won || 0), 0);
+    const wins = rounds.map(r => roundWins_(r));
+    const homeTotal = wins.reduce((s, w) => s + w.hw, 0);
+    const awayTotal = wins.reduce((s, w) => s + w.aw, 0);
     const colHeaders = rounds.map((r, i) => `<th>R${r.round_number || (i + 1)}</th>`).join('');
-    const homeScores = rounds.map(r => {
-      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
-      const active = hw || aw || isRoundDone(r);
-      const cls = isRoundDone(r) ? (hw > aw ? 'sb-win' : 'sb-loss') : '';
+    const homeScores = rounds.map((r, i) => {
+      const { hw, aw } = wins[i];
+      const active = hasRoundStarted_(r);
+      const done = active && isRoundDone(r);
+      const cls = done ? (hw > aw ? 'sb-win' : 'sb-loss') : '';
       return `<td class="sb-score-cell ${cls}">${active ? hw : '—'}</td>`;
     }).join('');
-    const awayScores = rounds.map(r => {
-      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
-      const active = hw || aw || isRoundDone(r);
-      const cls = isRoundDone(r) ? (aw > hw ? 'sb-win' : 'sb-loss') : '';
+    const awayScores = rounds.map((r, i) => {
+      const { hw, aw } = wins[i];
+      const active = hasRoundStarted_(r);
+      const done = active && isRoundDone(r);
+      const cls = done ? (aw > hw ? 'sb-win' : 'sb-loss') : '';
       return `<td class="sb-score-cell ${cls}">${active ? aw : '—'}</td>`;
     }).join('');
     card.innerHTML = `
       <table class="sb-table">
         <thead><tr class="sb-header-row">
-          <th id="sb-div-th" style="padding:6px 10px;width:120px;height:44px;"></th>
+          <th class="sb-corner-label">By Round</th>
           ${colHeaders}<th>Total</th>
         </tr></thead>
         <tbody>
@@ -1241,9 +1350,6 @@
           </tr>
         </tbody>
       </table>`;
-    // Move division dropdown into the blank first header cell
-    const divTh = document.getElementById('sb-div-th');
-    if (divTh && sel) { divTh.appendChild(sel); }
     updateStickyOffset();
   }
 
@@ -1272,7 +1378,13 @@
     const p1a = game.away_player_1_name || '', p2a = game.away_player_2_name || '';
     const hScoreCls = !hasH ? 'blank' : hWin ? 'win' : aWin ? 'lose' : '';
     const aScoreCls = !hasA ? 'blank' : aWin ? 'win' : hWin ? 'lose' : '';
-    const courtNum = game.court_number || game.court || game.game_number_in_round || '';
+    // Prefer the match-level court assignment for this game position
+    // (court_1..court_4 keyed on game_number_in_round); fall back to the
+    // game-level court_number, then the position number itself.
+    const posKey = 'court_' + Number(game.game_number_in_round || 0);
+    const matchCourt = (match && match[posKey] != null && String(match[posKey]).trim() !== '')
+      ? String(match[posKey]).trim() : '';
+    const courtNum = matchCourt || game.court_number || game.court || game.game_number_in_round || '';
     const typeLabel = prettyType(game.game_type).toUpperCase();
     return `
       <div class="gcard">
@@ -1363,7 +1475,7 @@
     el.innerHTML = `
       <table class="ts2-table">
         <thead><tr>
-          <th class="ts2-team-head"><span class="ts2-meta-label">Games Won</span></th>
+          <th class="ts2-team-head"><span class="ts2-meta-label">By Type</span></th>
           ${colHeads}
         </tr></thead>
         <tbody>
@@ -1449,9 +1561,11 @@
     const buildSection = (label, list) => {
       if (!list.length) return '';
       const badge = label === 'Women' ? 'W' : label === 'Men' ? 'M' : label[0];
-      return `<div class="ps-section-head">
-          <div class="ps-section-badge">${badge}</div>
-          <span class="ps-section-label">${esc(label)}</span>
+      return `<div class="round-head">
+          <div class="round-head-left">
+            <div class="round-badge">${badge}</div>
+            <span class="round-label">${esc(label)}</span>
+          </div>
         </div>
         <table class="player-stats-table">
           <thead><tr><th class="ps-rank"></th><th class="ps-logo-cell"></th><th class="ps-th-name">Player</th><th>W–L</th><th>+/–</th></tr></thead>
@@ -1463,9 +1577,27 @@
     const menHtml   = buildSection('Men',   menPlayers);
 
     const html = (womenHtml || menHtml)
-      ? `<div class="ps-two-col"><div class="ps-col">${womenHtml}</div><div class="ps-col">${menHtml}</div></div>`
+      ? `<div class="ps-two-col">
+           <div class="ps-col ps-col-women">${womenHtml}</div>
+           <div class="ps-col ps-col-men ps-hidden">${menHtml}</div>
+         </div>`
       : '';
     el.innerHTML = html || '<div class="empty-state"><div class="ico">🏓</div>No player data.</div>';
+    startPlayerStatsRotation_();
+  }
+
+  // Women/Men toggle state — driven by the shared 30s rotation tick.
+  let __psShowMen = false;
+  function startPlayerStatsRotation_() {
+    __psShowMen = false;
+    applyPlayerStatsVisibility_();
+  }
+  function applyPlayerStatsVisibility_() {
+    const w = document.querySelector('.ps-col-women');
+    const m = document.querySelector('.ps-col-men');
+    if (!w || !m) return;
+    w.classList.toggle('ps-hidden',  __psShowMen);
+    m.classList.toggle('ps-hidden', !__psShowMen);
   }
 
   // ── Logo helpers (same as scorecard) ──────────────────────────────────────
@@ -1531,6 +1663,26 @@
   function isRoundDone(round) {
     const gs = round.games||[];
     return gs.length > 0 && gs.every(g => hasScore(g.home_score) && hasScore(g.away_score));
+  }
+  // A round counts as "started" only when at least one game has a real,
+  // non-zero score recorded — guards against placeholder 0-0 rows in seed data.
+  function hasRoundStarted_(round) {
+    const gs = round.games||[];
+    return gs.some(g => hasScore(g.home_score) && hasScore(g.away_score) &&
+      (Number(g.home_score) > 0 || Number(g.away_score) > 0));
+  }
+  // Compute games-won per side from the round's actual games — the round-level
+  // rollup (home_games_won/away_games_won) can lag, so we always recompute.
+  function roundWins_(round) {
+    let hw = 0, aw = 0;
+    for (const g of (round.games || [])) {
+      if (!hasScore(g.home_score) || !hasScore(g.away_score)) continue;
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      if (hs === 0 && as === 0) continue;
+      if (hs > as) hw++;
+      else if (as > hs) aw++;
+    }
+    return { hw, aw };
   }
   // Defensive: the server can return multiple round rows for the same
   // round_number (e.g., split by game type). Merge by round_number so the

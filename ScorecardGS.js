@@ -851,3 +851,58 @@ function createDreambreakerGameV1(payload) {
 
   return JSON.stringify({ ok: true, roundId: dbRoundId, gameId: dbGameId });
 }
+/**
+ * Save the four court-number assignments for a match. Court[i] applies to
+ * the i-th game position within every round (so game position 1 in any round
+ * is played on court_1, etc.).
+ * payload: { matchId, courts: [c1, c2, c3, c4], userId?, userEmail?, userName? }
+ */
+function setMatchCourtsV1(payload) {
+  const { matchId } = payload || {};
+  const courts = (payload && payload.courts) || [];
+  if (!matchId) throw new Error('matchId is required.');
+
+  const ss = getBackendSpreadsheet_();
+  const matchesSheet = ss.getSheetByName('Matches');
+  if (!matchesSheet) throw new Error('Matches sheet not found.');
+
+  // Non-destructively append court_1..court_4 columns if they're not yet
+  // present (don't run ensureSchema_ — it would clear the live Matches data).
+  const wanted = ['court_1', 'court_2', 'court_3', 'court_4'];
+  let lastCol = matchesSheet.getLastColumn();
+  const existingHdrs = matchesSheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const missing = wanted.filter(h => existingHdrs.indexOf(h) === -1);
+  if (missing.length) {
+    matchesSheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+  }
+
+  const matchesTable = getTableScorecard_(matchesSheet);
+  const matchRow = findRowByIdScorecard_(matchesTable, 'match_id', matchId);
+  if (!matchRow) throw new Error('Match not found: ' + matchId);
+
+  const cleanedCourts = [];
+  for (let i = 0; i < 4; i++) {
+    const raw = courts[i];
+    const s = (raw == null) ? '' : String(raw).trim();
+    if (matchesTable.headerMap['court_' + (i + 1)]) {
+      setCellByHeaderScorecard_(
+        matchesSheet, matchesTable.headerMap, matchRow.rowNumber,
+        'court_' + (i + 1), s
+      );
+    }
+    cleanedCourts.push(s);
+  }
+
+  try {
+    appendAuditLog_({
+      access: { userId: (payload && payload.userId) || '', email: (payload && payload.userEmail) || '', name: (payload && payload.userName) || '' },
+      entityType: 'match',
+      entityId: matchId,
+      actionType: 'update_courts',
+      newValueJson: JSON.stringify({ courts: cleanedCourts }),
+      reason: (payload && payload.reason) || 'Set match court assignments'
+    });
+  } catch (e) { /* audit-log failures must never fail the save */ }
+
+  return JSON.stringify({ ok: true, matchId, courts: cleanedCourts });
+}

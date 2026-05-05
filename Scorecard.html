@@ -607,6 +607,37 @@
       </div>
     </div>
 
+    <!-- Court Assignments -->
+    <div class="side-panel">
+      <div class="side-panel-head">
+        <h3>Court Numbers</h3>
+        <span class="panel-badge">Match</span>
+      </div>
+      <div class="side-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Court used for game position 1–4 in every round.</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div>
+            <div class="cc-label">Game 1</div>
+            <input class="cc-input" id="court-1" inputmode="numeric" placeholder="–">
+          </div>
+          <div>
+            <div class="cc-label">Game 2</div>
+            <input class="cc-input" id="court-2" inputmode="numeric" placeholder="–">
+          </div>
+          <div>
+            <div class="cc-label">Game 3</div>
+            <input class="cc-input" id="court-3" inputmode="numeric" placeholder="–">
+          </div>
+          <div>
+            <div class="cc-label">Game 4</div>
+            <input class="cc-input" id="court-4" inputmode="numeric" placeholder="–">
+          </div>
+        </div>
+        <button class="cc-btn cc-btn-navy" style="margin-top:8px;" onclick="saveCourtNumbers()">Save Courts</button>
+        <div class="cc-status" id="court-status"></div>
+      </div>
+    </div>
+
     <!-- Super Dreambreaker -->
     <div class="side-panel">
       <div class="side-panel-head">
@@ -882,6 +913,12 @@
 
   // ── Control Centre ────────────────────────────────────────────────────────
   function populateControlCentre(match, rounds) {
+    // Court Numbers — pre-fill the four inputs from match.court_1..court_4
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('court-' + i);
+      if (el) el.value = (match && match['court_' + i] != null) ? String(match['court_' + i]) : '';
+    }
+
     const gameSel   = document.getElementById('sub-game');
     const subDL     = document.getElementById('sub-datalist');
     const homesDL   = document.getElementById('db-home-dl');
@@ -947,6 +984,27 @@
       .withSuccessHandler(() => { setCcSt('sub-status', 'ok', '✓ Applied.'); toast('Substitution saved', 'ok'); refreshCurrentMatch(); })
       .withFailureHandler(e  => { setCcSt('sub-status', 'err', 'Error: ' + (e.message || e)); })
       .savePlayerSubstitutionV1({ gameId, position: pos, newPlayerName: newName, matchId: currentMatchId });
+  }
+
+  function saveCourtNumbers() {
+    if (!currentMatchId) { setCcSt('court-status', 'err', 'No match loaded.'); return; }
+    const courts = [1, 2, 3, 4].map(i => (document.getElementById('court-' + i)?.value || '').trim());
+    setCcSt('court-status', 'busy', 'Saving…');
+    if (!hasGas()) {
+      setTimeout(() => setCcSt('court-status', 'ok', '✓ Saved.'), 300);
+      return;
+    }
+    const u = (window.cpblScoreUser || {});
+    google.script.run
+      .withSuccessHandler(() => { setCcSt('court-status', 'ok', '✓ Saved.'); refreshCurrentMatch(); })
+      .withFailureHandler(e  => { setCcSt('court-status', 'err', 'Error: ' + (e.message || e)); })
+      .setMatchCourtsV1({
+        matchId: currentMatchId,
+        courts,
+        userId:    u.userId || '',
+        userEmail: u.email  || '',
+        userName:  u.name   || ''
+      });
   }
 
   function toggleDreambreaker() {
