@@ -128,19 +128,13 @@
 
     /* ── Layout ── */
     .page {
-      display: grid;
-      grid-template-columns: minmax(0,1fr) 560px;
-      gap: 14px;
+      display: block;
       padding: 12px 20px;
-      align-items: start;
     }
     /* Wide-rail: absolutely positioned beyond the sidebar, shown on large screens only. */
     .wide-rail { display: none; }
     @media (min-width: 1800px) {
       .page {
-        grid-template-columns: 1060px 680px;
-        justify-content: start;
-        gap: 16px;
         padding: 14px 24px;
       }
       .wide-rail {
@@ -434,15 +428,15 @@
     .ps-col { flex: 1; min-width: 0; border-right: 1px solid var(--border-s); overflow: hidden; }
     .ps-col:last-child { border-right: none; }
 
-    .player-stats-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .player-stats-table th { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 5px; border-bottom: 1px solid var(--border-s); text-align: right; background: var(--soft); }
+    .player-stats-table { width: 100%; border-collapse: collapse; font-size: 19px; }
+    .player-stats-table th { font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 10px; border-bottom: 1px solid var(--border-s); text-align: right; background: var(--soft); }
     .player-stats-table th.ps-th-name { text-align: left; }
-    .player-stats-table td { padding: 5px 5px; border-bottom: 1px solid var(--border-s); text-align: right; vertical-align: middle; }
-    .player-stats-table td.ps-name { text-align: left; font-weight: 600; font-size: 14px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-stats-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-s); text-align: right; vertical-align: middle; }
+    .player-stats-table td.ps-name { text-align: left; font-weight: 600; font-size: 19px; max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .player-stats-table tr:last-child td { border-bottom: none; }
-    .ps-rank { width: 22px; text-align: center !important; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 800; color: var(--muted); padding: 5px 3px !important; }
-    .ps-logo-cell { width: 28px; padding: 3px 3px !important; text-align: center !important; }
-    .ps-logo-inner { width: 22px; height: 22px; border-radius: 5px; overflow: hidden; background: #0a1628; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+    .ps-rank { width: 32px; text-align: center !important; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 800; color: var(--muted); padding: 5px 4px !important; }
+    .ps-logo-cell { width: 40px; padding: 4px 4px !important; text-align: center !important; }
+    .ps-logo-inner { width: 32px; height: 32px; border-radius: 7px; overflow: hidden; background: #0a1628; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
     .ps-logo-inner img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .mono { font-family: 'DM Mono', monospace; }
 
@@ -484,7 +478,7 @@
 
     /* ── QHD / 2K (2500px+) ── */
     @media (min-width: 2500px) {
-      .page          { grid-template-columns: 1360px 840px; gap: 20px; padding: 16px 30px; }
+      .page          { padding: 16px 30px; }
       .scoreboard-strip { grid-template-columns: 1360px 840px; gap: 20px; padding: 12px 30px 14px; }
       .wide-rail     { grid-template-columns: 420px 460px; gap: 14px;
                        left: calc(30px + 1360px + 20px + 840px + 20px); width: 894px; }
@@ -519,11 +513,18 @@
       .match-banner  { padding: 14px 20px; }
       .ps-section-badge { width: 56px; height: 56px; font-size: 36px; }
       .ps-section-label { font-size: 42px; }
+      .player-stats-table { font-size: 28px; }
+      .player-stats-table th { font-size: 20px; padding: 12px 12px; }
+      .player-stats-table td { padding: 10px 12px; }
+      .player-stats-table td.ps-name { font-size: 28px; }
+      .ps-rank       { font-size: 22px; width: 42px; }
+      .ps-logo-inner { width: 44px; height: 44px; border-radius: 10px; }
+      .ps-logo-cell  { width: 54px; }
     }
 
     /* ── 4K (3800px+) ── */
     @media (min-width: 3800px) {
-      .page          { grid-template-columns: 1700px 1060px; gap: 26px; padding: 20px 40px; }
+      .page          { padding: 20px 40px; }
       .scoreboard-strip { grid-template-columns: 1700px 1060px; gap: 26px; padding: 14px 40px 18px; }
       .wide-rail     { grid-template-columns: 450px 500px; gap: 16px;
                        left: calc(40px + 1700px + 26px + 1060px + 26px); width: 966px; }
@@ -579,16 +580,16 @@
       .round-block   { border-radius: 22px; }
       .ps-section-badge { width: 80px; height: 80px; font-size: 52px; }
       .ps-section-label { font-size: 62px; }
-      .player-stats-table th { font-size: 17px; padding: 10px 9px; }
-      .player-stats-table td { padding: 9px 9px; }
-      .player-stats-table td.ps-name { font-size: 21px; max-width: 200px; }
-      .ps-rank       { font-size: 17px; width: 36px; }
-      .ps-logo-inner { width: 32px; height: 32px; }
+      .player-stats-table { font-size: 38px; }
+      .player-stats-table th { font-size: 26px; padding: 14px 14px; }
+      .player-stats-table td { padding: 12px 14px; }
+      .player-stats-table td.ps-name { font-size: 38px; }
+      .ps-rank       { font-size: 28px; width: 52px; }
+      .ps-logo-inner { width: 56px; height: 56px; border-radius: 12px; }
+      .ps-logo-cell  { width: 68px; }
     }
 
     /* Responsive */
-    @media (max-width: 1100px) { /* game-grid-2 already single column */ }
-    @media (max-width: 1000px) { .page { grid-template-columns: 1fr; } }
     @media (max-width: 700px)  { .page { padding: 10px 12px; } }
   </style>
 </head>
@@ -659,15 +660,12 @@
     <div id="main-content">
       <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
     </div>
-  </div>
-
-  <aside class="sidebar">
-    <div class="side-panel">
+    <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
       <div class="side-body" id="playerStatsBody">
         <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
       </div>
     </div>
-  </aside>
+  </div>
 </div>
 
 <script>
