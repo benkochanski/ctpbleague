@@ -976,6 +976,13 @@
       el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No other matches this week.</div>';
       return;
     }
+    const placeholderRounds = Array.from({ length: 9 }, (_, i) => ({
+      round_number: i + 1,
+      home_games_won: 0,
+      away_games_won: 0,
+      status: 'scheduled',
+      games: []
+    }));
     el.innerHTML = '<div class="om-list" id="om-list">' +
       others.map(m => `
         <div class="om-card" data-match-id="${esc(String(m.match_id))}" onclick="window.goToOtherMatch && goToOtherMatch('${esc(String(m.match_id))}')">
@@ -984,7 +991,7 @@
             <span class="om-status" id="om-status-${esc(m.match_id)}">Loading…</span>
           </div>
           <div id="om-body-${esc(m.match_id)}">
-            <div class="empty-state" style="padding:14px"><div class="ico">⌛</div></div>
+            ${buildRoundsScoreboardTable_(m, placeholderRounds)}
           </div>
         </div>
       `).join('') + '</div>';
