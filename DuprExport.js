@@ -140,7 +140,7 @@ function generateDuprCsvForWeek_(weekNum) {
 
     rows.push([
       'D',
-      'SIDEOUT',
+      'RALLY',
       duprCsvEsc_(eventName),
       meta.date,
       duprCsvEsc_(p1h), duprCsvEsc_(d1h),
