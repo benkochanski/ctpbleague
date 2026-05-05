@@ -441,7 +441,7 @@
 
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
-    /* ── Live Scores panel — uses identical sb-table styling as main scoreboard ── */
+    /* ── Live Scores panel — proportional 62% scale of main scoreboard ── */
     .livescores-rail .side-panel { border: 1px solid var(--border-s); border-radius: var(--r); overflow: hidden; background: var(--panel); }
     .om-card { background: #fff; transition: opacity .35s ease; }
     .om-card.om-fade { opacity: 0; }
@@ -452,11 +452,43 @@
       display: flex; justify-content: space-between; align-items: center; gap: 8px;
     }
     .om-meta-bar .om-status.live { color: var(--ok); }
+
+    /* Scale sb-table contents inside Live Scores so they fit the narrower column */
+    .om-card .sb-table th, .om-card .sb-table td { padding: 5px 8px; }
+    .om-card .sb-header-row th { font-size: 11px; height: 30px; }
+    .om-card .sb-row td { height: 54px; }
+    .om-card .sb-team-inner { padding: 4px 6px; }
+    .om-card .sb-logo { width: 62px; height: 38px; }
+    .om-card .sb-score-cell { font-size: 22px; }
+    .om-card .sb-total-cell { font-size: 22px; min-width: 36px; }
+
     @media (min-width: 1800px) {
       .om-meta-bar { font-size: 14px; padding: 7px 16px; }
+      .om-card .sb-table th, .om-card .sb-table td { padding: 5px 10px; }
+      .om-card .sb-header-row th { font-size: 13px; height: 36px; }
+      .om-card .sb-row td { height: 70px; }
+      .om-card .sb-team-inner { padding: 4px 6px; }
+      .om-card .sb-logo { width: 88px; height: 55px; }
+      .om-card .sb-score-cell { font-size: 34px; }
+      .om-card .sb-total-cell { font-size: 34px; min-width: 48px; }
+    }
+    @media (min-width: 2500px) {
+      .om-card .sb-table th, .om-card .sb-table td { padding: 6px 12px; }
+      .om-card .sb-header-row th { font-size: 14px; height: 40px; }
+      .om-card .sb-row td { height: 80px; }
+      .om-card .sb-logo { width: 100px; height: 62px; }
+      .om-card .sb-score-cell { font-size: 38px; }
+      .om-card .sb-total-cell { font-size: 38px; min-width: 54px; }
     }
     @media (min-width: 3800px) {
       .om-meta-bar { font-size: 18px; padding: 10px 20px; }
+      .om-card .sb-table th, .om-card .sb-table td { padding: 7px 12px; }
+      .om-card .sb-header-row th { font-size: 17px; height: 56px; }
+      .om-card .sb-row td { height: 95px; }
+      .om-card .sb-team-inner { padding: 8px 12px; }
+      .om-card .sb-logo { width: 124px; height: 78px; }
+      .om-card .sb-score-cell { font-size: 47px; }
+      .om-card .sb-total-cell { font-size: 47px; min-width: 64px; }
     }
 
     /* ── Division season standings table ── */
