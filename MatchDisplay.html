@@ -131,12 +131,18 @@
       display: block;
       padding: 12px 20px;
     }
+    .livescores-rail { display: none; }
     /* Wide-rail: absolutely positioned beyond the sidebar, shown on large screens only. */
     .wide-rail { display: none; }
     @media (min-width: 1800px) {
       .page {
+        display: grid;
+        grid-template-columns: 1060px 680px;
+        gap: 16px;
         padding: 14px 24px;
+        justify-content: start;
       }
+      .livescores-rail { display: block; }
       .main-col { max-width: 1060px; }
       .wide-rail {
         display: grid;
@@ -150,7 +156,16 @@
       }
     }
 
-    .main-col { display: flex; flex-direction: column; gap: 10px; max-width: 100%; }
+    .main-col { display: flex; flex-direction: column; gap: 10px; max-width: 100%; min-width: 0; }
+    .livescores-rail { min-width: 0; display: flex; }
+    .livescores-rail .side-panel { display: flex; flex-direction: column; flex: 1; }
+    .livescores-rail .side-body { flex: 1; display: flex; flex-direction: column; }
+    .livescores-rail .om-list { flex: 1; }
+    .livescores-rail .om-card { flex: 1; display: flex; flex-direction: column; }
+    .livescores-rail .om-card .sb-table { flex: 1; }
+    @media (min-width: 1800px) {
+      .page > .player-stats-panel { grid-column: 1 / -1; margin-top: 10px; }
+    }
 
     /* ── Match banner ── */
     .match-banner {
@@ -203,16 +218,8 @@
         padding: 10px 24px 12px;
       }
     }
-    .sb-stats { position: relative; }
     .sb-stats .side-panel { overflow: hidden; }
     .sb-stats #teamStandingsBody { overflow: visible; }
-    /* Live scores hangs below the Games Won panel without affecting grid row height */
-    .sb-stats-livescores {
-      position: absolute;
-      top: calc(100% + 10px);
-      left: 0; right: 0;
-      z-index: 10;
-    }
 
     /* ── Dropdown inside scoreboard header ── */
     .sb-division-select {
@@ -230,9 +237,9 @@
     .sb-table { width: 100%; border-collapse: collapse; }
     .sb-table th, .sb-table td { padding: 7px 12px; text-align: center; border-right: 1px solid var(--border-s); }
     .sb-table th:last-child, .sb-table td:last-child { border-right: none; }
-    .sb-header-row th { font-size: 16px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; background: var(--soft); border-bottom: 1px solid var(--border-s); }
+    .sb-header-row th { font-size: 16px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; background: var(--soft); border-bottom: 1px solid var(--border-s); height: 44px; vertical-align: middle; }
     .sb-header-row th:first-child { text-align: left; padding-left: 12px; }
-    .sb-row td { border-top: 1px solid var(--border-s); }
+    .sb-row td { border-top: 1px solid var(--border-s); height: 86px; vertical-align: middle; }
     .sb-row:first-of-type td { border-top: none; }
     .sb-team-cell { text-align: left !important; padding: 0 !important; }
     .sb-team-inner { display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
@@ -394,7 +401,7 @@
     /* ── Team stats — scoreboard-style columns per game type ── */
     .ts2-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     .ts2-team-head { background: var(--soft); border-right: 1px solid var(--border-s); border-bottom: 1px solid var(--border-s); padding: 0 12px; width: 120px; height: 44px; vertical-align: middle; }
-    .ts2-col-head { font-size: 16px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px; height: 52px; text-align: center; white-space: nowrap; border-left: 1px solid rgba(0,0,0,.14); border-bottom: 1px solid rgba(0,0,0,.14); vertical-align: middle; }
+    .ts2-col-head { font-size: 16px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 0 12px; height: 44px; text-align: center; white-space: nowrap; border-left: 1px solid rgba(0,0,0,.14); border-bottom: 1px solid rgba(0,0,0,.14); vertical-align: middle; }
     .ts2-col-head.ts2-col-all    { background: #081f43; color: #ffd22e; }
     .ts2-col-head.ts2-col-womens { background: #123a7c; color: #ffffff; }
     .ts2-col-head.ts2-col-mens   { background: #0b7e39; color: #ffffff; }
@@ -409,7 +416,8 @@
     .ts2-team-inner { display: flex; align-items: center; justify-content: center; padding: 6px 10px; }
     .ts2-logo { width: 100px; height: 62px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; background: transparent; flex-shrink: 0; }
     .ts2-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 12px; }
-    .ts2-score-cell { text-align: center; padding: 10px 12px 22px; border-left: 1px solid var(--border-s); vertical-align: middle; position: relative; }
+    .ts2-row td { height: 86px; vertical-align: middle; }
+    .ts2-score-cell { text-align: center; padding: 8px 12px 22px; border-left: 1px solid var(--border-s); vertical-align: middle; position: relative; }
     .ts2-wins { font-family: 'DM Mono', monospace; font-size: 36px; font-weight: 900; display: block; line-height: 1.1; color: var(--text); }
     .ts2-score-cell.ts2-win  .ts2-wins { color: var(--ok); font-weight: 800; }
     .ts2-score-cell.ts2-loss .ts2-wins { color: var(--muted); opacity: .65; }
@@ -457,21 +465,63 @@
 
     .panel-badge { font-size: 8px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #e8f0fa; color: var(--blue); border: 1px solid #c5d5f0; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
 
-    /* ── Other-match rounds scoreboard (rail) ── */
-    .om-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
-    .om-card { border: 1px solid var(--border-s); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .12s, box-shadow .12s; background: #fff; }
-    .om-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(8,30,67,.10); }
-    .om-meta { padding: 5px 10px; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--soft); border-bottom: 1px solid var(--border-s); display: flex; justify-content: space-between; gap: 6px; }
-    .om-meta .om-status.live { color: var(--ok); }
+    /* ── Live Scores panel — mirrors round-block (gradient header + stacked cards) ── */
+    .livescores-rail .side-panel-head {
+      padding: 10px 18px;
+      background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
+      border-bottom: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .livescores-rail .side-panel-head h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; letter-spacing: 2px; color: #fff;
+    }
+    .livescores-rail .side-panel-head .panel-badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.20);
+      color: rgba(255,255,255,.80);
+      font-size: 11px; padding: 3px 11px;
+    }
+
+    /* ── Other-match rounds scoreboard (rail) — mirrors main sb-table ── */
+    .om-list { display: flex; flex-direction: column; gap: 0; padding: 0; }
+    .om-card { border-bottom: 1px solid var(--border-s); border-radius: 0; overflow: hidden; cursor: pointer; background: #fff; }
+    .om-card:last-child { border-bottom: none; }
+    .om-card:hover { background: #f9fbff; }
+    .om-meta { display: none; }
     .om-card .sb-table { width: 100%; }
-    .om-card .sb-table th, .om-card .sb-table td { padding: 2px 4px; font-size: 11px; line-height: 1.1; }
-    .om-card .sb-header-row th { font-size: 9px; padding: 3px 4px; }
+    .om-card .sb-table th, .om-card .sb-table td { padding: 4px 8px; }
+    .om-card .sb-header-row th { font-size: 12px; height: 32px; }
+    .om-card .sb-row td { height: 50px; }
     .om-card .sb-team-inner { padding: 4px 6px; }
-    .om-card .sb-logo { width: 28px; height: 28px; border-radius: 7px; background: #0a1628; padding: 2px; }
+    .om-card .sb-logo { width: 56px; height: 36px; border-radius: 7px; background: transparent; }
     .om-card .sb-logo img { width: 100%; height: 100%; object-fit: contain; }
-    .om-card .sb-score-cell { font-size: 12px; }
-    .om-card .sb-total-cell { font-size: 14px; min-width: 30px; }
-    .om-card .sb-team-cell { width: 1%; white-space: nowrap; }
+    .om-card .sb-score-cell { font-size: 24px; }
+    .om-card .sb-total-cell { font-size: 24px; min-width: 40px; }
+    .om-card .sb-team-cell { width: 80px; padding: 0 !important; }
+    /* Hide repeated header rows — only first card shows the column header */
+    .om-card:not(:first-child) .sb-header-row { display: none; }
+
+    @media (min-width: 1800px) {
+      .livescores-rail .side-panel-head { padding: 13px 24px; }
+      .livescores-rail .side-panel-head h3 { font-size: 42px; }
+      .om-card .sb-header-row th { font-size: 16px; height: 44px; }
+      .om-card .sb-row td { height: 78px; }
+      .om-card .sb-logo { width: 90px; height: 56px; }
+      .om-card .sb-score-cell { font-size: 36px; }
+      .om-card .sb-total-cell { font-size: 36px; min-width: 60px; }
+      .om-card .sb-team-cell { width: 120px; }
+    }
+    @media (min-width: 3800px) {
+      .livescores-rail .side-panel-head { padding: 20px 32px; }
+      .livescores-rail .side-panel-head h3 { font-size: 62px; letter-spacing: 3px; }
+      .om-card .sb-header-row th { font-size: 22px; height: 70px; }
+      .om-card .sb-row td { height: 124px; }
+      .om-card .sb-logo { width: 130px; height: 80px; }
+      .om-card .sb-score-cell { font-size: 56px; }
+      .om-card .sb-total-cell { font-size: 56px; min-width: 90px; }
+      .om-card .sb-team-cell { width: 170px; }
+    }
 
     /* ── Division season standings table ── */
     .ds-wrap { padding: 10px 12px; }
@@ -487,7 +537,7 @@
 
     /* ── QHD / 2K (2500px+) ── */
     @media (min-width: 2500px) {
-      .page          { padding: 16px 30px; }
+      .page          { padding: 16px 30px; grid-template-columns: 1360px 840px; gap: 20px; }
       .main-col      { max-width: 1360px; }
       .scoreboard-strip { grid-template-columns: 1360px 840px; gap: 20px; padding: 12px 30px 14px; }
       .wide-rail     { grid-template-columns: 420px 460px; gap: 14px;
@@ -513,10 +563,12 @@
       .sb-total-cell { font-size: 54px; min-width: 76px; }
       .sb-logo       { width: 140px; height: 86px; }
       .sb-table th, .sb-table td { padding: 8px 14px; }
-      .sb-header-row th { font-size: 20px; }
+      .sb-header-row th { font-size: 20px; height: 54px; }
+      .sb-row td       { height: 110px; }
       .ts2-wins      { font-size: 54px; }
-      .ts2-col-head  { height: 64px; font-size: 20px; }
+      .ts2-col-head  { height: 54px; font-size: 20px; }
       .ts2-team-head { height: 54px; width: 150px; }
+      .ts2-row td    { height: 110px; }
       .ts2-team-cell { width: 150px; }
       .ts2-logo      { width: 140px; height: 86px; }
       .vs-teams      { font-size: 26px; }
@@ -534,7 +586,7 @@
 
     /* ── 4K (3800px+) ── */
     @media (min-width: 3800px) {
-      .page          { padding: 20px 40px; }
+      .page          { padding: 20px 40px; grid-template-columns: 1700px 1060px; gap: 26px; }
       .main-col      { max-width: 1700px; }
       .scoreboard-strip { grid-template-columns: 1700px 1060px; gap: 26px; padding: 14px 40px 18px; }
       .wide-rail     { grid-template-columns: 450px 500px; gap: 16px;
@@ -562,11 +614,13 @@
       .sb-logo       { width: 200px; height: 124px; }
       .sb-team-inner { padding: 12px 18px; }
       .sb-table th, .sb-table td { padding: 11px 18px; }
-      .sb-header-row th { font-size: 26px; padding: 11px 18px; }
+      .sb-header-row th { font-size: 26px; padding: 11px 18px; height: 90px; }
+      .sb-row td        { height: 152px; }
       .ts2-wins      { font-size: 76px; }
       .ts2-diff      { font-size: 16px; margin-top: 3px; }
       .ts2-col-head  { height: 90px; font-size: 26px; }
       .ts2-team-head { height: 90px; width: 206px; }
+      .ts2-row td    { height: 152px; }
       .ts2-team-cell { width: 206px; }
       .ts2-logo      { width: 190px; height: 116px; }
       .ts2-score-cell { padding: 12px 18px; }
@@ -640,17 +694,6 @@
           <div class="empty-state"><div class="ico">📊</div>Loading…</div>
         </div>
       </div>
-      <div class="sb-stats-livescores">
-        <div class="side-panel">
-          <div class="side-panel-head">
-            <h3>Live Scores</h3>
-            <span class="panel-badge">This Week</span>
-          </div>
-          <div class="side-body" id="otherMatchesBody">
-            <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 4K-only rail. Sits at the top of the right side, alongside the main scoreboard. -->
@@ -673,10 +716,21 @@
     <div id="main-content">
       <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
     </div>
-    <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
-      <div class="side-body" id="playerStatsBody">
+  </div>
+  <aside class="livescores-rail" id="liveScoresRail" aria-label="Live scores">
+    <div class="side-panel">
+      <div class="side-panel-head">
+        <h3>Live Scores</h3>
+        <span class="panel-badge">This Week</span>
+      </div>
+      <div class="side-body" id="otherMatchesBody">
         <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
       </div>
+    </div>
+  </aside>
+  <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
+    <div class="side-body" id="playerStatsBody">
+      <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
     </div>
   </div>
 </div>
