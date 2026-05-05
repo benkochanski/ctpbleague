@@ -138,11 +138,15 @@
       .page {
         display: grid;
         grid-template-columns: 1060px 680px;
+        grid-template-rows: auto auto;
         gap: 16px;
         padding: 14px 24px;
         justify-content: start;
+        align-items: start;
       }
-      .livescores-rail { display: block; }
+      .page-rounds { grid-column: 1; grid-row: 1; }
+      .livescores-rail { grid-column: 2; grid-row: 1; align-self: stretch; display: flex; }
+      .page-stats { grid-column: 1; grid-row: 2; }
       .main-col { max-width: 1060px; }
       .wide-rail {
         display: grid;
@@ -549,8 +553,9 @@
 
     /* ── QHD / 2K (2500px+) ── */
     @media (min-width: 2500px) {
-      .page          { padding: 16px 30px; grid-template-columns: 1360px 840px; gap: 20px; }
+      .page          { padding: 16px 30px; grid-template-columns: 1360px 840px; grid-template-rows: auto auto; gap: 20px; }
       .main-col      { max-width: 1360px; }
+      .page-rounds   { max-width: 1360px; }
       .scoreboard-strip { grid-template-columns: 1360px 840px; gap: 20px; padding: 12px 30px 14px; }
       .wide-rail     { grid-template-columns: 420px 460px; gap: 14px;
                        left: calc(30px + 1360px + 20px + 840px + 20px); width: 894px; }
@@ -598,8 +603,9 @@
 
     /* ── 4K (3800px+) ── */
     @media (min-width: 3800px) {
-      .page          { padding: 20px 40px; grid-template-columns: 1700px 1060px; gap: 26px; }
+      .page          { padding: 20px 40px; grid-template-columns: 1700px 1060px; grid-template-rows: auto auto; gap: 26px; }
       .main-col      { max-width: 1700px; }
+      .page-rounds   { max-width: 1700px; }
       .scoreboard-strip { grid-template-columns: 1700px 1060px; gap: 26px; padding: 14px 40px 18px; }
       .wide-rail     { grid-template-columns: 450px 500px; gap: 16px;
                        left: calc(40px + 1700px + 26px + 1060px + 26px); width: 966px; }
@@ -724,15 +730,8 @@
 </div>
 
 <div class="page">
-  <div class="main-col">
-    <div id="main-content">
-      <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
-    </div>
-    <div class="side-panel player-stats-panel" id="playerStatsPanelWrap">
-      <div class="side-body" id="playerStatsBody">
-        <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
-      </div>
-    </div>
+  <div id="main-content" class="page-rounds">
+    <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
   </div>
   <aside class="livescores-rail" id="liveScoresRail" aria-label="Live scores">
     <div class="side-panel">
@@ -748,6 +747,11 @@
       </div>
     </div>
   </aside>
+  <div class="side-panel player-stats-panel page-stats" id="playerStatsPanelWrap">
+    <div class="side-body" id="playerStatsBody">
+      <div class="empty-state"><div class="ico">🏓</div>Loading…</div>
+    </div>
+  </div>
 </div>
 
 <script>
