@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CPBL — Left Accent Bar · Color Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:  #081f43;
+  --blue:  #123a7c;
+  --green: #0b7e39;
+  --gold:  #ffd22e;
+  --bg:    #d8e2f0;
+  --panel: #ffffff;
+  --soft:  #f2f6fc;
+  --border:#ccd6e8;
+  --text:  #0d1f3c;
+  --muted: #5a6e8a;
+  --ok:    #0b7e39;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); padding: 36px 48px; }
+
+.page-title { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 40px; }
+.section { margin-bottom: 72px; }
+.opt-heading { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; color: var(--navy); margin-bottom: 4px; }
+.opt-desc { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin-bottom: 20px; }
+
+/* ── Round shell ── */
+.round-block { border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(8,31,67,.13); max-width: 1020px; }
+.round-head {
+  padding: 14px 26px;
+  background: linear-gradient(90deg, var(--navy) 0%, var(--blue) 100%);
+  display: flex; align-items: center; gap: 14px;
+}
+.round-badge {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--gold); display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--navy); flex-shrink: 0;
+}
+.round-label { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2.5px; color: #fff; }
+.round-pill {
+  margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .5px;
+  text-transform: uppercase; padding: 5px 16px; border-radius: 999px;
+  background: rgba(11,126,57,.5); border: 1px solid rgba(11,126,57,.7); color: #a7f3c0;
+}
+
+/* shared logo */
+.logo { border-radius: 11px; overflow: hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.tc { background: #1a1010; }
+.dd { background: #0d1a0d; }
+
+/* shared 2×2 grid */
+.quad-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--panel);
+}
+
+/* ── Shared game cell base ── */
+.game-cell {
+  display: flex;
+  border-right: 2px solid var(--border);
+}
+.game-cell:nth-child(even) { border-right: none; }
+.game-cell:nth-child(n+3)  { border-top: 2px solid var(--border); }
+
+/* ── Shared accent bar ── */
+.accent {
+  width: 64px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 14px 0 12px;
+}
+.accent-top {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.accent-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px; line-height: 1;
+}
+.accent-court {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 11px; letter-spacing: 2px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  opacity: .45;
+}
+.accent-type {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px; letter-spacing: 2px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  opacity: .7;
+}
+
+/* ── Shared content area ── */
+.cell-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cell-rows { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 14px; flex: 1; }
+.cell-row {
+  display: grid; grid-template-columns: 54px 1fr auto;
+  align-items: center; gap: 11px; padding: 11px 13px;
+  border-radius: 11px; background: var(--soft); border: 1px solid var(--border);
+  flex: 1;
+}
+.cell-row.win  { background: #edfaf3; border-color: #8dd8ad; }
+.cell-row.lose { background: #fafafa; border-color: #e4e9f1; opacity: .75; }
+.cell-logo { width: 54px; height: 54px; }
+.cell-names .n { font-size: 20px; font-weight: 700; line-height: 1.25; }
+.cell-row.win  .n { color: var(--ok); }
+.cell-row.lose .n { color: var(--muted); }
+.cell-score { font-family: 'DM Mono', monospace; font-size: 48px; font-weight: 700; min-width: 56px; text-align: center; line-height: 1; }
+.cell-score.win  { color: var(--ok); }
+.cell-score.lose { color: var(--muted); opacity: .38; }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   COLOR A — GOLD accent bar
+   Gold stripe, navy number and labels. High-contrast warmth.
+══════════════════════════════════════════════════════════════════ */
+.ca .accent { background: var(--gold); }
+.ca .accent-num  { color: var(--navy); }
+.ca .accent-court { color: var(--navy); }
+.ca .accent-type  { color: var(--navy); opacity: .6; }
+
+/* ══════════════════════════════════════════════════════════════════
+   COLOR B — CPBL GREEN accent bar
+   On-brand green stripe, gold number, white labels.
+══════════════════════════════════════════════════════════════════ */
+.cb .accent { background: var(--green); }
+.cb .accent-num  { color: var(--gold); }
+.cb .accent-court { color: rgba(255,255,255,.5); }
+.cb .accent-type  { color: rgba(255,255,255,.7); }
+
+/* ══════════════════════════════════════════════════════════════════
+   COLOR C — GAME-TYPE CODED accent bar
+   Women's = blue · Men's = green · Mixed = amber · Coed = teal
+   Bar color signals game type at a glance — no text needed.
+══════════════════════════════════════════════════════════════════ */
+.cc-womens .accent { background: var(--blue); }
+.cc-mens   .accent { background: var(--green); }
+.cc-mixed  .accent { background: #b07800; } /* dark amber */
+.cc-coed   .accent { background: #0e7a6e; } /* teal */
+
+.cc-womens .accent-num,
+.cc-mens   .accent-num,
+.cc-mixed  .accent-num,
+.cc-coed   .accent-num  { color: var(--gold); }
+
+.cc-womens .accent-court,
+.cc-mens   .accent-court,
+.cc-mixed  .accent-court,
+.cc-coed   .accent-court { color: rgba(255,255,255,.4); }
+
+.cc-womens .accent-type,
+.cc-mens   .accent-type,
+.cc-coed   .accent-type  { color: rgba(255,255,255,.7); }
+.cc-mixed  .accent-type  { color: rgba(255,255,255,.7); }
+
+/* ══════════════════════════════════════════════════════════════════
+   COLOR D — SLATE accent bar
+   Medium slate (#3d5a80) — lighter and less heavy than navy.
+   Gold number, soft white labels.
+══════════════════════════════════════════════════════════════════ */
+.cd .accent { background: #3d5a80; }
+.cd .accent-num  { color: var(--gold); }
+.cd .accent-court { color: rgba(255,255,255,.4); }
+.cd .accent-type  { color: rgba(255,255,255,.65); }
+
+</style>
+</head>
+<body>
+<div class="page-title">Left Accent Bar — Color Options · Game Type in Bar</div>
+
+<!-- helper SVG logos -->
+<svg style="display:none">
+  <symbol id="tc-logo" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#ffd22e"/><text x="24" y="30" text-anchor="middle" font-family="serif" font-size="15" font-weight="bold" fill="#0a1628">TC</text></symbol>
+  <symbol id="dd-logo" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#22c55e"/><text x="24" y="30" text-anchor="middle" font-family="serif" font-size="15" font-weight="bold" fill="#0a1628">DD</text></symbol>
+</svg>
+
+
+<!-- ═══ COLOR A: Gold ═══ -->
+<div class="section">
+  <div class="opt-heading">Color A — Gold Bar</div>
+  <div class="opt-desc">Gold accent, navy number · warm, high-contrast · game type reading vertically bottom of bar</div>
+  <div class="round-block">
+    <div class="round-head">
+      <div class="round-badge">3</div>
+      <div class="round-label">Round 3</div>
+      <div class="round-pill">Complete</div>
+    </div>
+    <div class="quad-grid">
+
+      <div class="game-cell ca">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">1</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">WOMEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Klaire Bierionko</div><div class="n">Pamela Jaquson</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Jordan Schultz</div><div class="n">Stacey Hildreth-Fortin</div></div>
+              <div class="cell-score lose">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell ca">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">2</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row lose">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Kyle Caldwell</div><div class="n">Tyler Varley</div></div>
+              <div class="cell-score lose">11</div>
+            </div>
+            <div class="cell-row win">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Alejandro Tobón Corrales</div><div class="n">Tom Padreaux</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell ca">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">3</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MIXED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Brandon Elbert</div><div class="n">Jordan Schultz</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Travis Lytle</div><div class="n">Bobby Degray</div></div>
+              <div class="cell-score lose">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell ca">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">4</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">COED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Sam Garcia</div><div class="n">Maxwell O'Connor</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Peter Holmes</div><div class="n">Lucas Biran</div></div>
+              <div class="cell-score lose">8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ COLOR B: CPBL Green ═══ -->
+<div class="section">
+  <div class="opt-heading">Color B — CPBL Green Bar</div>
+  <div class="opt-desc">On-brand green accent, gold number · fresh, sporty · game type in white vertical text at bottom</div>
+  <div class="round-block">
+    <div class="round-head">
+      <div class="round-badge">3</div>
+      <div class="round-label">Round 3</div>
+      <div class="round-pill">Complete</div>
+    </div>
+    <div class="quad-grid">
+
+      <div class="game-cell cb">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">1</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">WOMEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Klaire Bierionko</div><div class="n">Pamela Jaquson</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Jordan Schultz</div><div class="n">Stacey Hildreth-Fortin</div></div>
+              <div class="cell-score lose">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cb">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">2</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row lose">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Kyle Caldwell</div><div class="n">Tyler Varley</div></div>
+              <div class="cell-score lose">11</div>
+            </div>
+            <div class="cell-row win">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Alejandro Tobón Corrales</div><div class="n">Tom Padreaux</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cb">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">3</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MIXED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Brandon Elbert</div><div class="n">Jordan Schultz</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Travis Lytle</div><div class="n">Bobby Degray</div></div>
+              <div class="cell-score lose">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cb">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">4</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">COED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Sam Garcia</div><div class="n">Maxwell O'Connor</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Peter Holmes</div><div class="n">Lucas Biran</div></div>
+              <div class="cell-score lose">8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ COLOR C: Game-Type Coded ═══ -->
+<div class="section">
+  <div class="opt-heading">Color C — Game-Type Color Coded</div>
+  <div class="opt-desc">Blue = Women's · Green = Men's · Amber = Mixed · Teal = Coed · bar color signals game type instantly</div>
+  <div class="round-block">
+    <div class="round-head">
+      <div class="round-badge">3</div>
+      <div class="round-label">Round 3</div>
+      <div class="round-pill">Complete</div>
+    </div>
+    <div class="quad-grid">
+
+      <div class="game-cell cc-womens">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">1</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">WOMEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Klaire Bierionko</div><div class="n">Pamela Jaquson</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Jordan Schultz</div><div class="n">Stacey Hildreth-Fortin</div></div>
+              <div class="cell-score lose">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cc-mens">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">2</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row lose">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Kyle Caldwell</div><div class="n">Tyler Varley</div></div>
+              <div class="cell-score lose">11</div>
+            </div>
+            <div class="cell-row win">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Alejandro Tobón Corrales</div><div class="n">Tom Padreaux</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cc-mixed">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">3</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MIXED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Brandon Elbert</div><div class="n">Jordan Schultz</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Travis Lytle</div><div class="n">Bobby Degray</div></div>
+              <div class="cell-score lose">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cc-coed">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">4</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">COED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Sam Garcia</div><div class="n">Maxwell O'Connor</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Peter Holmes</div><div class="n">Lucas Biran</div></div>
+              <div class="cell-score lose">8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ COLOR D: Slate ═══ -->
+<div class="section">
+  <div class="opt-heading">Color D — Slate Bar</div>
+  <div class="opt-desc">Medium slate (#3d5a80) — lighter than navy, cooler than green · gold number pops · understated but clear</div>
+  <div class="round-block">
+    <div class="round-head">
+      <div class="round-badge">3</div>
+      <div class="round-label">Round 3</div>
+      <div class="round-pill">Complete</div>
+    </div>
+    <div class="quad-grid">
+
+      <div class="game-cell cd">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">1</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">WOMEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Klaire Bierionko</div><div class="n">Pamela Jaquson</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Jordan Schultz</div><div class="n">Stacey Hildreth-Fortin</div></div>
+              <div class="cell-score lose">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cd">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">2</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MEN'S</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row lose">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Kyle Caldwell</div><div class="n">Tyler Varley</div></div>
+              <div class="cell-score lose">11</div>
+            </div>
+            <div class="cell-row win">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Alejandro Tobón Corrales</div><div class="n">Tom Padreaux</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cd">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">3</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">MIXED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Brandon Elbert</div><div class="n">Jordan Schultz</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Travis Lytle</div><div class="n">Bobby Degray</div></div>
+              <div class="cell-score lose">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-cell cd">
+        <div class="accent">
+          <div class="accent-top">
+            <div class="accent-num">4</div>
+            <div class="accent-court">COURT</div>
+          </div>
+          <div class="accent-type">COED</div>
+        </div>
+        <div class="cell-content">
+          <div class="cell-rows">
+            <div class="cell-row win">
+              <div class="logo cell-logo tc"><svg width="44" height="44"><use href="#tc-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Sam Garcia</div><div class="n">Maxwell O'Connor</div></div>
+              <div class="cell-score win">15</div>
+            </div>
+            <div class="cell-row lose">
+              <div class="logo cell-logo dd"><svg width="44" height="44"><use href="#dd-logo"/></svg></div>
+              <div class="cell-names"><div class="n">Peter Holmes</div><div class="n">Lucas Biran</div></div>
+              <div class="cell-score lose">8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
