@@ -104,13 +104,21 @@ function getScorecardDataV2(matchId) {
       if (roundCompare !== 0) return roundCompare;
       return Number(a.game_number_in_round || 0) - Number(b.game_number_in_round || 0);
     })
-    .map(game => ({
-      ...game,
-      home_player_1_name: getPlayerNameScorecard_(playersById, game.home_player_1_id),
-      home_player_2_name: getPlayerNameScorecard_(playersById, game.home_player_2_id),
-      away_player_1_name: getPlayerNameScorecard_(playersById, game.away_player_1_id),
-      away_player_2_name: getPlayerNameScorecard_(playersById, game.away_player_2_id)
-    }));
+    .map(game => {
+      const homeSubmitted = !!(game.lineup_submitted_home === true || game.lineup_submitted_home === 'TRUE' || game.lineup_submitted_home === 'true' || game.lineup_submitted_home === 1);
+      const awaySubmitted = !!(game.lineup_submitted_away === true || game.lineup_submitted_away === 'TRUE' || game.lineup_submitted_away === 'true' || game.lineup_submitted_away === 1);
+      return {
+        ...game,
+        home_player_1_id:   homeSubmitted ? game.home_player_1_id : '',
+        home_player_2_id:   homeSubmitted ? game.home_player_2_id : '',
+        away_player_1_id:   awaySubmitted ? game.away_player_1_id : '',
+        away_player_2_id:   awaySubmitted ? game.away_player_2_id : '',
+        home_player_1_name: homeSubmitted ? getPlayerNameScorecard_(playersById, game.home_player_1_id) : '',
+        home_player_2_name: homeSubmitted ? getPlayerNameScorecard_(playersById, game.home_player_2_id) : '',
+        away_player_1_name: awaySubmitted ? getPlayerNameScorecard_(playersById, game.away_player_1_id) : '',
+        away_player_2_name: awaySubmitted ? getPlayerNameScorecard_(playersById, game.away_player_2_id) : ''
+      };
+    });
 
   let rounds = roundsTable.rows
     .map(r => rowToObjectScorecard_(roundsTable, r.rowNumber))
