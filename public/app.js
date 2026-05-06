@@ -25,6 +25,8 @@
     players:      { kind: 'iframe', label: 'Players',         url: `${GAS_BASE}?page=players` },
     scoreboard:   { kind: 'iframe', label: 'Live Scoreboard',
                     urlFn: id => `${GAS_BASE}?page=scoreboard${id ? `&matchId=${encodeURIComponent(id)}` : ''}` },
+    matchcast:    { kind: 'page',   label: 'Match Cast',    onEnter: renderMatchcast,   hidden: true },
+    matchreport:  { kind: 'page',   label: 'Match Report',  onEnter: renderMatchreport, hidden: true },
     gamereport:   { kind: 'iframe', label: 'Game Report',     urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
     player:       { kind: 'iframe', label: 'Player Profile',  urlFn: name => `${GAS_BASE}?page=player&playerName=${encodeURIComponent(name || '')}`, hidden: true },
 
@@ -44,7 +46,7 @@
   const iframeLoader = document.getElementById('iframeLoader');
   const brandSub     = document.getElementById('brandSub');
 
-  const pages = Array.from(document.querySelectorAll('.page'));
+  const pages = Array.from(document.querySelectorAll('.page, .sc-page'));
 
   // ---------- Sidebar (drawer) ----------
   toggleBtn.addEventListener('click', () => app.classList.toggle('is-expanded'));
@@ -78,6 +80,9 @@
     const route = ROUTES[routeKey];
     if (!route) return navigate('notfound');
 
+    // Stop live polling whenever we navigate away from matchcast
+    if (_mcPollTimer) { clearInterval(_mcPollTimer); _mcPollTimer = null; }
+
     if (!route.hidden) setActive(routeKey);
     else if (routeKey === 'notfound') document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('is-active'));
 
@@ -85,7 +90,7 @@
 
     if (route.kind === 'page') {
       showPage(routeKey);
-      if (route.onEnter) route.onEnter();
+      if (route.onEnter) route.onEnter(param);
     } else if (route.kind === 'iframe') {
       const url = route.urlFn ? route.urlFn(param) : route.url;
       showIframe(url);
@@ -131,6 +136,9 @@
 
   let publicData = null;
   let publicDataPromise = null;
+  let _mcPollTimer = null;
+  let _scBranding = null;
+  let _scBrandingPromise = null;
 
   function fetchPublicData() {
     if (publicData) return Promise.resolve(publicData);
@@ -386,13 +394,14 @@
       ? `<div class="date-stack"><span class="date-dow">${DOW[displayDate.getDay()]}</span><span class="date-md">${MON[displayDate.getMonth()]} ${displayDate.getDate()}</span></div>`
       : `<div class="date-stack"><span class="date-md is-tbd">TBD</span></div>`;
 
+    const live = !isDone && isLive(m);
     let matchCell;
     if (isDone) {
       const winnerIsHome = m.winning_team_id
         ? m.winning_team_id === m.home_team_id
         : (m.home_games_won || 0) > (m.away_games_won || 0);
       matchCell = `
-        <button class="match-cell is-final is-compact" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
+        <button class="match-cell is-final is-compact" data-route="matchreport" data-param="${escapeHtml(m.match_id)}" title="View match report">
           <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-score">
             <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
@@ -401,13 +410,21 @@
           </span>
           <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
         </button>`;
-    } else {
+    } else if (live) {
       matchCell = `
-        <button class="match-cell is-upcoming is-compact" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
+        <button class="match-cell is-upcoming is-compact is-live" data-route="matchcast" data-param="${escapeHtml(m.match_id)}" title="Watch live">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+          <span class="m-status m-status-live"><span class="live-dot"></span>Live</span>
         </button>`;
+    } else {
+      matchCell = `
+        <div class="match-cell is-upcoming is-compact">
+          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-vs">vs</span>
+          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+        </div>`;
     }
 
     return `
@@ -701,14 +718,13 @@
     const homeLogo = teamLogo(m.home_team_id);
     const awayLogo = teamLogo(m.away_team_id);
     const isDone   = isCompleted(m);
+    const live     = !isDone && isLive(m);
 
     const divNum = (div.match(/\d+/) || [''])[0];
     const divPill = `<span class="div-pill div-${divNum || 'na'}">${escapeHtml(div)}</span>`;
     const weekPill = m._week != null
       ? `<span class="week-pill">${m._week === 7 ? 'Championship' : `Week ${m._week}`}</span>`
       : `<span class="week-pill is-tbd">—</span>`;
-    // The grouping section header already shows week (or division), so drop
-    // that column from the row to avoid repeating the same value 5+ times.
     const leadingCell = groupBy === 'week'
       ? `<td class="col-division">${divPill}</td>`
       : `<td class="col-week">${weekPill}</td>`;
@@ -723,9 +739,8 @@
       const winnerIsHome = m.winning_team_id
         ? m.winning_team_id === m.home_team_id
         : (m.home_games_won || 0) > (m.away_games_won || 0);
-
       matchCell = `
-        <button class="match-cell is-final" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
+        <button class="match-cell is-final" data-route="matchreport" data-param="${escapeHtml(m.match_id)}" title="View match report">
           <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-score">
             <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
@@ -735,21 +750,29 @@
           <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
           <span class="m-status m-status-final">Final</span>
         </button>`;
+    } else if (live) {
+      matchCell = `
+        <button class="match-cell is-upcoming is-live" data-route="matchcast" data-param="${escapeHtml(m.match_id)}" title="Watch live">
+          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-vs">vs</span>
+          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+          <span class="m-status m-status-live"><span class="live-dot"></span>Live</span>
+        </button>`;
     } else {
       const timeStr = displayDate ? fmtTime(displayDate) : '';
-      const venue   = (m.venue || '').split(/\s+/)[0]; // first word: "Camp" or "Dill"
+      const venue   = (m.venue || '').split(/\s+/)[0];
       const meta    = [timeStr, venue].filter(Boolean).join(' · ');
       matchCell = `
-        <button class="match-cell is-upcoming" data-route="scoreboard" data-param="${escapeHtml(m.match_id)}" title="View scoreboard">
+        <div class="match-cell is-upcoming">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
           ${meta ? `<span class="m-status m-status-upcoming">${escapeHtml(meta)}</span>` : ''}
-        </button>`;
+        </div>`;
     }
 
     return `
-      <tr class="match-row ${isDone ? 'is-done' : 'is-upcoming'}">
+      <tr class="match-row ${isDone ? 'is-done' : live ? 'is-live' : 'is-upcoming'}">
         ${leadingCell}
         <td class="col-date">${dateBlock}</td>
         <td class="col-match">${matchCell}</td>
@@ -835,6 +858,540 @@
         </section>`;
     }).join('');
     body.dataset.loaded = '1';
+  }
+
+  // ==========================================================================
+  // MATCH CAST + MATCH REPORT
+  // ==========================================================================
+
+  function isLive(m) {
+    if (!m || typeof m !== 'object') return false;
+    const s = (m.status || '').toLowerCase();
+    return s === 'in_progress' || s === 'live' || s === 'active';
+  }
+
+  function fetchScBranding() {
+    if (_scBranding) return Promise.resolve(_scBranding);
+    if (_scBrandingPromise) return _scBrandingPromise;
+    _scBrandingPromise = fetch(`${GAS_BASE}?page=scorebranding`)
+      .then(r => r.ok ? r.json() : {})
+      .then(b => { _scBranding = b; return b; })
+      .catch(() => { _scBrandingPromise = null; return {}; });
+    return _scBrandingPromise;
+  }
+
+  // ---- Match Cast (live) ----
+
+  async function renderMatchcast(matchId) {
+    const selectEl = document.getElementById('mc-select');
+    const mainEl   = document.getElementById('mc-main');
+    const sideEl   = document.getElementById('mc-side');
+    if (!selectEl || !mainEl || !sideEl) return;
+
+    mainEl.innerHTML = `<div class="sc-empty"><div class="sc-spinner"></div><span>Loading…</span></div>`;
+    sideEl.innerHTML = '';
+
+    let data, branding;
+    try {
+      [data, branding] = await Promise.all([fetchPublicData(), fetchScBranding()]);
+    } catch (err) {
+      mainEl.innerHTML = `<div class="sc-empty">Failed to load data.<br><small>${escapeHtml(err.message)}</small></div>`;
+      return;
+    }
+
+    const teamsById = indexBy(data.teams, 'team_id');
+    const divsById  = indexBy(data.divisions, 'division_id');
+    const liveMatches = (data.matches || []).filter(m => isLive(m));
+
+    selectEl.innerHTML = '';
+    if (!liveMatches.length) {
+      const o = document.createElement('option');
+      o.textContent = 'No live matches';
+      selectEl.appendChild(o);
+      mainEl.innerHTML = `<div class="sc-empty">No matches currently in progress.</div>`;
+      return;
+    }
+
+    // Group by division
+    const byDiv = new Map();
+    liveMatches.forEach(m => {
+      const k = m.division_id || 'other';
+      if (!byDiv.has(k)) byDiv.set(k, []);
+      byDiv.get(k).push(m);
+    });
+    byDiv.forEach((matches, divId) => {
+      const grp = document.createElement('optgroup');
+      grp.label = divisionName(divsById, divId) || 'Division';
+      matches.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.match_id;
+        o.textContent = `${teamName(teamsById, m.home_team_id)} vs ${teamName(teamsById, m.away_team_id)}`;
+        grp.appendChild(o);
+      });
+      selectEl.appendChild(grp);
+    });
+
+    const target = matchId && [...selectEl.options].some(o => o.value === matchId)
+      ? matchId : liveMatches[0].match_id;
+    selectEl.value = target;
+
+    selectEl.onchange = () => {
+      if (_mcPollTimer) { clearInterval(_mcPollTimer); _mcPollTimer = null; }
+      scLoadAndRender(selectEl.value, mainEl, sideEl, branding, teamsById, divsById, true);
+    };
+
+    scLoadAndRender(target, mainEl, sideEl, branding, teamsById, divsById, true);
+  }
+
+  // ---- Match Report (completed) ----
+
+  async function renderMatchreport(matchId) {
+    const selectEl = document.getElementById('mr-select');
+    const mainEl   = document.getElementById('mr-main');
+    const sideEl   = document.getElementById('mr-side');
+    if (!selectEl || !mainEl || !sideEl) return;
+
+    mainEl.innerHTML = `<div class="sc-empty"><div class="sc-spinner"></div><span>Loading…</span></div>`;
+    sideEl.innerHTML = '';
+
+    let data, branding;
+    try {
+      [data, branding] = await Promise.all([fetchPublicData(), fetchScBranding()]);
+    } catch (err) {
+      mainEl.innerHTML = `<div class="sc-empty">Failed to load data.<br><small>${escapeHtml(err.message)}</small></div>`;
+      return;
+    }
+
+    const teamsById = indexBy(data.teams, 'team_id');
+    const divsById  = indexBy(data.divisions, 'division_id');
+
+    const completed = (data.matches || [])
+      .filter(m => isCompleted(m))
+      .map(m => ({ ...m, _date: parseMatchDate(m) }))
+      .sort((a, b) => (b._date || 0) - (a._date || 0));
+
+    selectEl.innerHTML = '';
+    if (!completed.length) {
+      const o = document.createElement('option');
+      o.textContent = 'No completed matches';
+      selectEl.appendChild(o);
+      mainEl.innerHTML = `<div class="sc-empty">No completed matches yet.</div>`;
+      return;
+    }
+
+    // Group by week, newest first
+    const weekGroups = new Map();
+    completed.forEach(m => {
+      const wk = m._date ? weekKey(m._date) : 'unknown';
+      if (!weekGroups.has(wk)) weekGroups.set(wk, []);
+      weekGroups.get(wk).push(m);
+    });
+    const sortedWeeks = [...weekGroups.keys()].sort((a, b) => b.localeCompare(a));
+    sortedWeeks.forEach(wk => {
+      const grp = document.createElement('optgroup');
+      grp.label = weekLabel(wk);
+      weekGroups.get(wk).forEach(m => {
+        const div = divisionName(divsById, m.division_id);
+        const divNum = (div.match(/\d+/) || [''])[0];
+        const o = document.createElement('option');
+        o.value = m.match_id;
+        o.textContent = `${divNum ? 'Div ' + divNum + ' · ' : ''}${teamName(teamsById, m.home_team_id)} ${m.home_games_won || 0}–${m.away_games_won || 0} ${teamName(teamsById, m.away_team_id)}`;
+        grp.appendChild(o);
+      });
+      selectEl.appendChild(grp);
+    });
+
+    const target = matchId && [...selectEl.options].some(o => o.value === matchId)
+      ? matchId : completed[0].match_id;
+    selectEl.value = target;
+
+    selectEl.onchange = () => {
+      scLoadAndRender(selectEl.value, mainEl, sideEl, branding, teamsById, divsById, false);
+    };
+
+    scLoadAndRender(target, mainEl, sideEl, branding, teamsById, divsById, false);
+  }
+
+  // ---- Core fetch + render ----
+
+  function scLoadAndRender(matchId, mainEl, sideEl, branding, teamsById, divsById, live) {
+    if (!matchId) return;
+    mainEl.innerHTML = `<div class="sc-empty"><div class="sc-spinner"></div><span>Loading…</span></div>`;
+    sideEl.innerHTML = '';
+
+    const doFetch = () => {
+      fetch(`${GAS_BASE}?page=scorecarddata&matchId=${encodeURIComponent(matchId)}`)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+        .then(d => scRender(d, mainEl, sideEl, branding, divsById))
+        .catch(err => {
+          mainEl.innerHTML = `<div class="sc-empty">Couldn't load match data.<br><small>${escapeHtml(err.message)}</small></div>`;
+        });
+    };
+
+    doFetch();
+    if (live) _mcPollTimer = setInterval(doFetch, 30000);
+  }
+
+  function scRender(data, mainEl, sideEl, branding, divsById) {
+    if (!data || !data.match) {
+      mainEl.innerHTML = `<div class="sc-empty">No scorecard data.</div>`;
+      return;
+    }
+    const match  = data.match;
+    const rounds = scDedupeRounds(data.rounds || []);
+
+    const homeTotal = rounds.reduce((s, r) => s + (r.home_games_won || 0), 0);
+    const awayTotal = rounds.reduce((s, r) => s + (r.away_games_won || 0), 0);
+
+    const divNum  = scExtractDivNum(match, divsById);
+    const weekNum = scExtractWeekNum(match);
+    const metaParts = [
+      match.match_date ? scFmtDate(match.match_date) : '',
+      match.start_time ? scFmtTime(match.start_time) : '',
+      match.venue ? 'at ' + match.venue : '',
+      divNum  ? 'Div ' + divNum   : '',
+      weekNum ? 'Week ' + weekNum : '',
+    ].filter(Boolean);
+
+    const colHeaders = rounds.map((r, i) => `<th>R${r.round_number || (i + 1)}</th>`).join('');
+    const homeScores = rounds.map(r => {
+      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
+      const active = hw || aw || scRoundDone(r);
+      const cls = scRoundDone(r) ? (hw > aw ? 'sc-win' : 'sc-loss') : '';
+      return `<td class="sc-score-cell ${cls}">${active ? hw : '—'}</td>`;
+    }).join('');
+    const awayScores = rounds.map(r => {
+      const hw = r.home_games_won || 0, aw = r.away_games_won || 0;
+      const active = hw || aw || scRoundDone(r);
+      const cls = scRoundDone(r) ? (aw > hw ? 'sc-win' : 'sc-loss') : '';
+      return `<td class="sc-score-cell ${cls}">${active ? aw : '—'}</td>`;
+    }).join('');
+
+    const cardHtml = `
+      <div class="sc-card">
+        <table class="sc-table">
+          <thead><tr class="sc-header-row">
+            <th>Team</th>${colHeaders}<th>Total</th>
+          </tr></thead>
+          <tbody>
+            <tr class="sc-body-row">
+              <td class="sc-team-cell"><div class="sc-team-inner"><div class="sc-logo">${scLogoHtml(match.home_team_name, 'sb', branding)}</div></div></td>
+              ${homeScores}
+              <td class="sc-total-cell ${homeTotal > awayTotal ? 'sc-leader' : 'sc-trail'}">${homeTotal}</td>
+            </tr>
+            <tr class="sc-body-row">
+              <td class="sc-team-cell"><div class="sc-team-inner"><div class="sc-logo">${scLogoHtml(match.away_team_name, 'sb', branding)}</div></div></td>
+              ${awayScores}
+              <td class="sc-total-cell ${awayTotal > homeTotal ? 'sc-leader' : 'sc-trail'}">${awayTotal}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+
+    const metaHtml = metaParts.length
+      ? `<div class="sc-meta-bar">${escapeHtml(metaParts.join(' · '))}</div>`
+      : '';
+
+    const roundsHtml = rounds.length
+      ? `<div class="sc-rounds">${rounds.map(r => scRoundHtml({ ...r, games: scSortGames(r.games || []) }, match, branding)).join('')}</div>`
+      : `<div class="sc-empty">No rounds found.</div>`;
+
+    mainEl.innerHTML = cardHtml + metaHtml + roundsHtml;
+    sideEl.innerHTML = scTeamStatsHtml(data, branding) + scPlayerStatsHtml(data, branding);
+  }
+
+  // ---- Round ----
+
+  function scRoundHtml(round, match, branding) {
+    const hw = round.home_games_won || 0, aw = round.away_games_won || 0;
+    const done = scRoundDone(round);
+    const showScore = hw || aw || done;
+    return `
+      <div class="round-block">
+        <div class="round-head">
+          <div class="round-head-left">
+            <div class="round-badge">${escapeHtml(String(round.round_number || ''))}</div>
+            <span class="round-label">Round ${escapeHtml(String(round.round_number || ''))}</span>
+          </div>
+          <div class="round-head-right">
+            ${showScore ? `<span class="round-score-disp">${hw} – ${aw}</span>` : ''}
+            <span class="round-pill ${done ? 'done' : ''}">${done ? 'Complete' : escapeHtml(round.status || 'Pending')}</span>
+          </div>
+        </div>
+        <div class="game-stack">${(round.games || []).map(g => scGameCardHtml(g, match, branding)).join('')}</div>
+      </div>`;
+  }
+
+  // ---- Game card ----
+
+  function scGameCardHtml(game, match, branding) {
+    const hasH = game.home_score !== null && game.home_score !== undefined && game.home_score !== '';
+    const hasA = game.away_score !== null && game.away_score !== undefined && game.away_score !== '';
+    const done = hasH && hasA;
+    const hNum = done ? Number(game.home_score) : null;
+    const aNum = done ? Number(game.away_score) : null;
+    const hWin = done && hNum > aNum, aWin = done && aNum > hNum;
+    const p1h = game.home_player_1_name || '', p2h = game.home_player_2_name || '';
+    const p1a = game.away_player_1_name || '', p2a = game.away_player_2_name || '';
+    const hScoreCls = !hasH ? 'blank' : hWin ? 'win' : aWin ? 'lose' : '';
+    const aScoreCls = !hasA ? 'blank' : aWin ? 'win' : hWin ? 'lose' : '';
+    const courtLabel = game.court_number
+      ? `Court ${game.court_number}`
+      : (game.court ? `Court ${game.court}` : `Court ${game.game_number_in_round || ''}`);
+    const tc = scTypeClass(game.game_type);
+    return `
+      <div class="gcard">
+        <div class="gcard-head">
+          <span class="game-num-lbl">${escapeHtml(courtLabel)}</span>
+          <span class="type-pill ${tc}">${escapeHtml(scPrettyType(game.game_type))}</span>
+        </div>
+        <div class="team-rows">
+          <div class="team-row ${hWin ? 'winner' : aWin ? 'loser' : ''}">
+            <div class="club-icon">${scLogoHtml(match.home_team_name, 'sm', branding)}</div>
+            <div class="player-names">
+              <div class="player-name">${p1h ? escapeHtml(p1h) : 'TBD'}</div>
+              <div class="player-name-2">${p2h ? escapeHtml(p2h) : 'TBD'}</div>
+            </div>
+            <span class="score-disp ${hScoreCls}">${hasH ? hNum : '—'}</span>
+          </div>
+          <div class="team-row ${aWin ? 'winner' : hWin ? 'loser' : ''}">
+            <div class="club-icon">${scLogoHtml(match.away_team_name, 'sm', branding)}</div>
+            <div class="player-names">
+              <div class="player-name">${p1a ? escapeHtml(p1a) : 'TBD'}</div>
+              <div class="player-name-2">${p2a ? escapeHtml(p2a) : 'TBD'}</div>
+            </div>
+            <span class="score-disp ${aScoreCls}">${hasA ? aNum : '—'}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ---- Team stats ----
+
+  function scTeamStatsHtml(data, branding) {
+    if (!data || !data.match) return '';
+    const match    = data.match;
+    const allGames = (data.rounds || []).flatMap(r => r.games || []);
+    const gtypes   = ['womens','mens','mixed','coed'];
+    const glabels  = { womens:"W's", mens:"M's", mixed:'Mix', coed:'Coed' };
+    const stats    = { all: { hW:0, aW:0, hD:0, aD:0 } };
+    for (const gt of gtypes) stats[gt] = { hW:0, aW:0, hD:0, aD:0, found:false };
+    const scheduled = new Set();
+    for (const g of allGames) {
+      const gt = scTypeClass(g.game_type);
+      if (gt && gt !== 'other') scheduled.add(gt);
+      if (g.home_score === '' || g.home_score === null || g.home_score === undefined) continue;
+      if (g.away_score === '' || g.away_score === null || g.away_score === undefined) continue;
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      stats.all.hW += hs>as?1:0; stats.all.aW += as>hs?1:0; stats.all.hD += hs-as; stats.all.aD += as-hs;
+      if (stats[gt]) { stats[gt].hW += hs>as?1:0; stats[gt].aW += as>hs?1:0; stats[gt].hD += hs-as; stats[gt].aD += as-hs; stats[gt].found = true; }
+    }
+    const activeCols = ['all', ...gtypes.filter(gt => stats[gt].found || scheduled.has(gt))];
+    const colHeads = activeCols.map(col => `<th class="ts-col-head ts-${col}">${escapeHtml(col === 'all' ? 'All' : glabels[col])}</th>`).join('');
+    const scoreCell = (col, isHome) => {
+      const s    = stats[col];
+      const wins = isHome ? s.hW : s.aW;
+      const diff = isHome ? s.hD : s.aD;
+      const opp  = isHome ? s.aW : s.hW;
+      const cls  = wins > opp ? 'ts-win' : wins < opp ? 'ts-loss' : '';
+      return `<td class="ts-score-cell ${cls}">
+        <span class="ts-wins">${wins}</span>
+        ${diff !== 0 ? `<span class="ts-diff ${diff>0?'pos':'neg'}">${diff>0?'+':''}${diff}</span>` : ''}
+      </td>`;
+    };
+    return `
+      <div class="sc-panel">
+        <div class="sc-panel-head"><span class="sc-panel-title">Games Won</span></div>
+        <table class="ts-table">
+          <thead><tr>
+            <th class="ts-team-head">Team</th>${colHeads}
+          </tr></thead>
+          <tbody>
+            <tr class="ts-row">
+              <td class="ts-team-cell"><div class="ts-team-inner"><div class="ts-logo">${scLogoHtml(match.home_team_name, 'sb', branding)}</div></div></td>
+              ${activeCols.map(col => scoreCell(col, true)).join('')}
+            </tr>
+            <tr class="ts-row">
+              <td class="ts-team-cell"><div class="ts-team-inner"><div class="ts-logo">${scLogoHtml(match.away_team_name, 'sb', branding)}</div></div></td>
+              ${activeCols.map(col => scoreCell(col, false)).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  // ---- Player stats ----
+
+  function scPlayerStatsHtml(data, branding) {
+    if (!data || !data.match) return '';
+    const match    = data.match;
+    const allGames = (data.rounds || []).flatMap(r => r.games || []);
+    const pm = {};
+    const ensure = (name, isHome, gt) => {
+      if (!name) return;
+      if (!pm[name]) pm[name] = { name, wins:0, losses:0, diff:0, isWomens:false, teamName: isHome ? match.home_team_name : match.away_team_name };
+      if (scTypeClass(gt) === 'womens') pm[name].isWomens = true;
+    };
+    for (const g of allGames) {
+      ensure(g.home_player_1_name, true,  g.game_type);
+      ensure(g.home_player_2_name, true,  g.game_type);
+      ensure(g.away_player_1_name, false, g.game_type);
+      ensure(g.away_player_2_name, false, g.game_type);
+      const hasH = g.home_score !== null && g.home_score !== undefined && g.home_score !== '';
+      const hasA = g.away_score !== null && g.away_score !== undefined && g.away_score !== '';
+      if (!hasH || !hasA) continue;
+      const hs = Number(g.home_score), as = Number(g.away_score);
+      const tally = (name, home) => {
+        const p = pm[name]; if (!p) return;
+        if (home) { p.wins += hs>as?1:0; p.losses += as>hs?1:0; p.diff += hs-as; }
+        else      { p.wins += as>hs?1:0; p.losses += hs>as?1:0; p.diff += as-hs; }
+      };
+      tally(g.home_player_1_name, true);  tally(g.home_player_2_name, true);
+      tally(g.away_player_1_name, false); tally(g.away_player_2_name, false);
+    }
+    const players = Object.values(pm).filter(p => p.name);
+    if (!players.length) return '';
+    const sortFn = (a, b) => b.wins - a.wins || a.losses - b.losses || b.diff - a.diff;
+    const women = players.filter(p =>  p.isWomens).sort(sortFn);
+    const men   = players.filter(p => !p.isWomens).sort(sortFn);
+    if (!women.length && !men.length) return '';
+    const buildRows = list => list.map((p, i) => {
+      const ds = p.diff > 0 ? '+' + p.diff : String(p.diff);
+      return `<tr>
+        <td class="ps-rank">${i+1}</td>
+        <td class="ps-logo-cell"><div class="ps-logo-inner">${scLogoHtml(p.teamName, 'xs', branding)}</div></td>
+        <td class="ps-name">${escapeHtml(p.name)}</td>
+        <td class="ps-mono">${p.wins}–${p.losses}</td>
+        <td class="ps-mono ${p.diff>0?'positive':p.diff<0?'negative':''}">${escapeHtml(ds)}</td>
+      </tr>`;
+    }).join('');
+    const buildSection = (label, list) => {
+      if (!list.length) return '';
+      return `<div class="ps-section">
+          <div class="ps-section-badge">${label[0]}</div>
+          <span class="ps-section-label">${escapeHtml(label)}</span>
+        </div>
+        <table class="ps-table">
+          <thead><tr><th class="ps-rank"></th><th class="ps-logo-cell"></th><th class="ps-th-name">Player</th><th>W–L</th><th>+/–</th></tr></thead>
+          <tbody>${buildRows(list)}</tbody>
+        </table>`;
+    };
+    return `
+      <div class="sc-panel">
+        <div class="ps-two-col">
+          <div class="ps-col">${buildSection('Women', women)}</div>
+          <div class="ps-col">${buildSection('Men', men)}</div>
+        </div>
+      </div>`;
+  }
+
+  // ---- Logo builder ----
+
+  function scLogoHtml(teamName, size, branding) {
+    const t = String(teamName || '').toLowerCase();
+    const dynLogos  = branding?.clubLogos || {};
+    const legacyMap = {};
+    if (branding?.campLogoUrl) legacyMap['camp'] = branding.campLogoUrl;
+    if (branding?.dillLogoUrl) legacyMap['dill'] = branding.dillLogoUrl;
+    const logos = Object.keys(dynLogos).length ? dynLogos : legacyMap;
+    for (const [kw, url] of Object.entries(logos)) {
+      if (url && t.includes(kw.toLowerCase()))
+        return `<img src="${escapeHtml(url)}" alt="${escapeHtml(teamName)}" style="width:100%;height:100%;object-fit:contain;">`;
+    }
+    const initials = String(teamName || 'TM').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+    const palette  = ['#123a7c','#0b7e39','#7c3a12','#3a127c','#127c3a','#7c6012'];
+    const idx      = Math.abs(String(teamName).split('').reduce((a,c) => a + c.charCodeAt(0), 0)) % palette.length;
+    const fs       = size === 'sb' ? '12' : '10';
+    return `<span style="font-family:'Bebas Neue',sans-serif;font-size:${fs}px;color:#fff;background:${palette[idx]};width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:inherit;">${escapeHtml(initials)}</span>`;
+  }
+
+  // ---- Scorecard helpers ----
+
+  function scDedupeRounds(rounds) {
+    if (!Array.isArray(rounds)) return [];
+    const byNum = new Map();
+    for (const r of rounds) {
+      const num = Number(r.round_number || 0);
+      const key = num || String(r.round_id || '').trim();
+      if (!key) continue;
+      const prev = byNum.get(key);
+      if (!prev) { byNum.set(key, { ...r, games: [...(r.games || [])] }); continue; }
+      const seenIds = new Set(prev.games.map(g => String(g.game_id)));
+      for (const g of (r.games || [])) {
+        if (!seenIds.has(String(g.game_id))) { prev.games.push(g); seenIds.add(String(g.game_id)); }
+      }
+      prev.home_games_won = Math.max(prev.home_games_won || 0, r.home_games_won || 0);
+      prev.away_games_won = Math.max(prev.away_games_won || 0, r.away_games_won || 0);
+      if ((prev.status || '') !== 'completed' && (r.status || '') === 'completed') prev.status = 'completed';
+    }
+    return Array.from(byNum.values()).sort((a,b) => Number(a.round_number||0) - Number(b.round_number||0));
+  }
+
+  function scRoundDone(r) {
+    const gs = r.games || [];
+    return gs.length > 0 && gs.every(g => {
+      const hasH = g.home_score !== null && g.home_score !== undefined && g.home_score !== '';
+      const hasA = g.away_score !== null && g.away_score !== undefined && g.away_score !== '';
+      return hasH && hasA;
+    });
+  }
+
+  function scSortGames(games) {
+    const pri = g => { const tc = scTypeClass(g.game_type); return tc==='womens'?0:tc==='mens'?1:tc==='mixed'?2:tc==='coed'?3:4; };
+    return [...games].sort((a,b) => pri(a)-pri(b) || (a.game_number_in_round||0)-(b.game_number_in_round||0));
+  }
+
+  function scTypeClass(type) {
+    const t = String(type || '').trim().toLowerCase();
+    if (t === 'womens' || t === "women's" || t === 'women') return 'womens';
+    if (t === 'mens'   || t === "men's"   || t === 'men')   return 'mens';
+    if (t === 'mixed')  return 'mixed';
+    if (t === 'coed'   || t === 'co-ed')  return 'coed';
+    return 'other';
+  }
+
+  function scPrettyType(type) {
+    const t = String(type || '').trim().toLowerCase();
+    if (t === 'womens' || t === "women's" || t === 'women') return "Women's";
+    if (t === 'mens'   || t === "men's"   || t === 'men')   return "Men's";
+    if (t === 'mixed')  return 'Mixed';
+    if (t === 'coed'   || t === 'co-ed')  return 'Coed';
+    return type || 'Game';
+  }
+
+  function scExtractDivNum(match, divsById) {
+    const divId = match?.division_id;
+    const name  = divId && divsById && divsById[divId] ? divsById[divId].division_name : '';
+    const m = (name || String(divId || '')).match(/(\d+)/);
+    return m ? m[1] : '';
+  }
+
+  function scExtractWeekNum(match) {
+    const m = String(match?.match_id || '').match(/W(\d+)/i);
+    return m ? m[1] : '';
+  }
+
+  function scFmtDate(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [y, mo, d] = s.split('-').map(Number);
+      return new Date(y, mo-1, d).toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    }
+    const d = new Date(s);
+    if (!isNaN(d)) return d.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    return s;
+  }
+
+  function scFmtTime(raw) {
+    if (!raw) return '';
+    const s  = String(raw).trim();
+    const hm = s.match(/^(\d{1,2}):(\d{2})/);
+    if (hm) {
+      const dt = new Date(); dt.setHours(+hm[1], +hm[2], 0, 0);
+      return dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+    }
+    return s;
   }
 
   // ---------- Init ----------
