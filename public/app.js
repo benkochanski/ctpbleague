@@ -27,6 +27,7 @@
                     urlFn: id => `${GAS_BASE}?page=scoreboard${id ? `&matchId=${encodeURIComponent(id)}` : ''}` },
     matchcast:    { kind: 'page',   label: 'Match Cast',    onEnter: renderMatchcast,   hidden: true },
     matchreport:  { kind: 'page',   label: 'Match Report',  onEnter: renderMatchreport, hidden: true },
+    matchpreview: { kind: 'page',   label: 'Match Preview', onEnter: renderMatchpreview, hidden: true },
     gamereport:   { kind: 'iframe', label: 'Game Report',     urlFn: id => `${GAS_BASE}?page=gamereport&matchId=${encodeURIComponent(id)}`, hidden: true },
     player:       { kind: 'iframe', label: 'Player Profile',  urlFn: name => `${GAS_BASE}?page=player&playerName=${encodeURIComponent(name || '')}`, hidden: true },
 
@@ -420,11 +421,12 @@
         </button>`;
     } else {
       matchCell = `
-        <div class="match-cell is-upcoming is-compact">
+        <button class="match-cell is-upcoming is-compact" data-route="matchpreview" data-param="${escapeHtml(m.match_id)}" title="Match preview">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
-        </div>`;
+          <span class="m-status m-status-scheduled">Scheduled</span>
+        </button>`;
     }
 
     return `
@@ -759,16 +761,13 @@
           <span class="m-status m-status-live"><span class="live-dot"></span>Live</span>
         </button>`;
     } else {
-      const timeStr = displayDate ? fmtTime(displayDate) : '';
-      const venue   = (m.venue || '').split(/\s+/)[0];
-      const meta    = [timeStr, venue].filter(Boolean).join(' · ');
       matchCell = `
-        <div class="match-cell is-upcoming">
+        <button class="match-cell is-upcoming" data-route="matchpreview" data-param="${escapeHtml(m.match_id)}" title="Match preview">
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
-          ${meta ? `<span class="m-status m-status-upcoming">${escapeHtml(meta)}</span>` : ''}
-        </div>`;
+          <span class="m-status m-status-scheduled">Scheduled</span>
+        </button>`;
     }
 
     return `
@@ -1003,6 +1002,73 @@
 
     const target = matchId && [...selectEl.options].some(o => o.value === matchId)
       ? matchId : completed[0].match_id;
+    selectEl.value = target;
+
+    selectEl.onchange = () => {
+      scLoadAndRender(selectEl.value, mainEl, sideEl, branding, teamsById, divsById, false);
+    };
+
+    scLoadAndRender(target, mainEl, sideEl, branding, teamsById, divsById, false);
+  }
+
+  async function renderMatchpreview(matchId) {
+    const selectEl = document.getElementById('mp-select');
+    const mainEl   = document.getElementById('mp-main');
+    const sideEl   = document.getElementById('mp-side');
+    if (!selectEl || !mainEl || !sideEl) return;
+
+    mainEl.innerHTML = `<div class="sc-empty"><div class="sc-spinner"></div><span>Loading…</span></div>`;
+    sideEl.innerHTML = '';
+
+    let data, branding;
+    try {
+      [data, branding] = await Promise.all([fetchPublicData(), fetchScBranding()]);
+    } catch (err) {
+      mainEl.innerHTML = `<div class="sc-empty">Failed to load data.<br><small>${escapeHtml(err.message)}</small></div>`;
+      return;
+    }
+
+    const teamsById = indexBy(data.teams, 'team_id');
+    const divsById  = indexBy(data.divisions, 'division_id');
+
+    const upcoming = (data.matches || [])
+      .filter(m => !isCompleted(m) && !isLive(m))
+      .map(m => ({ ...m, _date: parseMatchDate(m) }))
+      .sort((a, b) => (a._date || 0) - (b._date || 0));
+
+    selectEl.innerHTML = '';
+    if (!upcoming.length) {
+      const o = document.createElement('option');
+      o.textContent = 'No upcoming matches';
+      selectEl.appendChild(o);
+      mainEl.innerHTML = `<div class="sc-empty">No upcoming matches.</div>`;
+      return;
+    }
+
+    // Group by week, soonest first
+    const weekGroups = new Map();
+    upcoming.forEach(m => {
+      const wk = m._date ? weekKey(m._date) : 'unknown';
+      if (!weekGroups.has(wk)) weekGroups.set(wk, []);
+      weekGroups.get(wk).push(m);
+    });
+    const sortedWeeks = [...weekGroups.keys()].sort((a, b) => a.localeCompare(b));
+    sortedWeeks.forEach(wk => {
+      const grp = document.createElement('optgroup');
+      grp.label = weekLabel(wk);
+      weekGroups.get(wk).forEach(m => {
+        const div = divisionName(divsById, m.division_id);
+        const divNum = (div.match(/\d+/) || [''])[0];
+        const o = document.createElement('option');
+        o.value = m.match_id;
+        o.textContent = `${divNum ? 'Div ' + divNum + ' · ' : ''}${teamName(teamsById, m.home_team_id)} vs ${teamName(teamsById, m.away_team_id)}`;
+        grp.appendChild(o);
+      });
+      selectEl.appendChild(grp);
+    });
+
+    const target = matchId && [...selectEl.options].some(o => o.value === matchId)
+      ? matchId : upcoming[0].match_id;
     selectEl.value = target;
 
     selectEl.onchange = () => {

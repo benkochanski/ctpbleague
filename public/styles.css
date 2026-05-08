@@ -1051,6 +1051,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   text-transform: none;
   font-size: 11px;
 }
+.m-status-scheduled {
+  background: rgba(18,58,124,.12);
+  color: var(--blue);
+  border: 1px solid rgba(18,58,124,.28);
+}
 
 @media (max-width: 860px) {
   .matches-table { min-width: 0; font-size: 12px; }
