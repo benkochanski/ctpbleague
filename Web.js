@@ -742,6 +742,8 @@ function submitCaptainLineup(email, matchId, teamId, assignments) {
     newValueJson: JSON.stringify(assignments || []).slice(0, 50000)
   });
 
+  notifyLineupSubmitted_(cleanMatchId, cleanTeamId, access);
+
   return {
     ok: true,
     message: 'Official lineup submitted'
