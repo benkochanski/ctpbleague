@@ -93,6 +93,33 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
     throw new Error('Team is not part of this match');
   }
 
+  // Guardrail: refuse to silently wipe a non-empty draft.
+  //
+  // If a draft save (submitted=false) comes in with NO player IDs at all,
+  // and this side already has filled slots in the sheet, treat it as a
+  // likely UI bug (a captain page that loaded an empty schedule and then
+  // autosaved blanks). Captains who actually want to start over should
+  // clear individual slots via the UI — single-slot edits still pass
+  // because the other slots' incoming values stay populated.
+  if (!submitted) {
+    const incomingHasAnyPlayer = (assignments || []).some(a =>
+      String(a && a.player_1_id || '').trim() ||
+      String(a && a.player_2_id || '').trim()
+    );
+    if (!incomingHasAnyPlayer) {
+      const existingHasAnyPlayer = targetGames.some(g => isHomeSide
+        ? (String(g.home_player_1_id || '').trim() || String(g.home_player_2_id || '').trim())
+        : (String(g.away_player_1_id || '').trim() || String(g.away_player_2_id || '').trim())
+      );
+      if (existingHasAnyPlayer) {
+        throw new Error(
+          'Refused to overwrite an existing lineup with an empty one. ' +
+          'Reload the page to see the current lineup before editing.'
+        );
+      }
+    }
+  }
+
   const assignmentMap = {};
   (assignments || []).forEach(a => {
     const gid = String(a.game_id || '').trim();
