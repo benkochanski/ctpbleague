@@ -2,21 +2,19 @@
  * Lineup submission notifications.
  *
  * Called from submitCaptainLineup after the lineup has been persisted.
- * Wrapped in try/catch at the top level — email failures must never break a
- * lineup submission (MailApp can be flaky, quotas can run out, etc).
+ * Wrapped in try/catch at the top level — email/Telegram failures must
+ * never break a lineup submission.
  *
- * Recipients per league config (multi-select):
- *   - Opposing captain(s)            (Users.role_type=captain for the other team)
- *   - Submitting captain             (the access.email passed in)
- *   - Division directors             (Users.role_type=director, club in either team's club)
- *   - League commissioners           (Users.role_type=commissioner)
+ * League rule: away submits first; once a captain hits submit, that
+ * team's lineup is public. Sending the full lineup to all recipients
+ * (including the opposing captain) is consistent with that — the
+ * opposing captain has already submitted by the time they get this.
  *
- * NOTE: per current setting, the email body includes the FULL submitted
- * lineup. That intentionally leaks the submitter's pairings to the opposing
- * captain before they submit — which is contrary to the reveal-only-when-
- * both-submit rule enforced by revealLineupsIfReady_. If that becomes a
- * problem, switch buildLineupEmail_ to a notice-only body for the opposing
- * captain (or move full-content emails to revealLineupsIfReady_).
+ * Recipients (multi-select per league config):
+ *   - Opposing captain(s)        (Users.role_type=captain, other team)
+ *   - Submitting captain          (confirmation copy)
+ *   - Division directors          (role_type=director, club in this match)
+ *   - League commissioners        (role_type=commissioner)
  */
 function notifyLineupSubmitted_(matchId, teamId, access) {
   try {
