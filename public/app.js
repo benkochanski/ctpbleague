@@ -218,6 +218,7 @@
 
   const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MON_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   function fmtDate(d) {
     if (!d || isNaN(d)) return '';
@@ -242,10 +243,19 @@
     monday.setHours(0,0,0,0);
     return monday.toISOString().slice(0, 10);
   }
-  function weekLabel(key) {
-    if (key === 'unknown') return 'Date TBD';
-    const d = new Date(key);
-    return `Week of ${MON[d.getMonth()]} ${d.getDate()}`;
+  function weekLabelFromMatches(matches) {
+    const dated = (matches || []).filter(m => m && m._date instanceof Date && !isNaN(m._date));
+    if (!dated.length) return 'Date TBD';
+    const sorted = dated.slice().sort((a, b) => a._date - b._date);
+    const first = sorted[0]._date;
+    const last  = sorted[sorted.length - 1]._date;
+    const month = MON_FULL[first.getMonth()];
+    const fd    = first.getDate();
+    const ld    = last.getDate();
+    if (first.getMonth() !== last.getMonth()) {
+      return `${month} ${fd} – ${MON_FULL[last.getMonth()]} ${ld}`;
+    }
+    return fd === ld ? `${month} ${fd}` : `${month} ${fd}-${ld}`;
   }
 
   function escapeHtml(s) {
@@ -988,7 +998,7 @@
     const sortedWeeks = [...weekGroups.keys()].sort((a, b) => b.localeCompare(a));
     sortedWeeks.forEach(wk => {
       const grp = document.createElement('optgroup');
-      grp.label = weekLabel(wk);
+      grp.label = weekLabelFromMatches(weekGroups.get(wk));
       weekGroups.get(wk).forEach(m => {
         const div = divisionName(divsById, m.division_id);
         const divNum = (div.match(/\d+/) || [''])[0];
@@ -1055,7 +1065,7 @@
     const sortedWeeks = [...weekGroups.keys()].sort((a, b) => a.localeCompare(b));
     sortedWeeks.forEach(wk => {
       const grp = document.createElement('optgroup');
-      grp.label = weekLabel(wk);
+      grp.label = weekLabelFromMatches(weekGroups.get(wk));
       weekGroups.get(wk).forEach(m => {
         const div = divisionName(divsById, m.division_id);
         const divNum = (div.match(/\d+/) || [''])[0];

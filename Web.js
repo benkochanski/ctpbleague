@@ -801,7 +801,7 @@ function getPublicDashboardData() {
  */
 function getPublicSiteData_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('publicSiteData_v4');
+  const cached = cache.get('publicSiteData_v5');
   if (cached) return JSON.parse(cached);
 
   const str = (v) => String(v == null ? '' : v).trim();
@@ -853,13 +853,19 @@ function getPublicSiteData_() {
     return String(v).trim();
   };
 
-  // Normalize match_date to ISO yyyy-mm-dd (sheet may return native Date or
-  // various string formats — clients should not have to guess).
+  // Normalize match_date to ISO yyyy-mm-dd. Format in the SPREADSHEET's
+  // timezone, not the script's — Sheets anchors a "2026-04-11" cell to
+  // midnight in the spreadsheet TZ, so formatting in any other zone (incl.
+  // the script TZ when they differ) shifts the calendar day.
+  const sheetTz =
+    SpreadsheetApp.getActive().getSpreadsheetTimeZone() ||
+    Session.getScriptTimeZone() ||
+    'America/New_York';
   const toIsoDate = (v) => {
     if (!v) return '';
     if (v instanceof Date) {
       if (isNaN(v.getTime())) return '';
-      return Utilities.formatDate(v, Session.getScriptTimeZone() || 'America/New_York', 'yyyy-MM-dd');
+      return Utilities.formatDate(v, sheetTz, 'yyyy-MM-dd');
     }
     const s = String(v).trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -870,7 +876,7 @@ function getPublicSiteData_() {
     }
     const d = new Date(s);
     if (!isNaN(d.getTime())) {
-      return Utilities.formatDate(d, Session.getScriptTimeZone() || 'America/New_York', 'yyyy-MM-dd');
+      return Utilities.formatDate(d, sheetTz, 'yyyy-MM-dd');
     }
     return s;
   };
@@ -966,7 +972,7 @@ function getPublicSiteData_() {
     standings
   };
 
-  cache.put('publicSiteData_v4', JSON.stringify(payload), 60);
+  cache.put('publicSiteData_v5', JSON.stringify(payload), 60);
   return payload;
 }
 
