@@ -67,13 +67,27 @@ function appendObjects_(sheetName, objects) {
 }
 
 function overwriteObjects_(sheetName, objects) {
-  const sh = getSheet_(sheetName);
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
-  sh.getRange(2, 1, Math.max(sh.getLastRow() - 1, 0), headers.length).clearContent();
-  if (!objects.length) return;
+  const lock = LockService.getDocumentLock();
+  lock.waitLock(30000);
+  try {
+    const sh = getSheet_(sheetName);
+    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    const currentRows = Math.max(sh.getLastRow() - 1, 0);
+    const targetRows  = objects.length;
 
-  const values = objects.map(obj => headers.map(h => obj[h] ?? ''));
-  sh.getRange(2, 1, values.length, headers.length).setValues(values);
+    // Write-then-clear (instead of clear-then-write) so a concurrent reader
+    // never sees an empty sheet. Reduces the window where one captain's save
+    // can race with another's read+write and wipe everyone else's data.
+    if (targetRows > 0) {
+      const values = objects.map(obj => headers.map(h => obj[h] ?? ''));
+      sh.getRange(2, 1, targetRows, headers.length).setValues(values);
+    }
+    if (currentRows > targetRows) {
+      sh.getRange(2 + targetRows, 1, currentRows - targetRows, headers.length).clearContent();
+    }
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function makeId_(prefix) {
