@@ -56,11 +56,7 @@ function lineupPingUniqueV1() {
 // scrolling past the entire season's history.
 function captainWeekStartIso_() {
   const tz = Session.getScriptTimeZone() || 'America/New_York';
-  const now = new Date();
-  // 'u' = ISO day of week, 1=Mon..7=Sun. (sun%7)=0, mon=1..sat=6 — days since Sunday.
-  const daysSinceSunday = Number(Utilities.formatDate(now, tz, 'u')) % 7;
-  const start = new Date(now.getTime() - daysSinceSunday * 24 * 60 * 60 * 1000);
-  return Utilities.formatDate(start, tz, 'yyyy-MM-dd');
+  return Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
 }
 
 function captainMatchDateIso_(v) {
@@ -565,8 +561,6 @@ function getCaptainPortalData(matchId, teamId) {
     start_time: normalizeStartTime_(currentMatch.start_time),
     match_date: captainMatchDateIso_(currentMatch.match_date)
   });
-
-  ensureRoundsAndGamesForMatch_(currentMatchId);
 
   const division = divisions.find(d => String(d.division_id || '').trim() === String(currentMatch.division_id || '').trim());
   const teamName = myTeam.team_name || myTeamId;

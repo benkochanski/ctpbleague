@@ -22,15 +22,6 @@ function notifyLineupSubmitted_(matchId, teamId, access) {
     const cleanTeamId  = String(teamId  || '').trim();
     if (!cleanMatchId || !cleanTeamId) return;
 
-    const dryRun = String(
-      PropertiesService.getScriptProperties().getProperty('NOTIFICATIONS_DRY_RUN') || ''
-    ).trim().toLowerCase() === 'true';
-    if (dryRun) {
-      Logger.log('NOTIFICATIONS_DRY_RUN=true — skipping email + Telegram for match=' +
-        cleanMatchId + ' team=' + cleanTeamId);
-      return;
-    }
-
     const match = getObjects_(SHEETS.MATCHES)
       .find(m => String(m.match_id || '').trim() === cleanMatchId);
     if (!match) return;
@@ -242,19 +233,6 @@ function setTelegramCredentials(botToken, chatId) {
     TELEGRAM_CHAT_ID:   String(chatId   || '').trim()
   });
   return { ok: true };
-}
-
-/**
- * Toggle dry-run mode for lineup notifications. When on, submits succeed
- * normally but no email or Telegram is sent — useful for testing on /dev.
- * Run from the GAS editor:
- *   setNotificationsDryRun(true)   // testing
- *   setNotificationsDryRun(false)  // live
- */
-function setNotificationsDryRun(enabled) {
-  PropertiesService.getScriptProperties()
-    .setProperty('NOTIFICATIONS_DRY_RUN', enabled ? 'true' : 'false');
-  return { ok: true, dryRun: !!enabled };
 }
 
 function sendLineupTelegramNotification_(ctx) {

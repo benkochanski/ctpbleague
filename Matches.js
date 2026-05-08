@@ -115,15 +115,3 @@ function computeHomeLineupDue_(matchDate, startTime) {
   return `${matchDate} ${startTime}`;
 }
 
-function ensureRoundsAndGamesForMatch_(matchId) {
-  const cleanMatchId = String(matchId || '').trim();
-  if (!cleanMatchId) return;
-
-  const existingGames = getObjects_(SHEETS.MATCH_GAMES).filter(
-    g => String(g.match_id || '').trim() === cleanMatchId
-  );
-
-  if (existingGames.length) return;
-
-  generateRoundsAndGamesForMatch_(cleanMatchId);
-}
