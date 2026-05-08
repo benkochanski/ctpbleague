@@ -1031,23 +1031,23 @@
     const teamsById = indexBy(data.teams, 'team_id');
     const divsById  = indexBy(data.divisions, 'division_id');
 
-    const upcoming = (data.matches || [])
-      .filter(m => !isCompleted(m) && !isLive(m))
+    const allMatches = (data.matches || [])
       .map(m => ({ ...m, _date: parseMatchDate(m) }))
       .sort((a, b) => (a._date || 0) - (b._date || 0));
 
     selectEl.innerHTML = '';
-    if (!upcoming.length) {
+    if (!allMatches.length) {
       const o = document.createElement('option');
-      o.textContent = 'No upcoming matches';
+      o.textContent = 'No matches';
       selectEl.appendChild(o);
-      mainEl.innerHTML = `<div class="sc-empty">No upcoming matches.</div>`;
+      mainEl.innerHTML = `<div class="sc-empty">No matches.</div>`;
       return;
     }
 
-    // Group by week, soonest first
+    // Group by week, soonest first. Include final + live + upcoming so users
+    // can jump between any match from one dropdown.
     const weekGroups = new Map();
-    upcoming.forEach(m => {
+    allMatches.forEach(m => {
       const wk = m._date ? weekKey(m._date) : 'unknown';
       if (!weekGroups.has(wk)) weekGroups.set(wk, []);
       weekGroups.get(wk).push(m);
@@ -1059,16 +1059,26 @@
       weekGroups.get(wk).forEach(m => {
         const div = divisionName(divsById, m.division_id);
         const divNum = (div.match(/\d+/) || [''])[0];
+        const tag = isCompleted(m) ? ' · Final'
+                  : isLive(m)      ? ' · Live'
+                  : '';
+        const score = isCompleted(m)
+          ? ` ${m.home_games_won || 0}–${m.away_games_won || 0}`
+          : ' vs';
         const o = document.createElement('option');
         o.value = m.match_id;
-        o.textContent = `${divNum ? 'Div ' + divNum + ' · ' : ''}${teamName(teamsById, m.home_team_id)} vs ${teamName(teamsById, m.away_team_id)}`;
+        o.textContent = `${divNum ? 'Div ' + divNum + ' · ' : ''}${teamName(teamsById, m.home_team_id)}${score} ${teamName(teamsById, m.away_team_id)}${tag}`;
         grp.appendChild(o);
       });
       selectEl.appendChild(grp);
     });
 
+    // Default to the requested match if present, otherwise the first
+    // upcoming/live one (so the page still feels like "preview" by default).
+    const firstUpcoming = allMatches.find(m => !isCompleted(m));
     const target = matchId && [...selectEl.options].some(o => o.value === matchId)
-      ? matchId : upcoming[0].match_id;
+      ? matchId
+      : (firstUpcoming || allMatches[0]).match_id;
     selectEl.value = target;
 
     selectEl.onchange = () => {
