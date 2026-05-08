@@ -651,6 +651,8 @@ function saveCaptainLineupDraft(email, matchId, teamId, assignments) {
   if (!cleanTeamId) throw new Error('Missing teamId');
   const access = requireEmailAccess_(email, cleanTeamId);
 
+  assertLineupEditable_(cleanMatchId, cleanTeamId, access);
+
   const sheetGames = getObjects_(SHEETS.MATCH_GAMES)
     .filter(g => String(g.match_id || '').trim() === cleanMatchId);
 
@@ -709,6 +711,8 @@ function submitCaptainLineup(email, matchId, teamId, assignments) {
     throw new Error('teamId is not part of this match');
   }
 
+  assertLineupEditable_(cleanMatchId, cleanTeamId, access);
+
   const sheetGameIds = new Set(
     getObjects_(SHEETS.MATCH_GAMES)
       .filter(g => String(g.match_id || '').trim() === cleanMatchId)
@@ -742,6 +746,39 @@ function submitCaptainLineup(email, matchId, teamId, assignments) {
     ok: true,
     message: 'Official lineup submitted'
   };
+}
+
+/**
+ * Throws if the team's lineup for this match is already officially submitted
+ * and the caller isn't a commissioner. Captains can edit drafts freely; once
+ * they hit submit the lineup is locked. Commissioners always pass.
+ */
+function assertLineupEditable_(matchId, teamId, access) {
+  if (access && access.isCommissioner) return;
+
+  const cleanMatchId = String(matchId || '').trim();
+  const cleanTeamId  = String(teamId  || '').trim();
+
+  const match = getObjects_(SHEETS.MATCHES).find(m =>
+    String(m.match_id || '').trim() === cleanMatchId
+  );
+  if (!match) return;
+
+  const isHome = cleanTeamId === String(match.home_team_id || '').trim();
+  const flag   = isHome ? 'lineup_submitted_home' : 'lineup_submitted_away';
+
+  const submitted = getObjects_(SHEETS.MATCH_GAMES).some(g => {
+    if (String(g.match_id || '').trim() !== cleanMatchId) return false;
+    const v = g[flag];
+    return v === true || String(v || '').toUpperCase() === 'TRUE';
+  });
+
+  if (submitted) {
+    throw new Error(
+      'This lineup has already been submitted and can no longer be edited. ' +
+      'Contact a commissioner if a change is required.'
+    );
+  }
 }
 
 function revealLineupsIfReady_(matchId) {
