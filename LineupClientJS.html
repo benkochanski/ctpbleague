@@ -869,6 +869,9 @@ function queueAutosave() {
         if (resp && Array.isArray(resp.games)) {
           replacePortalGames_(resp.games);
         }
+        if (resp && resp.warning) {
+          showToast(resp.warning, 'error');
+        }
         render();
       })
       .withFailureHandler((err) => {

@@ -62,17 +62,11 @@ function rebuildMatchGamesFromTemplates() {
       const gameNumberInRound = Number(t.game_number_in_round || 0);
       const gameType = String(t.game_type || '').trim();
 
-      const cleanMatchId = matchId.replace(/[^A-Za-z0-9]/g, '');
-      const roundId =
-        'ROUND_' +
-        cleanMatchId +
-        '_R' + String(roundNumber).padStart(2, '0');
-
-      const gameId =
-        'GAME_' +
-        cleanMatchId +
-        '_R' + String(roundNumber).padStart(2, '0') +
-        '_G' + String(gameNumberInRound).padStart(2, '0');
+      // ID format must stay aligned with generateRoundsAndGamesForMatch_
+      // in Matches.js — captains submit assignments referencing these
+      // exact strings, so any divergence breaks lineup submission.
+      const roundId = `RND_${matchId}_${roundNumber}`;
+      const gameId = `GAME_${matchId}_${String(matchSequence).padStart(2, '0')}`;
 
       if (!roundsSeen[roundId]) {
         roundsSeen[roundId] = true;

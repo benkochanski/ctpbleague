@@ -657,10 +657,13 @@ function saveCaptainLineupDraft(email, matchId, teamId, assignments) {
   if (!cleanTeamId) throw new Error('Missing teamId');
   const access = requireEmailAccess_(email, cleanTeamId);
 
-  const normalizedAssignments = normalizeAssignments_(
-    assignments,
-    getObjects_(SHEETS.MATCH_GAMES).filter(g => String(g.match_id || '').trim() === cleanMatchId)
-  );
+  const sheetGames = getObjects_(SHEETS.MATCH_GAMES)
+    .filter(g => String(g.match_id || '').trim() === cleanMatchId);
+
+  const normalizedAssignments = normalizeAssignments_(assignments, sheetGames);
+  const submittedCount = (assignments || [])
+    .filter(a => String(a && a.game_id || '').trim()).length;
+  const droppedCount = submittedCount - normalizedAssignments.length;
 
   saveTeamLineup_(cleanMatchId, cleanTeamId, normalizedAssignments, false, access);
   appendAuditLog_({
@@ -678,11 +681,20 @@ function saveCaptainLineupDraft(email, matchId, teamId, assignments) {
       Number(a.game_number_in_round || 0) - Number(b.game_number_in_round || 0)
     );
 
-  return {
+  const response = {
     ok: true,
     message: 'Draft saved',
     games: games
   };
+
+  if (droppedCount > 0) {
+    response.warning =
+      'Your lineup is out of sync with the latest match data. ' +
+      'Reload the page and re-enter your picks before submitting.';
+    response.staleAssignmentCount = droppedCount;
+  }
+
+  return response;
 }
 
 function submitCaptainLineup(email, matchId, teamId, assignments) {
@@ -701,6 +713,23 @@ function submitCaptainLineup(email, matchId, teamId, assignments) {
   const awayId = String(match.away_team_id || '').trim();
   if (cleanTeamId !== homeId && cleanTeamId !== awayId) {
     throw new Error('teamId is not part of this match');
+  }
+
+  const sheetGameIds = new Set(
+    getObjects_(SHEETS.MATCH_GAMES)
+      .filter(g => String(g.match_id || '').trim() === cleanMatchId)
+      .map(g => String(g.game_id || '').trim())
+      .filter(Boolean)
+  );
+  const stale = (assignments || []).filter(a => {
+    const gid = String(a && a.game_id || '').trim();
+    return gid && !sheetGameIds.has(gid);
+  });
+  if (stale.length) {
+    throw new Error(
+      'Your lineup is out of sync with the latest match data. ' +
+      'Please reload the page and re-enter your picks.'
+    );
   }
 
   saveTeamLineup_(cleanMatchId, cleanTeamId, assignments || [], true, access);
