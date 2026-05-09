@@ -1715,29 +1715,37 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
     const [y, mo, d] = iso.split('-').map(Number);
 
-    let hh = 0, mm = 0;
+    let hh = null, mm = 0;
     const t = m.start_time;
     if (t instanceof Date && !isNaN(t.getTime())) {
       hh = t.getHours(); mm = t.getMinutes();
     } else {
       const s = String(t || '').trim();
-      // "h[:mm] AM/PM" — the format publicdata returns
+      // "h[:mm] AM/PM" — Web.js toClockTime output (Date input path)
       const ampm = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([AP]M)$/i);
+      // "HH:MM" or "H:MM" 24-hour — what getDisplayObjects_ returns when
+      // the cell is formatted as time
+      const h24 = s.match(/^(\d{1,2}):(\d{2})$/);
       if (ampm) {
         hh = Number(ampm[1]) % 12;
         if (/PM/i.test(ampm[3])) hh += 12;
         mm = Number(ampm[2] || 0);
+      } else if (h24) {
+        hh = Number(h24[1]); mm = Number(h24[2]);
       } else if (/^1899-12-30T(\d{2}):(\d{2})/.test(s)) {
         // Sheets time-only cells serialize anchored to 1899-12-30 in UTC.
-        // The hours/minutes are wall-clock for Eastern, but coming through
-        // as UTC. Use UTC components so we don't lose the offset twice.
         const dt = new Date(s);
         if (!isNaN(dt.getTime())) { hh = dt.getUTCHours(); mm = dt.getUTCMinutes(); }
+      } else if (/^\d+\/\d+\/\d+/.test(s)) {
+        // "12/30/1899" — Sheets default for an empty time cell. No time
+        // info, treat as start of the match day.
+        hh = 0; mm = 0;
       } else if (s) {
         const dt = new Date(s);
         if (!isNaN(dt.getTime())) { hh = dt.getHours(); mm = dt.getMinutes(); }
       }
     }
+    if (hh === null) return null;
     return new Date(y, mo - 1, d, hh, mm, 0).getTime();
   }
 
