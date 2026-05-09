@@ -830,7 +830,13 @@
 
           if (!currentMatchId) {
             const filtered = matchesForDiv(currentDivisionKey);
-            currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+            // Prefer the current week (earliest week with a match on/after
+            // today; falls back to the latest week) instead of the first
+            // match in sheet order, which is W1.
+            const targetWeek = pickCurrentWeek(filtered);
+            const inTargetWeek = filtered.filter(m => extractWeekNum(m) === targetWeek);
+            const pick = (inTargetWeek.length ? inTargetWeek : filtered)[0];
+            currentMatchId = pick ? String(pick.match_id) : '';
           }
 
           if (currentMatchId) { loadMatch(currentMatchId); schedulePoll(); }
@@ -1639,7 +1645,31 @@
     const m = String(match?.match_id||'').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
   }
   // Earliest week with a match on/after today; falls back to latest week.
-  // Compare YYYY-MM-DD strings to avoid UTC/local rollover bugs.
+  // Compare YYYY-MM-DD strings to avoid UTC/local rollover bugs. Tolerant
+  // of match_date being a JS Date, ISO string, MM/DD/YYYY, or "Sat Apr
+  // 11 2026 …" — getOpenMatchesForScoreEntryV5 hands back raw cell values.
+  function matchDateIsoStr_(v) {
+    if (!v) return '';
+    if (v instanceof Date && !isNaN(v.getTime())) {
+      return v.getFullYear() + '-' +
+        String(v.getMonth()+1).padStart(2,'0') + '-' +
+        String(v.getDate()).padStart(2,'0');
+    }
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+      const [mo, da, yr] = s.split('/');
+      const y = yr.length === 2 ? '20' + yr : yr;
+      return y + '-' + mo.padStart(2, '0') + '-' + da.padStart(2, '0');
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0');
+    }
+    return '';
+  }
   function pickCurrentWeek(matches) {
     if (!matches || !matches.length) return 0;
     const t = new Date();
@@ -1650,7 +1680,7 @@
     for (const m of matches) {
       const w = extractWeekNum(m);
       if (!w) continue;
-      const dStr = String(m.match_date || '').slice(0, 10);
+      const dStr = matchDateIsoStr_(m.match_date);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dStr)) continue;
       if (!byWeek[w] || dStr < byWeek[w]) byWeek[w] = dStr;
     }
