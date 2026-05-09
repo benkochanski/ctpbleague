@@ -954,14 +954,19 @@
     const publicMatches = (__publicSiteData && __publicSiteData.matches) || [];
     const sourceMatches = publicMatches.length ? publicMatches : (allMatches || []);
 
-    // Only rotate through current-week matches that are actually playing
-    // (in_progress) or already done (completed). Hide not-yet-started
-    // matches — there's nothing to show until a score lands.
+    // Show current-week matches that are completed, in_progress, OR
+    // scheduled but already past their start time — scorekeepers don't
+    // always flip the status to in_progress when the first ball is hit,
+    // so we can't rely on it alone. start-time-based "underway" is more
+    // accurate for an at-venue display.
+    const now = Date.now();
     const others = sourceMatches.filter(m => {
       if (String(m.match_id) === String(currentMatch.match_id)) return false;
       if (curWeek && extractWeekNum(m) !== curWeek) return false;
       const status = String(m.status || '').trim().toLowerCase();
-      return status === 'in_progress' || status === 'completed';
+      if (status === 'in_progress' || status === 'completed') return true;
+      const startMs = matchStartMs_(m);
+      return startMs !== null && startMs <= now;
     });
 
     // Skip a full rebuild if the set of other matches hasn't changed —
@@ -1699,6 +1704,43 @@
     }
     return '';
   }
+  // Combine a match's date + start_time into an epoch ms, in the local
+  // (script) timezone. Tolerates publicdata's "h:mm AM/PM" string, raw
+  // Sheets time-only Date strings ("1899-12-30T15:00:00.000Z"), and
+  // anything Date can parse. Returns null when the start time can't be
+  // figured out.
+  function matchStartMs_(m) {
+    if (!m) return null;
+    const iso = matchDateIsoStr_(m.match_date);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+    const [y, mo, d] = iso.split('-').map(Number);
+
+    let hh = 0, mm = 0;
+    const t = m.start_time;
+    if (t instanceof Date && !isNaN(t.getTime())) {
+      hh = t.getHours(); mm = t.getMinutes();
+    } else {
+      const s = String(t || '').trim();
+      // "h[:mm] AM/PM" — the format publicdata returns
+      const ampm = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([AP]M)$/i);
+      if (ampm) {
+        hh = Number(ampm[1]) % 12;
+        if (/PM/i.test(ampm[3])) hh += 12;
+        mm = Number(ampm[2] || 0);
+      } else if (/^1899-12-30T(\d{2}):(\d{2})/.test(s)) {
+        // Sheets time-only cells serialize anchored to 1899-12-30 in UTC.
+        // The hours/minutes are wall-clock for Eastern, but coming through
+        // as UTC. Use UTC components so we don't lose the offset twice.
+        const dt = new Date(s);
+        if (!isNaN(dt.getTime())) { hh = dt.getUTCHours(); mm = dt.getUTCMinutes(); }
+      } else if (s) {
+        const dt = new Date(s);
+        if (!isNaN(dt.getTime())) { hh = dt.getHours(); mm = dt.getMinutes(); }
+      }
+    }
+    return new Date(y, mo - 1, d, hh, mm, 0).getTime();
+  }
+
   function pickCurrentWeek(matches) {
     if (!matches || !matches.length) return 0;
     const t = new Date();
