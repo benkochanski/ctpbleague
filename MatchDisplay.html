@@ -942,10 +942,22 @@
     const el = document.getElementById('otherMatchesBody');
     if (!el) return;
     const curWeek = extractWeekNum(currentMatch);
-    const others = (allMatches || []).filter(m =>
-      String(m.match_id) !== String(currentMatch.match_id) &&
-      (!curWeek || extractWeekNum(m) === curWeek)
-    );
+
+    // Source from publicdata when available so we can include completed
+    // matches alongside in-progress ones (allMatches comes from
+    // getOpenMatchesForScoreEntryV5 which filters completed out).
+    const publicMatches = (__publicSiteData && __publicSiteData.matches) || [];
+    const sourceMatches = publicMatches.length ? publicMatches : (allMatches || []);
+
+    // Only rotate through current-week matches that are actually playing
+    // (in_progress) or already done (completed). Hide not-yet-started
+    // matches — there's nothing to show until a score lands.
+    const others = sourceMatches.filter(m => {
+      if (String(m.match_id) === String(currentMatch.match_id)) return false;
+      if (curWeek && extractWeekNum(m) !== curWeek) return false;
+      const status = String(m.status || '').trim().toLowerCase();
+      return status === 'in_progress' || status === 'completed';
+    });
 
     // Skip a full rebuild if the set of other matches hasn't changed —
     // we want the existing <img> elements to stay in the DOM so they don't reload.
@@ -956,7 +968,19 @@
       liveScoresState.sig = sig;
 
       if (!others.length) {
-        el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>No other matches this week.</div>';
+        // Distinguish "nothing scheduled" from "scheduled but not started" so
+        // the rail explains its silence on Saturday morning when the first
+        // match is the only one in progress.
+        const hasOtherScheduledThisWeek = sourceMatches.some(m => {
+          if (String(m.match_id) === String(currentMatch.match_id)) return false;
+          if (curWeek && extractWeekNum(m) !== curWeek) return false;
+          const s = String(m.status || '').trim().toLowerCase();
+          return s === 'scheduled';
+        });
+        const msg = hasOtherScheduledThisWeek
+          ? 'Other matches haven\'t started yet.'
+          : 'No other matches this week.';
+        el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>' + msg + '</div>';
         if (liveScoresState.rotateTimer) { clearInterval(liveScoresState.rotateTimer); liveScoresState.rotateTimer = null; }
         return;
       }
