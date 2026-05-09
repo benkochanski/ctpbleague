@@ -1778,6 +1778,57 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* Page shell */
 .sc-page { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
+/* Print button (Match Cast / Match Report / Match Preview selector bars) */
+.sc-print-btn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  letter-spacing: .04em;
+  background: var(--navy, #081f43); color: #fff;
+  border: 1px solid var(--navy, #081f43);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.sc-print-btn:hover { opacity: .9; }
+.sc-print-btn:focus { outline: 2px solid var(--gold, #ffd22e); outline-offset: 1px; }
+
+/* ── Print stylesheet ───────────────────────────────────────────────────── */
+@media print {
+  /* Show only the active scorecard page; strip the hub chrome and all
+     UI controls so the printout is just the match content. We hide
+     specific siblings of #app rather than #app itself, so the .sc-page
+     descendants stay rendered. */
+  body, html { background: #fff !important; height: auto !important; overflow: visible !important; }
+  .app-header, .app-sidebar, .app-backdrop, .app-frame,
+  .sc-selector-bar, .sc-sidebar, .sc-live-badge,
+  #iframeLoader, .iframe-loader, #toggleSidebar, #appFrame {
+    display: none !important;
+  }
+  /* Strip the layout grid so .app-main fills the page. */
+  .app, #app, .app-main { display: block !important; height: auto !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+  /* Make sure only the active sc-page prints — inactive ones are hidden
+     via inline style="display:none" already, that wins over our rule. */
+  .sc-page { height: auto !important; overflow: visible !important; }
+  .sc-body { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+  .sc-main { padding: 0 !important; height: auto !important; max-width: none !important; }
+
+  /* Scoreboard table — keep colors readable on paper */
+  .sc-card { box-shadow: none !important; border: 1px solid #888 !important; page-break-inside: avoid; margin-bottom: 14px !important; }
+  .sc-table th, .sc-table td { color: #000 !important; }
+  .sc-meta-bar { color: #000 !important; padding: 8px 0 !important; font-size: 11pt; page-break-after: avoid; }
+
+  /* Round + game cards: keep each round on one page when possible */
+  .round-block { page-break-inside: avoid; box-shadow: none !important; border: 1px solid #888 !important; margin-bottom: 10px !important; }
+  .round-head { background: #f3f3f3 !important; color: #000 !important; }
+  .game-stack .gcard, .gcard { box-shadow: none !important; border: 1px solid #aaa !important; }
+
+  /* Force-print background colors so logos / score backgrounds show */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  @page { margin: 0.5in; size: letter; }
+}
+
 /* Selector bar */
 .sc-selector-bar {
   display: flex; align-items: center; gap: 12px;
