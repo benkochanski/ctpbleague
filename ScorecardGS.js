@@ -107,8 +107,16 @@ function getScorecardDataV2(matchId) {
     .map(game => {
       const homeSubmitted = !!(game.lineup_submitted_home === true || game.lineup_submitted_home === 'TRUE' || game.lineup_submitted_home === 'true' || game.lineup_submitted_home === 1);
       const awaySubmitted = !!(game.lineup_submitted_away === true || game.lineup_submitted_away === 'TRUE' || game.lineup_submitted_away === 'true' || game.lineup_submitted_away === 1);
+      // Court numbers entered via scorekeeping live on the Matches sheet
+      // as court_1..court_4 (one per game position). Override the per-game
+      // default (game_number_in_round) when a real court was entered.
+      const pos = Number(game.game_number_in_round || 0);
+      const matchCourt = pos >= 1 && pos <= 4
+        ? String(match['court_' + pos] || '').trim()
+        : '';
       return {
         ...game,
+        court_number:       matchCourt || game.court_number,
         home_player_1_id:   homeSubmitted ? game.home_player_1_id : '',
         home_player_2_id:   homeSubmitted ? game.home_player_2_id : '',
         away_player_1_id:   awaySubmitted ? game.away_player_1_id : '',
