@@ -887,7 +887,12 @@
     if (!sel) return;
     currentDivisionKey = sel.value;
     const filtered = matchesForDiv(currentDivisionKey);
-    currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+    // Mirror the initial-load logic: pick the current week's match for this
+    // division, not whatever's first in sheet order (which is W1).
+    const targetWeek = pickCurrentWeek(filtered);
+    const inTargetWeek = filtered.filter(m => extractWeekNum(m) === targetWeek);
+    const pick = (inTargetWeek.length ? inTargetWeek : filtered)[0];
+    currentMatchId = pick ? String(pick.match_id) : '';
     if (currentMatchId) loadMatch(currentMatchId);
     else setMain(emptyHtml('🏓', 'No matches for this division.'));
   }
