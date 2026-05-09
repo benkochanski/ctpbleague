@@ -838,7 +838,7 @@ function getPublicDashboardData() {
  */
 function getPublicSiteData_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get('publicSiteData_v5');
+  const cached = cache.get('publicSiteData_v7');
   if (cached) return JSON.parse(cached);
 
   const str = (v) => String(v == null ? '' : v).trim();
@@ -890,14 +890,11 @@ function getPublicSiteData_() {
     return String(v).trim();
   };
 
-  // Normalize match_date to ISO yyyy-mm-dd. Format in the SPREADSHEET's
-  // timezone, not the script's — Sheets anchors a "2026-04-11" cell to
-  // midnight in the spreadsheet TZ, so formatting in any other zone (incl.
-  // the script TZ when they differ) shifts the calendar day.
-  const sheetTz =
-    SpreadsheetApp.getActive().getSpreadsheetTimeZone() ||
-    Session.getScriptTimeZone() ||
-    'America/New_York';
+  // Normalize match_date to ISO yyyy-mm-dd. Use a DST-aware TZ name —
+  // SpreadsheetApp.getSpreadsheetTimeZone() may return a fixed offset like
+  // "GMT-05:00" which silently shifts April dates back a day across the
+  // DST boundary.
+  const sheetTz = 'America/New_York';
   const toIsoDate = (v) => {
     if (!v) return '';
     if (v instanceof Date) {
@@ -933,7 +930,11 @@ function getPublicSiteData_() {
     else                 matchTallies[mid].away += 1;
   });
 
-  const matches = getObjects_(SHEETS.MATCHES).map(m => {
+  // Use display values for matches so match_date comes back as the cell's
+  // displayed string (e.g. "4/11/2026") and toIsoDate's regex handler
+  // converts it cleanly to ISO without going through a Date object whose
+  // epoch can drift across a fixed-offset spreadsheet TZ.
+  const matches = getDisplayObjects_(SHEETS.MATCHES).map(m => {
     const matchId = str(m.match_id);
     const homeId  = str(m.home_team_id);
     const awayId  = str(m.away_team_id);
@@ -1009,7 +1010,7 @@ function getPublicSiteData_() {
     standings
   };
 
-  cache.put('publicSiteData_v5', JSON.stringify(payload), 60);
+  cache.put('publicSiteData_v7', JSON.stringify(payload), 60);
   return payload;
 }
 
