@@ -144,7 +144,8 @@
   let _hscState = null;
   window._cpblHscStep = function(dir) {
     if (!_hscState) return;
-    _hscState.idx = Math.max(0, Math.min(_hscState.keys.length - 1, _hscState.idx + dir));
+    const len = _hscState.keys.length;
+    _hscState.idx = (_hscState.idx + dir + len) % len;
     _hscApply();
   };
   function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
@@ -155,11 +156,7 @@
     const d = agg[key];
 
     const lbl = document.getElementById('hsc-div-label');
-    const prev = document.getElementById('hsc-prev');
-    const next = document.getElementById('hsc-next');
-    if (lbl)  lbl.textContent  = labels[key];
-    if (prev) prev.disabled = idx === 0;
-    if (next) next.disabled = idx === keys.length - 1;
+    if (lbl) lbl.textContent = labels[key];
 
     // Hero match record
     const cpMwL = d.cpMw > d.dillMw, dillMwL = d.dillMw > d.cpMw;
@@ -432,22 +429,20 @@
           </button>`;
 
         statsEl.innerHTML = `
-          <h2 class="hsc-heading">2026 Spring Season</h2>
           <div class="home-series-wrap">
             <div class="series-main">
                 <div class="series-hero">
                   <div class="sh-team">
                     <div class="sh-logo-big">${logoImg(cpClub, 'CAMP PB')}</div>
-                    <div class="sh-team-name">${escapeHtml(cpClub.club_name)}</div>
                   </div>
                   <div class="sh-center">
+                    <span class="sh-heading">2026 Spring Season</span>
                     <span class="sh-series-lbl">Match Record</span>
                     <span class="sh-score" id="hsc-mw-score">—</span>
                     <span class="sh-leader" id="hsc-mw-leader"></span>
                   </div>
                   <div class="sh-team">
                     <div class="sh-logo-big">${logoImg(dillClub, 'TEAM DILL')}</div>
-                    <div class="sh-team-name">${escapeHtml(dillClub.club_name)}</div>
                   </div>
                 </div>
                 <div class="gt-tiles hsc-with-stepper">
