@@ -353,60 +353,6 @@
           ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}">`
           : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
 
-        // Schedule side panel: matches between a CP team and a Dill team
-        const seriesMatches = (data.matches || [])
-          .filter(m => (cpIds.has(m.home_team_id) && dillIds.has(m.away_team_id)) ||
-                       (dillIds.has(m.home_team_id) && cpIds.has(m.away_team_id)))
-          .map(m => ({ ...m, _mDate: parseMatchDate(m) }))
-          .sort((a, b) => {
-            if (!a._mDate && !b._mDate) return 0;
-            if (!a._mDate) return 1; if (!b._mDate) return -1;
-            return a._mDate - b._mDate;
-          });
-
-        // Group by week (Monday)
-        const monOf = d => {
-          const t = new Date(d); const day = t.getDay();
-          t.setDate(t.getDate() + (day === 0 ? -6 : 1 - day));
-          t.setHours(0,0,0,0);
-          return t;
-        };
-        const byWeek = new Map();
-        seriesMatches.forEach(m => {
-          const wk = m._mDate ? monOf(m._mDate).getTime() : 0;
-          if (!byWeek.has(wk)) byWeek.set(wk, []);
-          byWeek.get(wk).push(m);
-        });
-        const weekKeys = [...byWeek.keys()].sort((a,b) => a - b);
-
-        const schedRows = weekKeys.length ? weekKeys.map((wk, idx) => {
-          const matches = byWeek.get(wk);
-          let cpW = 0, dillW = 0, played = 0;
-          matches.forEach(m => {
-            if (!isCompleted(m) || m.home_rounds_won == null) return;
-            played++;
-            const hW = Number(m.home_rounds_won || 0), aW = Number(m.away_rounds_won || 0);
-            if (hW === aW) return;
-            const cpIsHome = cpIds.has(m.home_team_id);
-            const cpWon = cpIsHome ? hW > aW : aW > hW;
-            if (cpWon) cpW++; else dillW++;
-          });
-          const wkLabel = `Week ${idx + 1}`;
-          let result;
-          if (played === 0) {
-            result = `<span class="ms-result upcoming">Upcoming</span>`;
-          } else {
-            const cpL = cpW > dillW, dillL = dillW > cpW;
-            const winner = cpL ? 'Camp' : dillL ? 'Dill' : '';
-            const score  = `${cpW}–${dillW}`;
-            result = `<span class="ms-result">${winner ? `<span class="winner">${escapeHtml(winner)}</span> ` : ''}${escapeHtml(score)}</span>`;
-          }
-          return `<div class="ms-mrow">
-            <span class="ms-div">${escapeHtml(wkLabel)}</span>
-            ${result}
-          </div>`;
-        }).join('') : `<div class="ms-empty">No matches scheduled</div>`;
-
         const tile = (label, cpV, dillV, cpL, dillL) => `
           <div class="gt-tile">
             <div class="gt-mini-banner">
@@ -432,8 +378,7 @@
         statsEl.innerHTML = `
           <h2 class="hsc-heading">2026 Spring Season</h2>
           <div class="home-series-wrap">
-            <div class="series-with-side">
-              <div class="series-main">
+            <div class="series-main">
                 <div class="series-hero">
                   <div class="sh-team">
                     <div class="sh-logo-big">${logoImg(cpClub, 'CAMP PB')}</div>
@@ -453,11 +398,6 @@
                   ${tile('Games Won',      totals.cpGw, totals.dillGw, cpGwL, dillGwL)}
                   ${tile('Points Scored',  totals.cpPp, totals.dillPp, cpPpL, dillPpL)}
                 </div>
-              </div>
-              <aside class="series-side">
-                <div class="ms-hd">Schedule</div>
-                ${schedRows}
-              </aside>
             </div>
           </div>`;
 
