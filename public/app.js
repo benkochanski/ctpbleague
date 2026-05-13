@@ -148,7 +148,7 @@
     _hscState.idx = (_hscState.idx + dir + len) % len;
     _hscApply();
   };
-  function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
+  function _hscFmt(v) { return String(v); }
   function _hscApply() {
     if (!_hscState) return;
     const { keys, labels, agg, idx } = _hscState;
