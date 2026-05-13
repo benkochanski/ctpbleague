@@ -449,18 +449,18 @@
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
-            <div class="hsc-hero">
-              <div class="hsc-hero-team">
+            <div class="hsc-logo-row">
+              <div class="hsc-logo-cell">
                 <div class="hsc-club-logo">${logoImg(cpClub, 'CAMP<br>PB')}</div>
               </div>
-              <div class="hsc-hero-center">
-                <div class="hsc-hero-eyebrow">Match Wins</div>
-                <div class="hsc-hero-score"><span id="hsc-cp-mw">—</span> – <span id="hsc-dill-mw">—</span></div>
-                <div class="hsc-hero-status" id="hsc-mw-status"></div>
-              </div>
-              <div class="hsc-hero-team">
+              <div class="hsc-logo-cell">
                 <div class="hsc-club-logo">${logoImg(dillClub, 'TEAM<br>DILL')}</div>
               </div>
+            </div>
+            <div class="hsc-score-section">
+              <div class="hsc-hero-eyebrow">Match Wins</div>
+              <div class="hsc-hero-score"><span id="hsc-cp-mw">—</span> – <span id="hsc-dill-mw">—</span></div>
+              <div class="hsc-hero-status" id="hsc-mw-status"></div>
             </div>
             <div class="hsc-stat-strip">
               <div class="hsc-stat-tile">
