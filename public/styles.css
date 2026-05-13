@@ -2039,7 +2039,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: stretch;
 }
 .home-series-wrap .gt-tile {
-  padding: 26px 16px 12px; min-width: 0; background: var(--panel);
+  padding: 14px 22px 20px; min-width: 0; background: var(--panel);
   display: flex; align-items: center;
 }
 .home-series-wrap .gt-type-lbl {
@@ -2056,6 +2056,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 12px; border: 1.5px solid var(--border-s);
   background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13); overflow: hidden;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transform: translateY(10px);
 }
 .home-series-wrap .gt-mini-logo img { height: 100% !important; width: auto !important; max-width: none !important; object-fit: cover !important; display: block; }
 .home-series-wrap .gt-score-col { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
