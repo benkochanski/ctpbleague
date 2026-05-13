@@ -149,41 +149,75 @@
     _hscApply();
   };
   function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
+  function _hscClubShort(club) {
+    const n = (club?.club_name || '').toLowerCase();
+    if (n.includes('camp')) return 'Camp';
+    if (n.includes('dill')) return 'Dill';
+    return (club?.club_name || '').split(' ')[0] || '?';
+  }
+  function _hscLogoImg(club, fb) {
+    if (club?.logo_url) {
+      const safeUrl = String(club.logo_url).replace(/"/g, '&quot;');
+      const safeName = String(club.club_name || '').replace(/[<>&"]/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[c]));
+      return `<img src="${safeUrl}" alt="${safeName}">`;
+    }
+    return `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
+  }
   function _hscApply() {
     if (!_hscState) return;
-    const { keys, labels, agg, idx } = _hscState;
+    const { keys, labels, agg, idx, cpClub, dillClub } = _hscState;
     const key = keys[idx];
     const d = agg[key];
 
     const lbl = document.getElementById('hsc-div-label');
     if (lbl) lbl.textContent = labels[key];
 
-    // Hero match record
+    // ── Hero: leader always on the left ──
     const cpMwL = d.cpMw > d.dillMw, dillMwL = d.dillMw > d.cpMw;
+    const tied  = !cpMwL && !dillMwL;
+    const leftClub  = dillMwL ? dillClub : cpClub;
+    const rightClub = dillMwL ? cpClub  : dillClub;
+    const leftMw    = dillMwL ? d.dillMw : d.cpMw;
+    const rightMw   = dillMwL ? d.cpMw   : d.dillMw;
+
+    const leftLogoEl  = document.getElementById('hsc-hero-left');
+    const rightLogoEl = document.getElementById('hsc-hero-right');
+    if (leftLogoEl)  leftLogoEl.innerHTML  = _hscLogoImg(leftClub,  _hscClubShort(leftClub));
+    if (rightLogoEl) rightLogoEl.innerHTML = _hscLogoImg(rightClub, _hscClubShort(rightClub));
+
     const heroEl = document.getElementById('hsc-mw-score');
     if (heroEl) {
-      heroEl.innerHTML = `${cpMwL ? '<em>' : ''}${d.cpMw}${cpMwL ? '</em>' : ''} – ${dillMwL ? '<em>' : ''}${d.dillMw}${dillMwL ? '</em>' : ''}`;
+      heroEl.innerHTML = tied
+        ? `${leftMw} – ${rightMw}`
+        : `<em>${leftMw}</em> – ${rightMw}`;
     }
     const leadEl = document.getElementById('hsc-mw-leader');
-    if (leadEl) leadEl.textContent = cpMwL ? 'Camp Leads' : dillMwL ? 'Dill Leads' : 'Series Tied';
+    if (leadEl) leadEl.textContent = tied ? 'Series Tied' : `${_hscClubShort(leftClub)} Leads`;
 
-    // Tiles
-    const setTile = (stat, cpV, dillV) => {
-      const cpEl   = document.getElementById(`hsc-${stat}-cp`);
-      const dillEl = document.getElementById(`hsc-${stat}-dill`);
-      const cpDiff = document.getElementById(`hsc-${stat}-cpdiff`);
-      const dillDiff = document.getElementById(`hsc-${stat}-dilldiff`);
-      if (!cpEl) return;
-      const cpL = cpV > dillV, dillL = dillV > cpV;
-      cpEl.textContent   = _hscFmt(cpV);
-      dillEl.textContent = _hscFmt(dillV);
-      cpEl.className     = 'gt-snum' + (cpL   ? ' leader' : '');
-      dillEl.className   = 'gt-snum' + (dillL ? ' leader' : '');
-      cpDiff.textContent   = cpL   ? `+${_hscFmt(cpV - dillV)}` : '';
-      dillDiff.textContent = dillL ? `+${_hscFmt(dillV - cpV)}` : '';
+    // ── Sentence-style tiles ──
+    const updateSentence = (stat, cpV, dillV, verb, noun, mode) => {
+      const logoEl = document.getElementById(`hsc-${stat}-logo`);
+      const textEl = document.getElementById(`hsc-${stat}-text`);
+      if (!logoEl || !textEl) return;
+      const total = cpV + dillV;
+      const isTied = cpV === dillV;
+      const leaderClub = cpV >= dillV ? cpClub : dillClub;
+      const leadV = Math.max(cpV, dillV);
+      const lossV = Math.min(cpV, dillV);
+      const pct   = total > 0 ? Math.round((leadV / total) * 100) : 0;
+      const diff  = leadV - lossV;
+
+      logoEl.innerHTML = _hscLogoImg(leaderClub, _hscClubShort(leaderClub));
+      if (isTied || total === 0) {
+        textEl.innerHTML = `tied at <strong>${_hscFmt(cpV)}</strong> ${noun}`;
+      } else if (mode === 'diff') {
+        textEl.innerHTML = `${verb} <strong>${pct}%</strong> of the ${noun}, <strong>${_hscFmt(diff)}</strong> more`;
+      } else {
+        textEl.innerHTML = `${verb} <strong>${pct}%</strong> of the ${noun}, <strong>${_hscFmt(leadV)} – ${_hscFmt(lossV)}</strong>`;
+      }
     };
-    setTile('gw', d.cpGw, d.dillGw);
-    setTile('pp', d.cpPp, d.dillPp);
+    updateSentence('gw', d.cpGw, d.dillGw, 'has won',    'games',  'record');
+    updateSentence('pp', d.cpPp, d.dillPp, 'has scored', 'points', 'diff');
   }
 
   function fetchPublicData() {
@@ -398,31 +432,14 @@
             agg[s.division_id][`${pfx}Pp`] += s.points_for || 0;
           }
         });
-        _hscState = { keys, labels, agg, idx: 0 };
-
-        const logoImg = (club, fb) => club?.logo_url
-          ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}">`
-          : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
+        _hscState = { keys, labels, agg, idx: 0, cpClub, dillClub };
 
         const tile = (stat, label) => `
-          <div class="gt-tile">
-            <div class="gt-mini-banner">
-              <div class="gt-mini-logo">${logoImg(cpClub, 'CP')}</div>
-              <div class="gt-score-col">
-                <span class="gt-type-lbl">${label}</span>
-                <div class="gt-score-nums">
-                  <div class="gt-score-side"><div class="gt-snum-wrap">
-                    <span class="gt-snum" id="hsc-${stat}-cp">—</span>
-                    <span class="gt-diff" id="hsc-${stat}-cpdiff"></span>
-                  </div></div>
-                  <div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div>
-                  <div class="gt-score-side"><div class="gt-snum-wrap">
-                    <span class="gt-snum" id="hsc-${stat}-dill">—</span>
-                    <span class="gt-diff" id="hsc-${stat}-dilldiff"></span>
-                  </div></div>
-                </div>
-              </div>
-              <div class="gt-mini-logo">${logoImg(dillClub, 'DL')}</div>
+          <div class="gt-tile hsc-tile">
+            <div class="gt-type-lbl">${label}</div>
+            <div class="hsc-sentence">
+              <div class="hsc-sentence-logo" id="hsc-${stat}-logo"></div>
+              <div class="hsc-sentence-text" id="hsc-${stat}-text"></div>
             </div>
           </div>`;
 
@@ -436,7 +453,7 @@
             <div class="series-main">
                 <div class="series-hero">
                   <div class="sh-team">
-                    <div class="sh-logo-big">${logoImg(cpClub, 'CAMP PB')}</div>
+                    <div class="sh-logo-big" id="hsc-hero-left"></div>
                   </div>
                   <div class="sh-center">
                     <span class="sh-heading">2026 Spring Season</span>
@@ -445,7 +462,7 @@
                     <span class="sh-leader" id="hsc-mw-leader"></span>
                   </div>
                   <div class="sh-team">
-                    <div class="sh-logo-big">${logoImg(dillClub, 'TEAM DILL')}</div>
+                    <div class="sh-logo-big" id="hsc-hero-right"></div>
                   </div>
                 </div>
                 <div class="gt-tiles hsc-with-stepper">
