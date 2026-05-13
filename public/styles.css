@@ -2039,7 +2039,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: stretch;
 }
 .home-series-wrap .gt-tile {
-  padding: 14px 10px 20px; min-width: 0; background: var(--panel);
+  padding: 26px 16px 12px; min-width: 0; background: var(--panel);
   display: flex; align-items: center;
 }
 .home-series-wrap .gt-type-lbl {
