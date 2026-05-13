@@ -1996,7 +1996,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @keyframes spinner-rot { to { transform: rotate(360deg); } }
 
 /* ==========================================================================
-   Home Stats Card
+   Home Stats Card — Club Series (Season Stats layout)
    ========================================================================== */
 .hsc-heading {
   font-family: 'Bebas Neue', sans-serif;
@@ -2005,102 +2005,69 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(90deg, var(--league-navy) 0%, var(--league-blue) 50%, var(--league-green) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hsc-card {
+.home-series-wrap {
+  border-radius: 18px; overflow: hidden; box-shadow: 0 14px 40px rgba(8,30,67,.22);
+  margin-bottom: 24px;
+}
+.home-series-wrap .series-with-side { display: grid; grid-template-columns: minmax(0,1fr) 200px; }
+.home-series-wrap .series-main { min-width: 0; background: var(--panel); }
+
+/* ── Hero ── */
+.home-series-wrap .series-hero {
   background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 48%, #0d5229 100%);
-  border-radius: 18px; box-shadow: 0 14px 40px rgba(8,30,67,.22);
-  overflow: hidden; margin-bottom: 24px;
+  padding: 28px 24px; display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 16px;
 }
-
-/* ── Stepper header ── */
-.hsc-header {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  padding: 12px 20px 0;
-}
-.hsc-step-btn {
-  background: none; border: 1.5px solid rgba(255,255,255,.2); color: rgba(255,255,255,.6);
-  font-family: inherit; cursor: pointer; width: 28px; height: 28px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; transition: all .13s; padding: 0;
-}
-.hsc-step-btn:hover { border-color: rgba(255,255,255,.5); color: #fff; }
-.hsc-step-btn:disabled { opacity: .25; cursor: default; }
-.hsc-step-label {
-  font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: rgba(255,255,255,.6); min-width: 80px; text-align: center;
-}
-
-/* ── Logo row: two equal columns ── */
-.hsc-logo-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-}
-.hsc-logo-cell {
-  padding: 20px 20px 16px; display: flex; justify-content: center; align-items: center;
-}
-.hsc-logo-cell:first-child { border-right: 1px solid rgba(255,255,255,.12); }
-.hsc-club-logo {
-  height: 120px; width: auto; max-width: 100%;
-  border-radius: 18px; background: #fff;
+.home-series-wrap .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.home-series-wrap .sh-logo-big {
+  height: 132px; width: auto; min-width: 88px; max-width: 220px; border-radius: 22px;
+  background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.32); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 10px 28px rgba(0,0,0,.32); overflow: hidden;
 }
-.hsc-club-logo img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
+.home-series-wrap .sh-logo-big img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
+.home-series-wrap .sh-team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; color: #fff; text-align: center; }
+.home-series-wrap .sh-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.home-series-wrap .sh-series-lbl { font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
+.home-series-wrap .sh-score { font-family: 'Bebas Neue', sans-serif; font-size: 84px; line-height: 1; color: #fff; letter-spacing: -2px; white-space: nowrap; }
+.home-series-wrap .sh-score em { color: var(--league-gold); font-style: normal; }
+.home-series-wrap .sh-leader { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--league-gold); text-align: center; margin-top: 4px; }
 
-/* ── Score section ── */
-.hsc-score-section {
-  text-align: center; padding: 14px 24px 14px;
-  border-top: 1px solid rgba(255,255,255,.1);
-  border-bottom: 1px solid rgba(255,255,255,.1);
-}
-.hsc-hero-eyebrow {
-  font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
-  color: rgba(255,255,255,.4); margin-bottom: 4px;
-}
-.hsc-hero-score {
-  font-family: 'Bebas Neue', sans-serif; font-size: 80px; line-height: 1;
-  letter-spacing: -2px; white-space: nowrap; color: #fff;
-}
-.hsc-hero-score .leader { color: #ffd22e; }
-.hsc-hero-status {
-  font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(255,255,255,.35); margin-top: 4px;
-}
-.hsc-hero-status.has-leader { color: #ffd22e; }
+/* ── Game-type tiles ── */
+.home-series-wrap .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 2), minmax(0,1fr)); border-top: 1px solid var(--border-s); }
+.home-series-wrap .gt-tile { padding: 10px 14px; border-right: 1px solid var(--border-s); min-width: 0; }
+.home-series-wrap .gt-tile:last-child { border-right: none; }
+.home-series-wrap .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; white-space: nowrap; pointer-events: none; color: var(--league-navy); }
+.home-series-wrap .gt-mini-banner { display: grid; grid-template-columns: 56px minmax(0,1fr) 56px; align-items: center; gap: 4px; min-width: 0; }
+.home-series-wrap .gt-mini-logo { width: 56px; height: 50px; border-radius: 12px; border: 1.5px solid var(--border-s); background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.home-series-wrap .gt-mini-logo img { width: auto !important; height: 100% !important; object-fit: contain !important; }
+.home-series-wrap .gt-score-col { position: relative; height: 50px; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.home-series-wrap .gt-score-nums { display: flex; align-items: flex-start; gap: 4px; }
+.home-series-wrap .gt-score-side { display: flex; flex-direction: column; align-items: center; min-width: 32px; }
+.home-series-wrap .gt-snum-wrap { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; min-width: 32px; }
+.home-series-wrap .gt-sdash-wrap { height: 50px; display: flex; align-items: center; }
+.home-series-wrap .gt-snum { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 900; line-height: 1; color: var(--muted); }
+.home-series-wrap .gt-snum.leader { color: var(--ok); }
+.home-series-wrap .gt-sdash { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700; color: var(--border); line-height: 1; }
+.home-series-wrap .gt-diff { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 800; color: var(--ok); white-space: nowrap; }
 
-/* ── Stat tiles strip ── */
-.hsc-stat-strip {
-  display: grid; grid-template-columns: 1fr 1fr;
-  border-top: 1px solid rgba(255,255,255,.1);
+/* ── Schedule side panel ── */
+.home-series-wrap .series-side {
+  background: linear-gradient(180deg, var(--league-navy) 0%, #0d5229 100%);
+  padding: 14px; display: flex; flex-direction: column; gap: 0;
+  border-left: 1px solid rgba(255,255,255,.10); min-width: 0; overflow: hidden;
 }
-.hsc-stat-tile {
-  padding: 12px 14px 14px; border-right: 1px solid rgba(255,255,255,.08);
-}
-.hsc-stat-tile:last-child { border-right: none; }
-.hsc-tile-banner {
-  display: grid; grid-template-columns: 44px minmax(0,1fr) 44px;
-  align-items: center; gap: 4px; margin-bottom: 4px;
-}
-.hsc-mini-logo {
-  width: 44px; height: 38px; border-radius: 10px; background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,.22); overflow: hidden;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.hsc-mini-logo img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
-.hsc-tile-label {
-  font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(255,255,255,.4); text-align: center;
-}
-.hsc-tile-score-row {
-  display: flex; align-items: center; justify-content: center; gap: 5px; position: relative;
-}
-.hsc-tile-num {
-  font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 900;
-  line-height: 1; color: rgba(255,255,255,.55); transition: color .2s; min-width: 32px; text-align: center;
-}
-.hsc-tile-num.leader { color: #ffd22e; }
-.hsc-tile-dash {
-  font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700;
-  color: rgba(255,255,255,.2); line-height: 1;
-}
-.hsc-tile-diff {
-  font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 800;
-  color: rgba(255,210,46,.6); text-align: center; margin-top: 1px; min-height: 13px;
+.home-series-wrap .ms-hd { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1.4px; color: var(--league-gold); padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.18); margin-bottom: 6px; }
+.home-series-wrap .ms-week { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.10); }
+.home-series-wrap .ms-week:last-child { border-bottom: none; }
+.home-series-wrap .ms-week-hd { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .8px; color: var(--league-gold); margin-bottom: 4px; }
+.home-series-wrap .ms-mrow { display: grid; grid-template-columns: 28px 1fr; gap: 6px; padding: 2px 4px; align-items: baseline; }
+.home-series-wrap .ms-div { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55); }
+.home-series-wrap .ms-result { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.92); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-series-wrap .ms-result .winner { color: var(--league-gold); font-weight: 700; }
+.home-series-wrap .ms-result.upcoming { color: rgba(255,255,255,.35); }
+.home-series-wrap .ms-empty { color: rgba(255,255,255,.55); font-size: 12px; padding: 8px 4px; }
+
+@media (max-width: 700px) {
+  .home-series-wrap .series-with-side { grid-template-columns: 1fr; }
+  .home-series-wrap .series-side { border-left: none; border-top: 1px solid rgba(255,255,255,.10); }
 }

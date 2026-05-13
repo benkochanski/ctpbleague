@@ -140,72 +140,6 @@
   let _mcPollTimer = null;
   let _scBranding = null;
   let _scBrandingPromise = null;
-  let _hscData = null;
-  let _hscIdx  = 0;
-
-  window._cpblHscStep = function(dir) {
-    if (!_hscData) return;
-    _hscIdx = Math.max(0, Math.min(_hscData.keys.length - 1, _hscIdx + dir));
-    _hscApply();
-  };
-
-  function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
-
-  function _hscUpdateTile(stat, cpV, dillV, cls) {
-    const cpEl   = document.getElementById(`hsc-cp-${stat}`);
-    const dillEl = document.getElementById(`hsc-dill-${stat}`);
-    const diffEl = document.getElementById(`hsc-diff-${stat}`);
-    if (!cpEl) return;
-    const cpLeads = cpV > dillV, dillLeads = dillV > cpV;
-    cpEl.textContent   = _hscFmt(cpV);
-    dillEl.textContent = _hscFmt(dillV);
-    cpEl.className     = `${cls}` + (cpLeads   ? ' leader' : '');
-    dillEl.className   = `${cls}` + (dillLeads ? ' leader' : '');
-    if (diffEl) {
-      const diff = Math.abs(cpV - dillV);
-      diffEl.textContent = diff > 0 ? `+${_hscFmt(diff)}` : '';
-    }
-  }
-
-  function _hscApply() {
-    if (!_hscData) return;
-    const key = _hscData.keys[_hscIdx];
-    const d   = _hscData.agg[key];
-
-    const labelEl = document.getElementById('hsc-step-label');
-    const prevBtn = document.getElementById('hsc-prev');
-    const nextBtn = document.getElementById('hsc-next');
-    if (labelEl) labelEl.textContent = _hscData.labels[key];
-    if (prevBtn) prevBtn.disabled = _hscIdx === 0;
-    if (nextBtn) nextBtn.disabled = _hscIdx === _hscData.keys.length - 1;
-
-    // Hero: match wins
-    const cpMwEl   = document.getElementById('hsc-cp-mw');
-    const dillMwEl = document.getElementById('hsc-dill-mw');
-    const statusEl = document.getElementById('hsc-mw-status');
-    if (cpMwEl) {
-      const cpLeads = d.cpMw > d.dillMw, dillLeads = d.dillMw > d.cpMw;
-      const diff = Math.abs(d.cpMw - d.dillMw);
-      cpMwEl.className   = cpLeads   ? 'leader' : '';
-      dillMwEl.className = dillLeads ? 'leader' : '';
-      cpMwEl.textContent   = String(d.cpMw);
-      dillMwEl.textContent = String(d.dillMw);
-      if (statusEl) {
-        if (diff === 0) {
-          statusEl.textContent = 'Tied';
-          statusEl.className = 'hsc-hero-status';
-        } else {
-          const who = cpLeads ? _hscData.cpShort : _hscData.dillShort;
-          statusEl.textContent = `${who} leads +${diff}`;
-          statusEl.className = 'hsc-hero-status has-leader';
-        }
-      }
-    }
-
-    // Stat tiles
-    _hscUpdateTile('gw', d.cpGw, d.dillGw, 'hsc-tile-num');
-    _hscUpdateTile('pp', d.cpPp, d.dillPp, 'hsc-tile-num');
-  }
 
   function fetchPublicData() {
     if (publicData) return Promise.resolve(publicData);
@@ -387,8 +321,8 @@
     };
 
     // ---- Stats card ----
-    if (statsEl.dataset.loaded !== '1') {
-      const clubs = data.clubs || [];
+    if (statsEl && statsEl.dataset.loaded !== '1') {
+      const clubs    = data.clubs || [];
       const cpClub   = clubs.find(c => (c.club_name || '').toLowerCase().includes('camp'));
       const dillClub = clubs.find(c => (c.club_name || '').toLowerCase().includes('dill'));
 
@@ -396,103 +330,142 @@
         const cpIds   = new Set((data.teams || []).filter(t => t.club_id === cpClub.club_id).map(t => t.team_id));
         const dillIds = new Set((data.teams || []).filter(t => t.club_id === dillClub.club_id).map(t => t.team_id));
 
-        const sortedDivs = (data.divisions || []).slice().sort((a,b) => (a.division_order||0) - (b.division_order||0));
-        const divKeys  = ['all', ...sortedDivs.map(d => d.division_id)];
-        const divLabels = { all: 'All Divs' };
-        sortedDivs.forEach(d => { divLabels[d.division_id] = d.division_name; });
-
-        const agg = {};
-        divKeys.forEach(k => { agg[k] = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 }; });
+        // Aggregate all-divisions totals
+        const totals = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 };
         (data.standings || []).forEach(s => {
-          const isCp   = cpIds.has(s.team_id);
-          const isDill = dillIds.has(s.team_id);
-          if (!isCp && !isDill) return;
-          const pfx = isCp ? 'cp' : 'dill';
-          agg.all[`${pfx}Mw`] += s.match_wins  || 0;
-          agg.all[`${pfx}Gw`] += s.games_won   || 0;
-          agg.all[`${pfx}Pp`] += s.points_for  || 0;
-          if (agg[s.division_id]) {
-            agg[s.division_id][`${pfx}Mw`] += s.match_wins || 0;
-            agg[s.division_id][`${pfx}Gw`] += s.games_won  || 0;
-            agg[s.division_id][`${pfx}Pp`] += s.points_for || 0;
+          if (cpIds.has(s.team_id)) {
+            totals.cpMw += s.match_wins || 0; totals.cpGw += s.games_won || 0; totals.cpPp += s.points_for || 0;
+          } else if (dillIds.has(s.team_id)) {
+            totals.dillMw += s.match_wins || 0; totals.dillGw += s.games_won || 0; totals.dillPp += s.points_for || 0;
           }
         });
 
-        const shortName = name => {
-          const n = (name || '').toLowerCase();
-          if (n.includes('dill')) return 'Dill';
-          if (n.includes('camp')) return 'Camp';
-          return (name || '').split(' ')[0];
-        };
+        const fmt = v => v >= 1000 ? v.toLocaleString() : String(v);
 
-        _hscData = { keys: divKeys, labels: divLabels, agg,
-                     cpShort: shortName(cpClub.club_name),
-                     dillShort: shortName(dillClub.club_name) };
-        _hscIdx  = 0;
+        const cpMwL = totals.cpMw > totals.dillMw, dillMwL = totals.dillMw > totals.cpMw;
+        const cpGwL = totals.cpGw > totals.dillGw,  dillGwL = totals.dillGw > totals.cpGw;
+        const cpPpL = totals.cpPp > totals.dillPp,  dillPpL = totals.dillPp > totals.cpPp;
 
-        const logoImg = (club, fallback) => club?.logo_url
+        const mwScore  = `${cpMwL ? '<em>' : ''}${totals.cpMw}${cpMwL ? '</em>' : ''} – ${dillMwL ? '<em>' : ''}${totals.dillMw}${dillMwL ? '</em>' : ''}`;
+        const leaderTx = cpMwL ? 'Camp Leads' : dillMwL ? 'Dill Leads' : 'Series Tied';
+
+        const logoImg = (club, fb) => club?.logo_url
           ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}">`
-          : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fallback}</span>`;
+          : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
 
-        const miniLogo = (club, fallback) =>
-          `<div class="hsc-mini-logo">${logoImg(club, fallback)}</div>`;
+        // Schedule side panel: matches between a CP team and a Dill team
+        const seriesMatches = (data.matches || [])
+          .filter(m => (cpIds.has(m.home_team_id) && dillIds.has(m.away_team_id)) ||
+                       (dillIds.has(m.home_team_id) && cpIds.has(m.away_team_id)))
+          .map(m => ({ ...m, _mDate: parseMatchDate(m) }))
+          .sort((a, b) => {
+            if (!a._mDate && !b._mDate) return 0;
+            if (!a._mDate) return 1; if (!b._mDate) return -1;
+            return a._mDate - b._mDate;
+          });
 
-        statsEl.innerHTML = `
-          <h2 class="hsc-heading">2026 Spring Season</h2>
-          <div class="hsc-card">
-            <div class="hsc-header">
-              <button class="hsc-step-btn" id="hsc-prev" onclick="window._cpblHscStep(-1)" disabled>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <span class="hsc-step-label" id="hsc-step-label">All Divs</span>
-              <button class="hsc-step-btn" id="hsc-next" onclick="window._cpblHscStep(1)">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
-            <div class="hsc-logo-row">
-              <div class="hsc-logo-cell">
-                <div class="hsc-club-logo">${logoImg(cpClub, 'CAMP<br>PB')}</div>
-              </div>
-              <div class="hsc-logo-cell">
-                <div class="hsc-club-logo">${logoImg(dillClub, 'TEAM<br>DILL')}</div>
-              </div>
-            </div>
-            <div class="hsc-score-section">
-              <div class="hsc-hero-eyebrow">Match Wins</div>
-              <div class="hsc-hero-score"><span id="hsc-cp-mw">—</span> – <span id="hsc-dill-mw">—</span></div>
-              <div class="hsc-hero-status" id="hsc-mw-status"></div>
-            </div>
-            <div class="hsc-stat-strip">
-              <div class="hsc-stat-tile">
-                <div class="hsc-tile-banner">
-                  ${miniLogo(cpClub, 'CP')}
-                  <span class="hsc-tile-label">Games Won</span>
-                  ${miniLogo(dillClub, 'DL')}
+        // Group by week (Monday)
+        const monOf = d => {
+          const t = new Date(d); const day = t.getDay();
+          t.setDate(t.getDate() + (day === 0 ? -6 : 1 - day));
+          t.setHours(0,0,0,0);
+          return t;
+        };
+        const byWeek = new Map();
+        seriesMatches.forEach(m => {
+          const wk = m._mDate ? monOf(m._mDate).getTime() : 0;
+          if (!byWeek.has(wk)) byWeek.set(wk, []);
+          byWeek.get(wk).push(m);
+        });
+        const weekKeys = [...byWeek.keys()].sort((a,b) => a - b);
+
+        const schedRows = weekKeys.length ? weekKeys.map(wk => {
+          const wkLabel = wk
+            ? new Date(wk).toLocaleDateString('en-US', { month:'short', day:'numeric' })
+            : 'TBD';
+          const matches = byWeek.get(wk).slice().sort((a,b) => {
+            const ao = divsById[a.division_id]?.division_order || 0;
+            const bo = divsById[b.division_id]?.division_order || 0;
+            return ao - bo;
+          });
+          const rows = matches.map(m => {
+            const divShort = (divsById[m.division_id]?.division_name || '').replace('Division ', 'D');
+            if (isCompleted(m)) {
+              const cpIsHome = cpIds.has(m.home_team_id);
+              const hW = Number(m.home_rounds_won || 0), aW = Number(m.away_rounds_won || 0);
+              const cpWon = cpIsHome ? hW > aW : aW > hW;
+              const winner = (m.home_rounds_won != null) ? (cpWon ? 'Camp' : 'Dill') : '';
+              const score  = (m.home_rounds_won != null) ? `${hW}–${aW}` : '';
+              return `<div class="ms-mrow">
+                <span class="ms-div">${escapeHtml(divShort)}</span>
+                <span class="ms-result">${winner ? `<span class="winner">${escapeHtml(winner)}</span> ` : ''}${escapeHtml(score)}</span>
+              </div>`;
+            }
+            return `<div class="ms-mrow">
+              <span class="ms-div">${escapeHtml(divShort)}</span>
+              <span class="ms-result upcoming">—</span>
+            </div>`;
+          }).join('');
+          return `<div class="ms-week">
+            <div class="ms-week-hd">${escapeHtml(wkLabel)}</div>
+            ${rows}
+          </div>`;
+        }).join('') : `<div class="ms-empty">No matches scheduled</div>`;
+
+        const tile = (label, cpV, dillV, cpL, dillL) => `
+          <div class="gt-tile">
+            <div class="gt-mini-banner">
+              <div class="gt-mini-logo">${logoImg(cpClub, 'CP')}</div>
+              <div class="gt-score-col">
+                <span class="gt-type-lbl">${label}</span>
+                <div class="gt-score-nums">
+                  <div class="gt-score-side"><div class="gt-snum-wrap">
+                    <span class="gt-snum${cpL ? ' leader' : ''}">${fmt(cpV)}</span>
+                    ${cpL ? `<span class="gt-diff">+${fmt(cpV - dillV)}</span>` : ''}
+                  </div></div>
+                  <div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div>
+                  <div class="gt-score-side"><div class="gt-snum-wrap">
+                    <span class="gt-snum${dillL ? ' leader' : ''}">${fmt(dillV)}</span>
+                    ${dillL ? `<span class="gt-diff">+${fmt(dillV - cpV)}</span>` : ''}
+                  </div></div>
                 </div>
-                <div class="hsc-tile-score-row">
-                  <span class="hsc-tile-num" id="hsc-cp-gw">—</span>
-                  <span class="hsc-tile-dash">–</span>
-                  <span class="hsc-tile-num" id="hsc-dill-gw">—</span>
-                </div>
-                <div class="hsc-tile-diff" id="hsc-diff-gw"></div>
               </div>
-              <div class="hsc-stat-tile">
-                <div class="hsc-tile-banner">
-                  ${miniLogo(cpClub, 'CP')}
-                  <span class="hsc-tile-label">Points Scored</span>
-                  ${miniLogo(dillClub, 'DL')}
-                </div>
-                <div class="hsc-tile-score-row">
-                  <span class="hsc-tile-num" id="hsc-cp-pp">—</span>
-                  <span class="hsc-tile-dash">–</span>
-                  <span class="hsc-tile-num" id="hsc-dill-pp">—</span>
-                </div>
-                <div class="hsc-tile-diff" id="hsc-diff-pp"></div>
-              </div>
+              <div class="gt-mini-logo">${logoImg(dillClub, 'DL')}</div>
             </div>
           </div>`;
 
-        _hscApply();
+        statsEl.innerHTML = `
+          <h2 class="hsc-heading">2026 Spring Season</h2>
+          <div class="home-series-wrap">
+            <div class="series-with-side">
+              <div class="series-main">
+                <div class="series-hero">
+                  <div class="sh-team">
+                    <div class="sh-logo-big">${logoImg(cpClub, 'CAMP PB')}</div>
+                    <div class="sh-team-name">${escapeHtml(cpClub.club_name)}</div>
+                  </div>
+                  <div class="sh-center">
+                    <span class="sh-series-lbl">Season Series</span>
+                    <span class="sh-score">${mwScore}</span>
+                    <span class="sh-leader">${escapeHtml(leaderTx)}</span>
+                  </div>
+                  <div class="sh-team">
+                    <div class="sh-logo-big">${logoImg(dillClub, 'TEAM DILL')}</div>
+                    <div class="sh-team-name">${escapeHtml(dillClub.club_name)}</div>
+                  </div>
+                </div>
+                <div class="gt-tiles" style="--tile-cols:2">
+                  ${tile('Games Won',      totals.cpGw, totals.dillGw, cpGwL, dillGwL)}
+                  ${tile('Points Scored',  totals.cpPp, totals.dillPp, cpPpL, dillPpL)}
+                </div>
+              </div>
+              <aside class="series-side">
+                <div class="ms-hd">Schedule</div>
+                ${schedRows}
+              </aside>
+            </div>
+          </div>`;
+
         statsEl.dataset.loaded = '1';
       }
     }
