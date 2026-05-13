@@ -2000,15 +2000,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    ========================================================================== */
 .hsc-heading {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 30px; letter-spacing: .1em; text-transform: uppercase;
-  text-align: center; margin-bottom: 10px;
+  font-size: 28px; letter-spacing: .1em; text-transform: uppercase;
+  text-align: center; margin-bottom: 8px;
   background: linear-gradient(90deg, var(--league-navy) 0%, var(--league-blue) 50%, var(--league-green) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .hsc-card {
   background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 48%, #0d5229 100%);
   border-radius: 18px; box-shadow: 0 14px 40px rgba(8,30,67,.22);
-  overflow: hidden; max-width: 560px; margin: 0 auto 24px;
+  overflow: hidden; margin-bottom: 24px;
 }
 
 /* ── Stepper header ── */
