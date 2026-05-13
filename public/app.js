@@ -148,7 +148,7 @@
     _hscState.idx = (_hscState.idx + dir + len) % len;
     _hscApply();
   };
-  function _hscFmt(v) { return String(v); }
+  function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
   function _hscApply() {
     if (!_hscState) return;
     const { keys, labels, agg, idx } = _hscState;
@@ -378,8 +378,11 @@
         // Aggregate per-division + all-divisions totals
         const sortedDivs = (data.divisions || []).slice().sort((a,b) => (a.division_order||0) - (b.division_order||0));
         const keys   = ['all', ...sortedDivs.map(d => d.division_id)];
-        const labels = { all: 'All Divisions' };
-        sortedDivs.forEach(d => { labels[d.division_id] = d.division_name; });
+        const labels = { all: 'All' };
+        sortedDivs.forEach(d => {
+          const m = (d.division_name || '').match(/(\d+)/);
+          labels[d.division_id] = m ? m[1] : d.division_name;
+        });
         const agg = {};
         keys.forEach(k => { agg[k] = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 }; });
         (data.standings || []).forEach(s => {
@@ -448,9 +451,12 @@
                 <div class="gt-tiles hsc-with-stepper">
                   ${tile('gw', 'Games Won')}
                   <div class="hsc-div-step">
-                    ${arrow(-1, 'hsc-prev')}
-                    <span class="hsc-div-label" id="hsc-div-label">All Divisions</span>
-                    ${arrow(1, 'hsc-next')}
+                    <span class="hsc-div-step-eyebrow">Division</span>
+                    <div class="hsc-div-step-row">
+                      ${arrow(-1, 'hsc-prev')}
+                      <span class="hsc-div-label" id="hsc-div-label">All</span>
+                      ${arrow(1, 'hsc-next')}
+                    </div>
                   </div>
                   ${tile('pp', 'Points Scored')}
                 </div>
