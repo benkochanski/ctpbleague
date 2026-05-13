@@ -434,9 +434,8 @@
         });
         _hscState = { keys, labels, agg, idx: 0, cpClub, dillClub };
 
-        const tile = (stat, label) => `
+        const tile = (stat) => `
           <div class="gt-tile hsc-tile">
-            <div class="gt-type-lbl">${label}</div>
             <div class="hsc-sentence">
               <div class="hsc-sentence-logo" id="hsc-${stat}-logo"></div>
               <div class="hsc-sentence-text" id="hsc-${stat}-text"></div>
@@ -466,7 +465,7 @@
                   </div>
                 </div>
                 <div class="gt-tiles hsc-with-stepper">
-                  ${tile('gw', 'Games Won')}
+                  ${tile('gw')}
                   <div class="hsc-div-step">
                     <span class="hsc-div-step-eyebrow">Division</span>
                     <div class="hsc-div-step-row">
@@ -475,7 +474,7 @@
                       ${arrow(1, 'hsc-next')}
                     </div>
                   </div>
-                  ${tile('pp', 'Points Scored')}
+                  ${tile('pp')}
                 </div>
             </div>
           </div>`;
