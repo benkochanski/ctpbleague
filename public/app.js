@@ -140,6 +140,49 @@
   let _mcPollTimer = null;
   let _scBranding = null;
   let _scBrandingPromise = null;
+  let _hscData = null;
+  let _hscIdx  = 0;
+
+  window._cpblHscStep = function(dir) {
+    if (!_hscData) return;
+    _hscIdx = Math.max(0, Math.min(_hscData.keys.length - 1, _hscIdx + dir));
+    _hscApply();
+  };
+
+  function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
+
+  function _hscUpdatePair(stat, cpV, dillV) {
+    const cpLeads = cpV > dillV, dillLeads = dillV > cpV;
+    const diff = _hscFmt(Math.abs(cpV - dillV));
+    const cpNum   = document.getElementById(`hsc-cp-${stat}`);
+    const dillNum = document.getElementById(`hsc-dill-${stat}`);
+    const cpBdg   = document.getElementById(`hsc-b-cp-${stat}`);
+    const dillBdg = document.getElementById(`hsc-b-dill-${stat}`);
+    if (!cpNum) return;
+    cpNum.textContent   = _hscFmt(cpV);
+    dillNum.textContent = _hscFmt(dillV);
+    cpNum.className     = 'hsc-stat-num' + (cpLeads   ? ' leader' : '');
+    dillNum.className   = 'hsc-stat-num' + (dillLeads ? ' leader' : '');
+    cpBdg.textContent   = '+' + diff;
+    dillBdg.textContent = '+' + diff;
+    cpBdg.className     = 'hsc-badge' + (cpLeads   ? ' visible' : '');
+    dillBdg.className   = 'hsc-badge' + (dillLeads ? ' visible' : '');
+  }
+
+  function _hscApply() {
+    if (!_hscData) return;
+    const key = _hscData.keys[_hscIdx];
+    const d   = _hscData.agg[key];
+    _hscUpdatePair('mw', d.cpMw, d.dillMw);
+    _hscUpdatePair('gw', d.cpGw, d.dillGw);
+    _hscUpdatePair('pp', d.cpPp, d.dillPp);
+    const labelEl = document.getElementById('hsc-step-label');
+    if (labelEl) labelEl.textContent = _hscData.labels[key];
+    const prevBtn = document.getElementById('hsc-prev');
+    const nextBtn = document.getElementById('hsc-next');
+    if (prevBtn) prevBtn.disabled = _hscIdx === 0;
+    if (nextBtn) nextBtn.disabled = _hscIdx === _hscData.keys.length - 1;
+  }
 
   function fetchPublicData() {
     if (publicData) return Promise.resolve(publicData);
@@ -297,7 +340,8 @@
   async function renderHome() {
     const upcomingEl = document.getElementById('home-upcoming');
     const recentEl   = document.getElementById('home-recent');
-    if (upcomingEl.dataset.loaded === '1' && recentEl.dataset.loaded === '1') return;
+    const statsEl    = document.getElementById('home-stats');
+    if (upcomingEl.dataset.loaded === '1' && recentEl.dataset.loaded === '1' && statsEl.dataset.loaded === '1') return;
 
     let data;
     try {
@@ -318,6 +362,86 @@
       const club = clubsById[team.club_id];
       return club?.logo_url || '';
     };
+
+    // ---- Stats card ----
+    if (statsEl.dataset.loaded !== '1') {
+      const clubs = data.clubs || [];
+      const cpClub   = clubs.find(c => (c.club_name || '').toLowerCase().includes('camp'));
+      const dillClub = clubs.find(c => (c.club_name || '').toLowerCase().includes('dill'));
+
+      if (cpClub && dillClub) {
+        const cpIds   = new Set((data.teams || []).filter(t => t.club_id === cpClub.club_id).map(t => t.team_id));
+        const dillIds = new Set((data.teams || []).filter(t => t.club_id === dillClub.club_id).map(t => t.team_id));
+
+        const sortedDivs = (data.divisions || []).slice().sort((a,b) => (a.division_order||0) - (b.division_order||0));
+        const divKeys  = ['all', ...sortedDivs.map(d => d.division_id)];
+        const divLabels = { all: 'All Divs' };
+        sortedDivs.forEach(d => { divLabels[d.division_id] = d.division_name; });
+
+        const agg = {};
+        divKeys.forEach(k => { agg[k] = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 }; });
+        (data.standings || []).forEach(s => {
+          const isCp   = cpIds.has(s.team_id);
+          const isDill = dillIds.has(s.team_id);
+          if (!isCp && !isDill) return;
+          const pfx = isCp ? 'cp' : 'dill';
+          agg.all[`${pfx}Mw`] += s.match_wins  || 0;
+          agg.all[`${pfx}Gw`] += s.games_won   || 0;
+          agg.all[`${pfx}Pp`] += s.points_for  || 0;
+          if (agg[s.division_id]) {
+            agg[s.division_id][`${pfx}Mw`] += s.match_wins || 0;
+            agg[s.division_id][`${pfx}Gw`] += s.games_won  || 0;
+            agg[s.division_id][`${pfx}Pp`] += s.points_for || 0;
+          }
+        });
+
+        _hscData = { keys: divKeys, labels: divLabels, agg };
+        _hscIdx  = 0;
+
+        const logoHtml = (club, fallbackHtml) => club?.logo_url
+          ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}" style="width:100%;height:100%;object-fit:contain;">`
+          : fallbackHtml;
+
+        statsEl.innerHTML = `
+          <h2 class="hsc-heading">2026 Spring Season</h2>
+          <div class="hsc-card">
+            <table class="hsc-table">
+              <tr class="hsc-logo-row">
+                <td><div class="hsc-club-logo">${logoHtml(cpClub, `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#081f43;line-height:1.3;text-align:center;">CAMP<br>PB</span>`)}</div></td>
+                <td><div class="hsc-club-logo">${logoHtml(dillClub, `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#0b7e39;line-height:1.3;text-align:center;">TEAM<br>DILL</span>`)}</div></td>
+              </tr>
+              <tr class="hsc-label-row"><td colspan="2">Matches Won</td></tr>
+              <tr class="hsc-val-row">
+                <td><div class="hsc-stat-num" id="hsc-cp-mw">—</div><div class="hsc-badge" id="hsc-b-cp-mw"></div></td>
+                <td><div class="hsc-stat-num" id="hsc-dill-mw">—</div><div class="hsc-badge" id="hsc-b-dill-mw"></div></td>
+              </tr>
+              <tr class="hsc-label-row"><td colspan="2">Games Won</td></tr>
+              <tr class="hsc-val-row">
+                <td><div class="hsc-stat-num" id="hsc-cp-gw">—</div><div class="hsc-badge" id="hsc-b-cp-gw"></div></td>
+                <td><div class="hsc-stat-num" id="hsc-dill-gw">—</div><div class="hsc-badge" id="hsc-b-dill-gw"></div></td>
+              </tr>
+              <tr class="hsc-label-row"><td colspan="2">Points Scored</td></tr>
+              <tr class="hsc-val-row">
+                <td><div class="hsc-stat-num" id="hsc-cp-pp">—</div><div class="hsc-badge" id="hsc-b-cp-pp"></div></td>
+                <td><div class="hsc-stat-num" id="hsc-dill-pp">—</div><div class="hsc-badge" id="hsc-b-dill-pp"></div></td>
+              </tr>
+            </table>
+            <div class="hsc-footer">
+              <button class="hsc-step-btn" id="hsc-prev" onclick="window._cpblHscStep(-1)" disabled>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="hsc-step-label" id="hsc-step-label">All Divs</span>
+              <button class="hsc-step-btn" id="hsc-next" onclick="window._cpblHscStep(1)">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>`;
+
+        _hscApply();
+        statsEl.dataset.loaded = '1';
+      }
+    }
+
     // Override displayed date + time per league rules:
     //   D1–D4 play Saturdays; D5 plays Sundays.
     //   D1, D2, D5 start at 12 PM; D3, D4 start at 3 PM.

@@ -1994,3 +1994,72 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .sc-body { padding: 10px 12px; }
 }
 @keyframes spinner-rot { to { transform: rotate(360deg); } }
+
+/* ==========================================================================
+   Home Stats Card
+   ========================================================================== */
+.hsc-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--league-navy) 0%, var(--league-blue) 50%, var(--league-green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hsc-card {
+  background: linear-gradient(160deg, var(--league-navy) 0%, #1a3870 45%, #0a5c2a 100%);
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(8,30,67,.22);
+  overflow: hidden;
+  max-width: 520px;
+  margin: 0 auto 24px;
+}
+.hsc-table { width: 100%; border-collapse: collapse; }
+.hsc-logo-row td { padding: 20px 24px 16px; text-align: center; width: 50%; }
+.hsc-logo-row td:first-child { border-right: 1px solid rgba(255,255,255,.12); }
+.hsc-club-logo {
+  width: 96px; height: 96px; border-radius: 18px; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,.28); overflow: hidden;
+}
+.hsc-label-row td {
+  padding: 10px 20px 8px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.5); text-align: center;
+}
+.hsc-val-row td { padding: 12px 24px 16px; text-align: center; position: relative; }
+.hsc-val-row td:first-child { border-right: 1px solid rgba(255,255,255,.12); }
+.hsc-stat-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 60px; line-height: 1;
+  letter-spacing: -1px; color: #fff; transition: color .2s;
+}
+.hsc-stat-num.leader { color: #ffd22e; }
+.hsc-badge {
+  position: absolute; top: 8px; right: 10px;
+  font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace;
+  background: rgba(255,210,46,.18); color: rgba(255,210,46,.7);
+  border-radius: 5px; padding: 3px 7px; opacity: 0; transition: opacity .2s;
+}
+.hsc-badge.visible { opacity: 1; }
+.hsc-val-row td:last-child .hsc-badge { right: auto; left: 10px; }
+.hsc-footer {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 10px 20px 14px; border-top: 1px solid rgba(255,255,255,.1);
+}
+.hsc-step-btn {
+  background: none; border: 1.5px solid rgba(255,255,255,.2); color: rgba(255,255,255,.6);
+  font-family: inherit; cursor: pointer; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; transition: all .13s; padding: 0;
+}
+.hsc-step-btn:hover { border-color: rgba(255,255,255,.5); color: #fff; }
+.hsc-step-btn:disabled { opacity: .25; cursor: default; }
+.hsc-step-label {
+  font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.6); min-width: 80px; text-align: center;
+}
