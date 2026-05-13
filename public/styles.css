@@ -2060,8 +2060,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .home-series-wrap .ms-week { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.10); }
 .home-series-wrap .ms-week:last-child { border-bottom: none; }
 .home-series-wrap .ms-week-hd { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .8px; color: var(--league-gold); margin-bottom: 4px; }
-.home-series-wrap .ms-mrow { display: grid; grid-template-columns: 28px 1fr; gap: 6px; padding: 2px 4px; align-items: baseline; }
-.home-series-wrap .ms-div { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55); }
+.home-series-wrap .ms-mrow { display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding: 5px 4px; align-items: baseline; border-bottom: 1px solid rgba(255,255,255,.08); }
+.home-series-wrap .ms-mrow:last-child { border-bottom: none; }
+.home-series-wrap .ms-div { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: .8px; color: var(--league-gold); }
 .home-series-wrap .ms-result { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.92); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .home-series-wrap .ms-result .winner { color: var(--league-gold); font-weight: 700; }
 .home-series-wrap .ms-result.upcoming { color: rgba(255,255,255,.35); }

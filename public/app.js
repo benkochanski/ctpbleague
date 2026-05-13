@@ -379,36 +379,31 @@
         });
         const weekKeys = [...byWeek.keys()].sort((a,b) => a - b);
 
-        const schedRows = weekKeys.length ? weekKeys.map(wk => {
-          const wkLabel = wk
-            ? new Date(wk).toLocaleDateString('en-US', { month:'short', day:'numeric' })
-            : 'TBD';
-          const matches = byWeek.get(wk).slice().sort((a,b) => {
-            const ao = divsById[a.division_id]?.division_order || 0;
-            const bo = divsById[b.division_id]?.division_order || 0;
-            return ao - bo;
+        const schedRows = weekKeys.length ? weekKeys.map((wk, idx) => {
+          const matches = byWeek.get(wk);
+          let cpW = 0, dillW = 0, played = 0;
+          matches.forEach(m => {
+            if (!isCompleted(m) || m.home_rounds_won == null) return;
+            played++;
+            const hW = Number(m.home_rounds_won || 0), aW = Number(m.away_rounds_won || 0);
+            if (hW === aW) return;
+            const cpIsHome = cpIds.has(m.home_team_id);
+            const cpWon = cpIsHome ? hW > aW : aW > hW;
+            if (cpWon) cpW++; else dillW++;
           });
-          const rows = matches.map(m => {
-            const divShort = (divsById[m.division_id]?.division_name || '').replace('Division ', 'D');
-            if (isCompleted(m)) {
-              const cpIsHome = cpIds.has(m.home_team_id);
-              const hW = Number(m.home_rounds_won || 0), aW = Number(m.away_rounds_won || 0);
-              const cpWon = cpIsHome ? hW > aW : aW > hW;
-              const winner = (m.home_rounds_won != null) ? (cpWon ? 'Camp' : 'Dill') : '';
-              const score  = (m.home_rounds_won != null) ? `${hW}–${aW}` : '';
-              return `<div class="ms-mrow">
-                <span class="ms-div">${escapeHtml(divShort)}</span>
-                <span class="ms-result">${winner ? `<span class="winner">${escapeHtml(winner)}</span> ` : ''}${escapeHtml(score)}</span>
-              </div>`;
-            }
-            return `<div class="ms-mrow">
-              <span class="ms-div">${escapeHtml(divShort)}</span>
-              <span class="ms-result upcoming">—</span>
-            </div>`;
-          }).join('');
-          return `<div class="ms-week">
-            <div class="ms-week-hd">${escapeHtml(wkLabel)}</div>
-            ${rows}
+          const wkLabel = `Week ${idx + 1}`;
+          let result;
+          if (played === 0) {
+            result = `<span class="ms-result upcoming">Upcoming</span>`;
+          } else {
+            const cpL = cpW > dillW, dillL = dillW > cpW;
+            const winner = cpL ? 'Camp' : dillL ? 'Dill' : '';
+            const score  = `${cpW}–${dillW}`;
+            result = `<span class="ms-result">${winner ? `<span class="winner">${escapeHtml(winner)}</span> ` : ''}${escapeHtml(score)}</span>`;
+          }
+          return `<div class="ms-mrow">
+            <span class="ms-div">${escapeHtml(wkLabel)}</span>
+            ${result}
           </div>`;
         }).join('') : `<div class="ms-empty">No matches scheduled</div>`;
 
