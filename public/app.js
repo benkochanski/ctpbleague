@@ -151,37 +151,60 @@
 
   function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
 
-  function _hscUpdatePair(stat, cpV, dillV) {
+  function _hscUpdateTile(stat, cpV, dillV, cls) {
+    const cpEl   = document.getElementById(`hsc-cp-${stat}`);
+    const dillEl = document.getElementById(`hsc-dill-${stat}`);
+    const diffEl = document.getElementById(`hsc-diff-${stat}`);
+    if (!cpEl) return;
     const cpLeads = cpV > dillV, dillLeads = dillV > cpV;
-    const diff = _hscFmt(Math.abs(cpV - dillV));
-    const cpNum   = document.getElementById(`hsc-cp-${stat}`);
-    const dillNum = document.getElementById(`hsc-dill-${stat}`);
-    const cpBdg   = document.getElementById(`hsc-b-cp-${stat}`);
-    const dillBdg = document.getElementById(`hsc-b-dill-${stat}`);
-    if (!cpNum) return;
-    cpNum.textContent   = _hscFmt(cpV);
-    dillNum.textContent = _hscFmt(dillV);
-    cpNum.className     = 'hsc-stat-num' + (cpLeads   ? ' leader' : '');
-    dillNum.className   = 'hsc-stat-num' + (dillLeads ? ' leader' : '');
-    cpBdg.textContent   = '+' + diff;
-    dillBdg.textContent = '+' + diff;
-    cpBdg.className     = 'hsc-badge' + (cpLeads   ? ' visible' : '');
-    dillBdg.className   = 'hsc-badge' + (dillLeads ? ' visible' : '');
+    cpEl.textContent   = _hscFmt(cpV);
+    dillEl.textContent = _hscFmt(dillV);
+    cpEl.className     = `${cls}` + (cpLeads   ? ' leader' : '');
+    dillEl.className   = `${cls}` + (dillLeads ? ' leader' : '');
+    if (diffEl) {
+      const diff = Math.abs(cpV - dillV);
+      diffEl.textContent = diff > 0 ? `+${_hscFmt(diff)}` : '';
+    }
   }
 
   function _hscApply() {
     if (!_hscData) return;
     const key = _hscData.keys[_hscIdx];
     const d   = _hscData.agg[key];
-    _hscUpdatePair('mw', d.cpMw, d.dillMw);
-    _hscUpdatePair('gw', d.cpGw, d.dillGw);
-    _hscUpdatePair('pp', d.cpPp, d.dillPp);
+
     const labelEl = document.getElementById('hsc-step-label');
-    if (labelEl) labelEl.textContent = _hscData.labels[key];
     const prevBtn = document.getElementById('hsc-prev');
     const nextBtn = document.getElementById('hsc-next');
+    if (labelEl) labelEl.textContent = _hscData.labels[key];
     if (prevBtn) prevBtn.disabled = _hscIdx === 0;
     if (nextBtn) nextBtn.disabled = _hscIdx === _hscData.keys.length - 1;
+
+    // Hero: match wins
+    const cpMwEl   = document.getElementById('hsc-cp-mw');
+    const dillMwEl = document.getElementById('hsc-dill-mw');
+    const statusEl = document.getElementById('hsc-mw-status');
+    if (cpMwEl) {
+      const cpLeads = d.cpMw > d.dillMw, dillLeads = d.dillMw > d.cpMw;
+      const diff = Math.abs(d.cpMw - d.dillMw);
+      cpMwEl.className   = cpLeads   ? 'leader' : '';
+      dillMwEl.className = dillLeads ? 'leader' : '';
+      cpMwEl.textContent   = String(d.cpMw);
+      dillMwEl.textContent = String(d.dillMw);
+      if (statusEl) {
+        if (diff === 0) {
+          statusEl.textContent = 'Tied';
+          statusEl.className = 'hsc-hero-status';
+        } else {
+          const who = cpLeads ? _hscData.cpShort : _hscData.dillShort;
+          statusEl.textContent = `${who} leads +${diff}`;
+          statusEl.className = 'hsc-hero-status has-leader';
+        }
+      }
+    }
+
+    // Stat tiles
+    _hscUpdateTile('gw', d.cpGw, d.dillGw, 'hsc-tile-num');
+    _hscUpdateTile('pp', d.cpPp, d.dillPp, 'hsc-tile-num');
   }
 
   function fetchPublicData() {
@@ -395,38 +418,29 @@
           }
         });
 
-        _hscData = { keys: divKeys, labels: divLabels, agg };
+        const shortName = name => {
+          const n = (name || '').toLowerCase();
+          if (n.includes('dill')) return 'Dill';
+          if (n.includes('camp')) return 'Camp';
+          return (name || '').split(' ')[0];
+        };
+
+        _hscData = { keys: divKeys, labels: divLabels, agg,
+                     cpShort: shortName(cpClub.club_name),
+                     dillShort: shortName(dillClub.club_name) };
         _hscIdx  = 0;
 
-        const logoHtml = (club, fallbackHtml) => club?.logo_url
-          ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}" style="width:100%;height:100%;object-fit:contain;">`
-          : fallbackHtml;
+        const logoImg = (club, fallback) => club?.logo_url
+          ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}">`
+          : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fallback}</span>`;
+
+        const miniLogo = (club, fallback) =>
+          `<div class="hsc-mini-logo">${logoImg(club, fallback)}</div>`;
 
         statsEl.innerHTML = `
           <h2 class="hsc-heading">2026 Spring Season</h2>
           <div class="hsc-card">
-            <table class="hsc-table">
-              <tr class="hsc-logo-row">
-                <td><div class="hsc-club-logo">${logoHtml(cpClub, `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#081f43;line-height:1.3;text-align:center;">CAMP<br>PB</span>`)}</div></td>
-                <td><div class="hsc-club-logo">${logoHtml(dillClub, `<span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:#0b7e39;line-height:1.3;text-align:center;">TEAM<br>DILL</span>`)}</div></td>
-              </tr>
-              <tr class="hsc-label-row"><td colspan="2">Matches Won</td></tr>
-              <tr class="hsc-val-row">
-                <td><div class="hsc-stat-num" id="hsc-cp-mw">—</div><div class="hsc-badge" id="hsc-b-cp-mw"></div></td>
-                <td><div class="hsc-stat-num" id="hsc-dill-mw">—</div><div class="hsc-badge" id="hsc-b-dill-mw"></div></td>
-              </tr>
-              <tr class="hsc-label-row"><td colspan="2">Games Won</td></tr>
-              <tr class="hsc-val-row">
-                <td><div class="hsc-stat-num" id="hsc-cp-gw">—</div><div class="hsc-badge" id="hsc-b-cp-gw"></div></td>
-                <td><div class="hsc-stat-num" id="hsc-dill-gw">—</div><div class="hsc-badge" id="hsc-b-dill-gw"></div></td>
-              </tr>
-              <tr class="hsc-label-row"><td colspan="2">Points Scored</td></tr>
-              <tr class="hsc-val-row">
-                <td><div class="hsc-stat-num" id="hsc-cp-pp">—</div><div class="hsc-badge" id="hsc-b-cp-pp"></div></td>
-                <td><div class="hsc-stat-num" id="hsc-dill-pp">—</div><div class="hsc-badge" id="hsc-b-dill-pp"></div></td>
-              </tr>
-            </table>
-            <div class="hsc-footer">
+            <div class="hsc-header">
               <button class="hsc-step-btn" id="hsc-prev" onclick="window._cpblHscStep(-1)" disabled>
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
@@ -434,6 +448,47 @@
               <button class="hsc-step-btn" id="hsc-next" onclick="window._cpblHscStep(1)">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
+            </div>
+            <div class="hsc-hero">
+              <div class="hsc-hero-team">
+                <div class="hsc-club-logo">${logoImg(cpClub, 'CAMP<br>PB')}</div>
+              </div>
+              <div class="hsc-hero-center">
+                <div class="hsc-hero-eyebrow">Match Wins</div>
+                <div class="hsc-hero-score"><span id="hsc-cp-mw">—</span> – <span id="hsc-dill-mw">—</span></div>
+                <div class="hsc-hero-status" id="hsc-mw-status"></div>
+              </div>
+              <div class="hsc-hero-team">
+                <div class="hsc-club-logo">${logoImg(dillClub, 'TEAM<br>DILL')}</div>
+              </div>
+            </div>
+            <div class="hsc-stat-strip">
+              <div class="hsc-stat-tile">
+                <div class="hsc-tile-banner">
+                  ${miniLogo(cpClub, 'CP')}
+                  <span class="hsc-tile-label">Games Won</span>
+                  ${miniLogo(dillClub, 'DL')}
+                </div>
+                <div class="hsc-tile-score-row">
+                  <span class="hsc-tile-num" id="hsc-cp-gw">—</span>
+                  <span class="hsc-tile-dash">–</span>
+                  <span class="hsc-tile-num" id="hsc-dill-gw">—</span>
+                </div>
+                <div class="hsc-tile-diff" id="hsc-diff-gw"></div>
+              </div>
+              <div class="hsc-stat-tile">
+                <div class="hsc-tile-banner">
+                  ${miniLogo(cpClub, 'CP')}
+                  <span class="hsc-tile-label">Points Scored</span>
+                  ${miniLogo(dillClub, 'DL')}
+                </div>
+                <div class="hsc-tile-score-row">
+                  <span class="hsc-tile-num" id="hsc-cp-pp">—</span>
+                  <span class="hsc-tile-dash">–</span>
+                  <span class="hsc-tile-num" id="hsc-dill-pp">—</span>
+                </div>
+                <div class="hsc-tile-diff" id="hsc-diff-pp"></div>
+              </div>
             </div>
           </div>`;
 
