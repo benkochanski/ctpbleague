@@ -2034,6 +2034,24 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ── Game-type tiles ── */
 .home-series-wrap .gt-tiles { display: grid; grid-template-columns: repeat(var(--tile-cols, 2), minmax(0,1fr)); border-top: 1px solid var(--border-s); }
+.home-series-wrap .gt-tiles.hsc-with-stepper { grid-template-columns: 1fr auto 1fr; }
+.home-series-wrap .hsc-div-step {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 0 16px; border-left: 1px solid var(--border-s); border-right: 1px solid var(--border-s);
+  min-width: 200px;
+}
+.home-series-wrap .hsc-step-btn {
+  background: transparent; border: 1.5px solid var(--border); color: var(--muted);
+  width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .12s, color .12s;
+}
+.home-series-wrap .hsc-step-btn:hover:not(:disabled) { border-color: var(--league-navy); color: var(--league-navy); }
+.home-series-wrap .hsc-step-btn:disabled { opacity: .25; cursor: default; }
+.home-series-wrap .hsc-div-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.4px;
+  color: var(--league-navy); min-width: 110px; text-align: center; white-space: nowrap;
+}
 .home-series-wrap .gt-tile { padding: 10px 14px; border-right: 1px solid var(--border-s); min-width: 0; }
 .home-series-wrap .gt-tile:last-child { border-right: none; }
 .home-series-wrap .gt-type-lbl { position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase; white-space: nowrap; pointer-events: none; color: var(--league-navy); }

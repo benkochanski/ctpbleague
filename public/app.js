@@ -141,6 +141,54 @@
   let _scBranding = null;
   let _scBrandingPromise = null;
 
+  let _hscState = null;
+  window._cpblHscStep = function(dir) {
+    if (!_hscState) return;
+    _hscState.idx = Math.max(0, Math.min(_hscState.keys.length - 1, _hscState.idx + dir));
+    _hscApply();
+  };
+  function _hscFmt(v) { return v >= 1000 ? v.toLocaleString() : String(v); }
+  function _hscApply() {
+    if (!_hscState) return;
+    const { keys, labels, agg, idx } = _hscState;
+    const key = keys[idx];
+    const d = agg[key];
+
+    const lbl = document.getElementById('hsc-div-label');
+    const prev = document.getElementById('hsc-prev');
+    const next = document.getElementById('hsc-next');
+    if (lbl)  lbl.textContent  = labels[key];
+    if (prev) prev.disabled = idx === 0;
+    if (next) next.disabled = idx === keys.length - 1;
+
+    // Hero match record
+    const cpMwL = d.cpMw > d.dillMw, dillMwL = d.dillMw > d.cpMw;
+    const heroEl = document.getElementById('hsc-mw-score');
+    if (heroEl) {
+      heroEl.innerHTML = `${cpMwL ? '<em>' : ''}${d.cpMw}${cpMwL ? '</em>' : ''} – ${dillMwL ? '<em>' : ''}${d.dillMw}${dillMwL ? '</em>' : ''}`;
+    }
+    const leadEl = document.getElementById('hsc-mw-leader');
+    if (leadEl) leadEl.textContent = cpMwL ? 'Camp Leads' : dillMwL ? 'Dill Leads' : 'Series Tied';
+
+    // Tiles
+    const setTile = (stat, cpV, dillV) => {
+      const cpEl   = document.getElementById(`hsc-${stat}-cp`);
+      const dillEl = document.getElementById(`hsc-${stat}-dill`);
+      const cpDiff = document.getElementById(`hsc-${stat}-cpdiff`);
+      const dillDiff = document.getElementById(`hsc-${stat}-dilldiff`);
+      if (!cpEl) return;
+      const cpL = cpV > dillV, dillL = dillV > cpV;
+      cpEl.textContent   = _hscFmt(cpV);
+      dillEl.textContent = _hscFmt(dillV);
+      cpEl.className     = 'gt-snum' + (cpL   ? ' leader' : '');
+      dillEl.className   = 'gt-snum' + (dillL ? ' leader' : '');
+      cpDiff.textContent   = cpL   ? `+${_hscFmt(cpV - dillV)}` : '';
+      dillDiff.textContent = dillL ? `+${_hscFmt(dillV - cpV)}` : '';
+    };
+    setTile('gw', d.cpGw, d.dillGw);
+    setTile('pp', d.cpPp, d.dillPp);
+  }
+
   function fetchPublicData() {
     if (publicData) return Promise.resolve(publicData);
     if (publicDataPromise) return publicDataPromise;
@@ -330,30 +378,33 @@
         const cpIds   = new Set((data.teams || []).filter(t => t.club_id === cpClub.club_id).map(t => t.team_id));
         const dillIds = new Set((data.teams || []).filter(t => t.club_id === dillClub.club_id).map(t => t.team_id));
 
-        // Aggregate all-divisions totals
-        const totals = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 };
+        // Aggregate per-division + all-divisions totals
+        const sortedDivs = (data.divisions || []).slice().sort((a,b) => (a.division_order||0) - (b.division_order||0));
+        const keys   = ['all', ...sortedDivs.map(d => d.division_id)];
+        const labels = { all: 'All Divisions' };
+        sortedDivs.forEach(d => { labels[d.division_id] = d.division_name; });
+        const agg = {};
+        keys.forEach(k => { agg[k] = { cpMw:0, dillMw:0, cpGw:0, dillGw:0, cpPp:0, dillPp:0 }; });
         (data.standings || []).forEach(s => {
-          if (cpIds.has(s.team_id)) {
-            totals.cpMw += s.match_wins || 0; totals.cpGw += s.games_won || 0; totals.cpPp += s.points_for || 0;
-          } else if (dillIds.has(s.team_id)) {
-            totals.dillMw += s.match_wins || 0; totals.dillGw += s.games_won || 0; totals.dillPp += s.points_for || 0;
+          const isCp = cpIds.has(s.team_id), isDill = dillIds.has(s.team_id);
+          if (!isCp && !isDill) return;
+          const pfx = isCp ? 'cp' : 'dill';
+          agg.all[`${pfx}Mw`] += s.match_wins || 0;
+          agg.all[`${pfx}Gw`] += s.games_won  || 0;
+          agg.all[`${pfx}Pp`] += s.points_for || 0;
+          if (agg[s.division_id]) {
+            agg[s.division_id][`${pfx}Mw`] += s.match_wins || 0;
+            agg[s.division_id][`${pfx}Gw`] += s.games_won  || 0;
+            agg[s.division_id][`${pfx}Pp`] += s.points_for || 0;
           }
         });
-
-        const fmt = v => v >= 1000 ? v.toLocaleString() : String(v);
-
-        const cpMwL = totals.cpMw > totals.dillMw, dillMwL = totals.dillMw > totals.cpMw;
-        const cpGwL = totals.cpGw > totals.dillGw,  dillGwL = totals.dillGw > totals.cpGw;
-        const cpPpL = totals.cpPp > totals.dillPp,  dillPpL = totals.dillPp > totals.cpPp;
-
-        const mwScore  = `${cpMwL ? '<em>' : ''}${totals.cpMw}${cpMwL ? '</em>' : ''} – ${dillMwL ? '<em>' : ''}${totals.dillMw}${dillMwL ? '</em>' : ''}`;
-        const leaderTx = cpMwL ? 'Camp Leads' : dillMwL ? 'Dill Leads' : 'Series Tied';
+        _hscState = { keys, labels, agg, idx: 0 };
 
         const logoImg = (club, fb) => club?.logo_url
           ? `<img src="${escapeHtml(club.logo_url)}" alt="${escapeHtml(club.club_name || '')}">`
           : `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
 
-        const tile = (label, cpV, dillV, cpL, dillL) => `
+        const tile = (stat, label) => `
           <div class="gt-tile">
             <div class="gt-mini-banner">
               <div class="gt-mini-logo">${logoImg(cpClub, 'CP')}</div>
@@ -361,19 +412,24 @@
                 <span class="gt-type-lbl">${label}</span>
                 <div class="gt-score-nums">
                   <div class="gt-score-side"><div class="gt-snum-wrap">
-                    <span class="gt-snum${cpL ? ' leader' : ''}">${fmt(cpV)}</span>
-                    ${cpL ? `<span class="gt-diff">+${fmt(cpV - dillV)}</span>` : ''}
+                    <span class="gt-snum" id="hsc-${stat}-cp">—</span>
+                    <span class="gt-diff" id="hsc-${stat}-cpdiff"></span>
                   </div></div>
                   <div class="gt-sdash-wrap"><span class="gt-sdash">–</span></div>
                   <div class="gt-score-side"><div class="gt-snum-wrap">
-                    <span class="gt-snum${dillL ? ' leader' : ''}">${fmt(dillV)}</span>
-                    ${dillL ? `<span class="gt-diff">+${fmt(dillV - cpV)}</span>` : ''}
+                    <span class="gt-snum" id="hsc-${stat}-dill">—</span>
+                    <span class="gt-diff" id="hsc-${stat}-dilldiff"></span>
                   </div></div>
                 </div>
               </div>
               <div class="gt-mini-logo">${logoImg(dillClub, 'DL')}</div>
             </div>
           </div>`;
+
+        const arrow = (dir, id) => `
+          <button class="hsc-step-btn" id="${id}" onclick="window._cpblHscStep(${dir})">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="${dir < 0 ? '15 18 9 12 15 6' : '9 18 15 12 9 6'}"/></svg>
+          </button>`;
 
         statsEl.innerHTML = `
           <h2 class="hsc-heading">2026 Spring Season</h2>
@@ -385,22 +441,28 @@
                     <div class="sh-team-name">${escapeHtml(cpClub.club_name)}</div>
                   </div>
                   <div class="sh-center">
-                    <span class="sh-series-lbl">Season Series</span>
-                    <span class="sh-score">${mwScore}</span>
-                    <span class="sh-leader">${escapeHtml(leaderTx)}</span>
+                    <span class="sh-series-lbl">Match Record</span>
+                    <span class="sh-score" id="hsc-mw-score">—</span>
+                    <span class="sh-leader" id="hsc-mw-leader"></span>
                   </div>
                   <div class="sh-team">
                     <div class="sh-logo-big">${logoImg(dillClub, 'TEAM DILL')}</div>
                     <div class="sh-team-name">${escapeHtml(dillClub.club_name)}</div>
                   </div>
                 </div>
-                <div class="gt-tiles" style="--tile-cols:2">
-                  ${tile('Games Won',      totals.cpGw, totals.dillGw, cpGwL, dillGwL)}
-                  ${tile('Points Scored',  totals.cpPp, totals.dillPp, cpPpL, dillPpL)}
+                <div class="gt-tiles hsc-with-stepper">
+                  ${tile('gw', 'Games Won')}
+                  <div class="hsc-div-step">
+                    ${arrow(-1, 'hsc-prev')}
+                    <span class="hsc-div-label" id="hsc-div-label">All Divisions</span>
+                    ${arrow(1, 'hsc-next')}
+                  </div>
+                  ${tile('pp', 'Points Scored')}
                 </div>
             </div>
           </div>`;
 
+        _hscApply();
         statsEl.dataset.loaded = '1';
       }
     }
