@@ -210,13 +210,11 @@
       logoEl.innerHTML = _hscLogoImg(leaderClub, _hscClubShort(leaderClub));
       if (isTied || total === 0) {
         textEl.innerHTML = `tied at <strong>${_hscFmt(cpV)}</strong> ${noun}`;
-      } else if (mode === 'diff') {
-        textEl.innerHTML = `${verb} <strong>${pct}%</strong> of the ${noun}, <strong>${_hscFmt(diff)}</strong> more`;
       } else {
-        textEl.innerHTML = `${verb} <strong>${pct}%</strong> of the ${noun}, <strong>${_hscFmt(leadV)} – ${_hscFmt(lossV)}</strong>`;
+        textEl.innerHTML = `${verb} <strong>${_hscFmt(diff)}</strong> more ${noun}, <strong>${_hscFmt(leadV)}–${_hscFmt(lossV)}</strong>`;
       }
     };
-    updateSentence('gw', d.cpGw, d.dillGw, 'has won',    'games',  'record');
+    updateSentence('gw', d.cpGw, d.dillGw, 'has won',    'games',  'wins');
     updateSentence('pp', d.cpPp, d.dillPp, 'has scored', 'points', 'diff');
   }
 

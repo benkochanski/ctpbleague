@@ -2047,15 +2047,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: center; gap: 16px; width: 100%;
 }
 .home-series-wrap .hsc-sentence-logo {
-  height: 78px; width: auto; aspect-ratio: 6/5;
+  height: 78px; width: 115px;
   border-radius: 14px; border: 1.5px solid var(--border-s);
   background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13);
-  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .home-series-wrap .hsc-sentence-logo img {
   height: 100% !important; width: auto !important; max-width: none !important;
-  object-fit: cover !important; display: block;
+  object-fit: contain !important; display: block;
 }
 .home-series-wrap .hsc-sentence-text {
   font-family: 'DM Sans', sans-serif;
@@ -2097,13 +2097,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ── Stepper (contrasted navy pill between tiles) ── */
 .home-series-wrap .hsc-div-step {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  padding: 0 18px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 8px 22px;
   background: linear-gradient(135deg, var(--league-navy) 0%, #123a7c 100%);
-  color: #fff; min-width: 170px;
+  color: #fff; min-width: 200px;
 }
 .home-series-wrap .hsc-div-step-eyebrow {
-  font-size: 11px; font-weight: 900; letter-spacing: .28em; text-transform: uppercase;
+  font-size: 14px; font-weight: 900; letter-spacing: .28em; text-transform: uppercase;
   color: var(--league-gold);
 }
 .home-series-wrap .hsc-div-step-row {
@@ -2120,8 +2120,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-color: var(--league-gold); color: var(--league-gold); background: rgba(255,210,46,.12);
 }
 .home-series-wrap .hsc-div-label {
-  font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2.4px;
-  color: #fff; min-width: 110px; text-align: center; white-space: nowrap; line-height: 1;
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px;
+  color: #fff; min-width: 80px; text-align: center; white-space: nowrap; line-height: 1;
 }
 
 /* ── Schedule side panel ── */
