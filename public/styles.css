@@ -2145,4 +2145,32 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 @media (max-width: 700px) {
   .home-series-wrap .series-with-side { grid-template-columns: 1fr; }
   .home-series-wrap .series-side { border-left: none; border-top: 1px solid rgba(255,255,255,.10); }
+
+  /* Hero: tighter columns, smaller score */
+  .home-series-wrap .series-hero {
+    grid-template-columns: auto minmax(0,1fr) auto;
+    padding: 20px 12px; gap: 10px;
+  }
+  .home-series-wrap .sh-logo-big {
+    height: 84px; min-width: 60px; max-width: 110px; border-radius: 14px;
+  }
+  .home-series-wrap .sh-heading { font-size: 13px; letter-spacing: .14em; margin-bottom: 4px; }
+  .home-series-wrap .sh-series-lbl { font-size: 10px; letter-spacing: .14em; }
+  .home-series-wrap .sh-score { font-size: 56px; min-width: 0; letter-spacing: -1px; }
+  .home-series-wrap .sh-leader { font-size: 10px; }
+
+  /* Bottom strip: stack tile / stepper / tile */
+  .home-series-wrap .gt-tiles.hsc-with-stepper {
+    grid-template-columns: 1fr;
+  }
+  .home-series-wrap .hsc-div-step {
+    min-width: 0; padding: 12px 18px;
+  }
+  .home-series-wrap .hsc-div-label { font-size: 30px; min-width: 60px; letter-spacing: 2px; }
+  .home-series-wrap .hsc-div-step-eyebrow { font-size: 12px; }
+
+  .home-series-wrap .gt-tile { padding: 14px 16px; }
+  .home-series-wrap .hsc-sentence { gap: 12px; }
+  .home-series-wrap .hsc-sentence-logo { width: 92px; height: 62px; border-radius: 10px; }
+  .home-series-wrap .hsc-sentence-text { font-size: 15px; line-height: 1.3; }
 }
