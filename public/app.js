@@ -155,13 +155,20 @@
     if (n.includes('dill')) return 'Dill';
     return (club?.club_name || '').split(' ')[0] || '?';
   }
+  function _hscEsc(s) {
+    return String(s || '').replace(/[<>&"]/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[c]));
+  }
   function _hscLogoImg(club, fb) {
     if (club?.logo_url) {
-      const safeUrl = String(club.logo_url).replace(/"/g, '&quot;');
-      const safeName = String(club.club_name || '').replace(/[<>&"]/g, c => ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;' }[c]));
-      return `<img src="${safeUrl}" alt="${safeName}">`;
+      return `<img src="${_hscEsc(club.logo_url)}" alt="${_hscEsc(club.club_name)}">`;
     }
     return `<span style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${fb}</span>`;
+  }
+  function _hscDualLogo(cpClub, dillClub) {
+    const one = (club, key) => club?.logo_url
+      ? `<img class="hsc-img hsc-img-${key}" src="${_hscEsc(club.logo_url)}" alt="${_hscEsc(club.club_name)}">`
+      : `<span class="hsc-img hsc-img-${key}" style="font-family:'Bebas Neue',sans-serif;font-size:12px;line-height:1.2;text-align:center;color:#081f43;">${_hscEsc(_hscClubShort(club))}</span>`;
+    return one(cpClub, 'cp') + one(dillClub, 'dill');
   }
   function _hscApply() {
     if (!_hscState) return;
@@ -182,8 +189,8 @@
 
     const leftLogoEl  = document.getElementById('hsc-hero-left');
     const rightLogoEl = document.getElementById('hsc-hero-right');
-    if (leftLogoEl)  leftLogoEl.innerHTML  = _hscLogoImg(leftClub,  _hscClubShort(leftClub));
-    if (rightLogoEl) rightLogoEl.innerHTML = _hscLogoImg(rightClub, _hscClubShort(rightClub));
+    if (leftLogoEl)  leftLogoEl.dataset.club  = (leftClub  === dillClub) ? 'dill' : 'cp';
+    if (rightLogoEl) rightLogoEl.dataset.club = (rightClub === dillClub) ? 'dill' : 'cp';
 
     const heroEl = document.getElementById('hsc-mw-score');
     if (heroEl) {
@@ -207,7 +214,7 @@
       const pct   = total > 0 ? Math.round((leadV / total) * 100) : 0;
       const diff  = leadV - lossV;
 
-      logoEl.innerHTML = _hscLogoImg(leaderClub, _hscClubShort(leaderClub));
+      logoEl.dataset.club = (leaderClub === dillClub) ? 'dill' : 'cp';
       if (isTied || total === 0) {
         textEl.innerHTML = `tied at <strong>${_hscFmt(cpV)}</strong> ${noun}`;
       } else {
@@ -432,10 +439,11 @@
         });
         _hscState = { keys, labels, agg, idx: 0, cpClub, dillClub };
 
+        const dual = _hscDualLogo(cpClub, dillClub);
         const tile = (stat) => `
           <div class="gt-tile hsc-tile">
             <div class="hsc-sentence">
-              <div class="hsc-sentence-logo" id="hsc-${stat}-logo"></div>
+              <div class="hsc-sentence-logo" id="hsc-${stat}-logo" data-club="cp">${dual}</div>
               <div class="hsc-sentence-text" id="hsc-${stat}-text"></div>
             </div>
           </div>`;
@@ -451,7 +459,7 @@
                 <div class="series-hero">
                   <span class="sh-heading">2026 Spring Season</span>
                   <div class="sh-team">
-                    <div class="sh-logo-big" id="hsc-hero-left"></div>
+                    <div class="sh-logo-big" id="hsc-hero-left" data-club="cp">${dual}</div>
                   </div>
                   <div class="sh-center">
                     <span class="sh-series-lbl">Match Record</span>
@@ -459,7 +467,7 @@
                     <span class="sh-leader" id="hsc-mw-leader"></span>
                   </div>
                   <div class="sh-team">
-                    <div class="sh-logo-big" id="hsc-hero-right"></div>
+                    <div class="sh-logo-big" id="hsc-hero-right" data-club="dill">${dual}</div>
                   </div>
                 </div>
                 <div class="gt-tiles hsc-with-stepper">
