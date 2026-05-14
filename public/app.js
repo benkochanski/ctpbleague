@@ -211,7 +211,7 @@
       if (isTied || total === 0) {
         textEl.innerHTML = `tied at <strong>${_hscFmt(cpV)}</strong> ${noun}`;
       } else {
-        textEl.innerHTML = `${verb} <strong>${_hscFmt(diff)}</strong> more ${noun}, <strong>${_hscFmt(leadV)}–${_hscFmt(lossV)}</strong>`;
+        textEl.innerHTML = `${verb} <strong>${_hscFmt(diff)}</strong> more ${noun},<span class="hsc-counts"> <strong>${_hscFmt(leadV)}&ndash;${_hscFmt(lossV)}</strong></span>`;
       }
     };
     updateSentence('gw', d.cpGw, d.dillGw, 'has won',    'games',  'wins');
@@ -449,11 +449,11 @@
           <div class="home-series-wrap">
             <div class="series-main">
                 <div class="series-hero">
+                  <span class="sh-heading">2026 Spring Season</span>
                   <div class="sh-team">
                     <div class="sh-logo-big" id="hsc-hero-left"></div>
                   </div>
                   <div class="sh-center">
-                    <span class="sh-heading">2026 Spring Season</span>
                     <span class="sh-series-lbl">Match Record</span>
                     <span class="sh-score" id="hsc-mw-score">—</span>
                     <span class="sh-leader" id="hsc-mw-leader"></span>
