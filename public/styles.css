@@ -2154,22 +2154,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .home-series-wrap .series-with-side { grid-template-columns: 1fr; }
   .home-series-wrap .series-side { border-left: none; border-top: 1px solid rgba(255,255,255,.10); }
 
-  /* Hero: heading on its own row, logos vertically aligned with score */
+  /* Hero: stack logos above the score so it's not crowded */
   .home-series-wrap .series-hero {
-    grid-template-columns: auto minmax(0,1fr) auto;
-    padding: 14px 12px 22px; gap: 8px 10px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "heading heading"
+      "left    right"
+      "center  center";
+    padding: 18px 16px 22px; gap: 10px;
   }
+  .home-series-wrap .sh-team:first-of-type { justify-self: end; padding-right: 6px; }
+  .home-series-wrap .sh-team:last-of-type  { justify-self: start; padding-left: 6px; }
   .home-series-wrap .sh-logo-big {
-    height: 92px; min-width: 60px; max-width: 120px; border-radius: 14px;
+    height: 96px; min-width: 60px; max-width: 130px; border-radius: 14px;
   }
   .home-series-wrap .sh-heading { font-size: 13px; letter-spacing: .14em; }
-  .home-series-wrap .sh-series-lbl { font-size: 10px; letter-spacing: .14em; }
-  .home-series-wrap .sh-score { font-size: 52px; min-width: 0; letter-spacing: -1px; }
-  .home-series-wrap .sh-leader { font-size: 10px; }
-  .home-series-wrap .sh-center { gap: 0; }
-  /* drop the small label/leader so logos align with the big number */
-  .home-series-wrap .sh-team:first-of-type,
-  .home-series-wrap .sh-team:last-of-type { align-self: center; }
+  .home-series-wrap .sh-series-lbl { font-size: 11px; letter-spacing: .16em; margin-top: 4px; }
+  .home-series-wrap .sh-score { font-size: 64px; min-width: 0; letter-spacing: -1px; }
+  .home-series-wrap .sh-leader { font-size: 11px; }
+  .home-series-wrap .sh-center { gap: 0; padding-top: 4px; }
 
   /* Bottom strip: stack tile / stepper / tile */
   .home-series-wrap .gt-tiles.hsc-with-stepper {
