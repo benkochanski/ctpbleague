@@ -296,10 +296,12 @@ function getSeasonDataV1(divisionKey) {
       // Qualified: appeared in ≥ 50% of the division's rounds
       const qualified = totalRounds > 0 && (ps.matchIds.size / totalRounds) >= 0.5;
 
-      // Rating: blended Win% + Pts% (0–100 scale)
+      // Rating: 60% Win% + 40% Pts% (0–100 scale). Matches the displayed
+      // Rating in SeasonStats.html and the CSV export.
       const winPct = gms > 0 ? ps.wins / gms : 0;
-      const ptsPct = gms > 0 ? Math.min(ps.points_for / (21 * gms), 1) : 0;
-      const rating = (winPct + ptsPct) / 2 * 100;
+      const ptsTot = ps.points_for + ps.points_against;
+      const ptsPct = ptsTot > 0 ? ps.points_for / ptsTot : 0;
+      const rating = (winPct * 0.6 + ptsPct * 0.4) * 100;
 
       // Per-type: null = player never played that type (hides the cell)
       const hasType = t => ps[t+'_w'] + ps[t+'_l'] > 0;
@@ -496,9 +498,11 @@ function getAllPlayersStatsV1_() {
       const isWomens = isWomensGender || (!g && ps.gameTypes.has('womens'));
       const isMens   = isMensGender   || (!g && !ps.gameTypes.has('womens') && ps.gameTypes.has('mens'));
 
+      // Rating: 60% Win% + 40% Pts% (matches per-division code + UI).
       const winPct = gms > 0 ? ps.wins / gms : 0;
-      const ptsPct = gms > 0 ? Math.min(ps.points_for / (21 * gms), 1) : 0;
-      const rating = (winPct + ptsPct) / 2 * 100;
+      const ptsTot = ps.points_for + ps.points_against;
+      const ptsPct = ptsTot > 0 ? ps.points_for / ptsTot : 0;
+      const rating = (winPct * 0.6 + ptsPct * 0.4) * 100;
 
       const qualified = possMatches > 0 && (ps.matchIds.size / possMatches) >= 0.5;
 
