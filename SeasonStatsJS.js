@@ -20,22 +20,11 @@ function getSeasonDivisionsV1() {
 
 
 function getSeasonDataV1(divisionKey) {
-  // Aggregate across every active division — used by the "All Players" page.
+  // League-wide player stats: scan Match_Games once and accumulate per
+  // player across every active division, so a player who appears in
+  // multiple divisions sees one row with combined totals.
   if (String(divisionKey) === '__ALL__') {
-    const divsRaw = JSON.parse(getSeasonDivisionsV1());
-    const merged = [];
-    divsRaw.forEach(d => {
-      try {
-        const sub = JSON.parse(getSeasonDataV1(d.key));
-        (sub.playerStats || []).forEach(p => {
-          merged.push(Object.assign({}, p, {
-            division_id:   d.key,
-            division_name: d.label,
-          }));
-        });
-      } catch (e) { /* skip a broken division rather than failing the whole page */ }
-    });
-    return JSON.stringify({ standings: [], playerStats: merged, matches: [] });
+    return getAllPlayersStatsV1_();
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -336,5 +325,211 @@ function getSeasonDataV1(divisionKey) {
     });
 
   return JSON.stringify({ standings, playerStats, matches: divMatches });
+}
+
+// League-wide player stats: one row per player, totals summed across every
+// division they appear in. Mirrors getSeasonDataV1's per-player math, but
+// the accumulator is keyed by player_id (not division) so multi-division
+// players merge into a single row.
+function getAllPlayersStatsV1_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Active season
+  const seasRows = ss.getSheetByName('Seasons').getDataRange().getValues();
+  const sH = seasRows[0];
+  const activeSeason = seasRows.slice(1).find(r =>
+    String(r[sH.indexOf('status')]).toLowerCase() === 'active'
+  );
+  const seasonId = activeSeason ? String(activeSeason[sH.indexOf('season_id')]) : null;
+
+  // Active divisions (for labelling)
+  const divRows = ss.getSheetByName('Divisions').getDataRange().getValues();
+  const dH = divRows[0];
+  const divNameById = {};
+  divRows.slice(1)
+    .filter(r => String(r[dH.indexOf('active')]).toLowerCase() === 'true')
+    .forEach(r => {
+      divNameById[String(r[dH.indexOf('division_id')])] =
+        String(r[dH.indexOf('division_name')] || '');
+    });
+  const activeDivIds = new Set(Object.keys(divNameById));
+
+  // Teams (for display name + division mapping)
+  const teamRows = ss.getSheetByName('Teams').getDataRange().getValues();
+  const tH = teamRows[0];
+  const teamNameById = {};
+  const teamNameFullById = {};
+  const teamDivById = {};
+  teamRows.slice(1).forEach(r => {
+    const tid = String(r[tH.indexOf('team_id')]);
+    const full = String(r[tH.indexOf('team_name')] || '');
+    teamNameById[tid] = stripDivisionSuffix_(full);
+    teamNameFullById[tid] = full;
+    teamDivById[tid] = String(r[tH.indexOf('division_id')] || '');
+  });
+
+  // Matches in any active division this season
+  const matchRows = ss.getSheetByName('Matches').getDataRange().getValues();
+  const mH = matchRows[0];
+  const mIdIdx     = mH.indexOf('match_id');
+  const mDivIdx    = mH.indexOf('division_id');
+  const mSeasonIdx = mH.indexOf('season_id');
+  const matchIdToDiv = {};
+  matchRows.slice(1).forEach(r => {
+    const divId = String(r[mDivIdx] || '');
+    if (!activeDivIds.has(divId)) return;
+    if (seasonId && String(r[mSeasonIdx]) !== seasonId) return;
+    matchIdToDiv[String(r[mIdIdx])] = divId;
+  });
+  const matchIds = new Set(Object.keys(matchIdToDiv));
+
+  // Per-division team-match counts (a team's match count is per-division).
+  const teamMatchSets = {};  // tid → Set<matchId>
+
+  // Players lookup
+  const plyrRows = ss.getSheetByName('Players').getDataRange().getValues();
+  const plH = plyrRows[0];
+  const plGenderIdx = plH.indexOf('gender');
+  const playerNames  = {};
+  const playerGender = {};
+  plyrRows.slice(1).forEach(r => {
+    const pid = String(r[plH.indexOf('player_id')]);
+    playerNames[pid]  = String(r[plH.indexOf('name')]);
+    if (plGenderIdx >= 0) playerGender[pid] = String(r[plGenderIdx]).toLowerCase().trim();
+  });
+
+  // Match_Games scan — single accumulator keyed by player_id
+  const gameRows = ss.getSheetByName('Match_Games').getDataRange().getValues();
+  const gH = gameRows[0];
+  const gMatchIdx = gH.indexOf('match_id');
+  const gTypeIdx  = gH.indexOf('game_type');
+  const gHomeIdx  = gH.indexOf('home_team_id');
+  const gAwayIdx  = gH.indexOf('away_team_id');
+  const gHScIdx   = gH.indexOf('home_score');
+  const gAScIdx   = gH.indexOf('away_score');
+  const gWinIdx   = gH.indexOf('winner_team_id');
+  const gHP1Idx   = gH.indexOf('home_player_1_id');
+  const gHP2Idx   = gH.indexOf('home_player_2_id');
+  const gAP1Idx   = gH.indexOf('away_player_1_id');
+  const gAP2Idx   = gH.indexOf('away_player_2_id');
+
+  const VALID_TYPES = new Set(['womens','mens','mixed','coed']);
+
+  const psMap = {};
+  const initPs = () => ({
+    teamIds:       new Set(),
+    divIds:        new Set(),
+    wins:          0, losses:        0,
+    points_for:    0, points_against:0,
+    womens_w:0, womens_l:0, womens_diff:0,
+    mens_w:0,   mens_l:0,   mens_diff:0,
+    mixed_w:0,  mixed_l:0,  mixed_diff:0,
+    coed_w:0,   coed_l:0,   coed_diff:0,
+    matchIds:   new Set(),
+    gameTypes:  new Set(),
+  });
+
+  gameRows.slice(1).forEach(r => {
+    const matchId = String(r[gMatchIdx]);
+    if (!matchIds.has(matchId)) return;
+
+    const hs  = Number(r[gHScIdx]);
+    const as_ = Number(r[gAScIdx]);
+    if (r[gHScIdx] === '' || r[gAScIdx] === '' || isNaN(hs) || isNaN(as_)) return;
+
+    const gt      = String(r[gTypeIdx]).toLowerCase();
+    const home    = String(r[gHomeIdx]);
+    const away    = String(r[gAwayIdx]);
+    const winner  = String(r[gWinIdx]);
+    const homeWon = winner === home;
+    const validGt = VALID_TYPES.has(gt);
+
+    if (!teamMatchSets[home]) teamMatchSets[home] = new Set();
+    if (!teamMatchSets[away]) teamMatchSets[away] = new Set();
+    teamMatchSets[home].add(matchId);
+    teamMatchSets[away].add(matchId);
+
+    const accum = (pid, teamId, won, pf, pa) => {
+      if (!psMap[pid]) psMap[pid] = initPs();
+      const ps = psMap[pid];
+      ps.teamIds.add(teamId);
+      const dId = teamDivById[teamId] || matchIdToDiv[matchId] || '';
+      if (dId) ps.divIds.add(dId);
+      if (won) ps.wins++; else ps.losses++;
+      ps.points_for     += pf;
+      ps.points_against += pa;
+      ps.matchIds.add(matchId);
+      if (validGt) {
+        ps.gameTypes.add(gt);
+        if (won) ps[gt+'_w']++; else ps[gt+'_l']++;
+        ps[gt+'_diff'] += pf - pa;
+      }
+    };
+
+    [r[gHP1Idx], r[gHP2Idx]].map(String)
+      .filter(p => p && p !== '' && p.toLowerCase() !== 'undefined')
+      .forEach(pid => accum(pid, home,  homeWon, hs,  as_));
+
+    [r[gAP1Idx], r[gAP2Idx]].map(String)
+      .filter(p => p && p !== '' && p.toLowerCase() !== 'undefined')
+      .forEach(pid => accum(pid, away, !homeWon, as_,  hs));
+  });
+
+  // For Play% across multiple divisions: a player's "possible games" =
+  // sum of (their team's match count × 8) over every team they played for.
+  // Falls back to maxGms when a player has no team match info.
+  const playerStats = Object.entries(psMap)
+    .filter(([, ps]) => ps.wins > 0 || ps.losses > 0)
+    .map(([pid, ps]) => {
+      const gms = ps.wins + ps.losses;
+
+      let possMatches = 0;
+      ps.teamIds.forEach(tid => {
+        possMatches += (teamMatchSets[tid]?.size || 0);
+      });
+      // team_match_count is consumed by the client as possGms = count * 8.
+      const teamMatches = possMatches || ps.matchIds.size;
+
+      const g = playerGender[pid] || '';
+      const isWomensGender = ['f','female','w','woman','women'].includes(g);
+      const isMensGender   = ['m','male','man','men'].includes(g);
+      const isWomens = isWomensGender || (!g && ps.gameTypes.has('womens'));
+      const isMens   = isMensGender   || (!g && !ps.gameTypes.has('womens') && ps.gameTypes.has('mens'));
+
+      const winPct = gms > 0 ? ps.wins / gms : 0;
+      const ptsPct = gms > 0 ? Math.min(ps.points_for / (21 * gms), 1) : 0;
+      const rating = (winPct + ptsPct) / 2 * 100;
+
+      const qualified = possMatches > 0 && (ps.matchIds.size / possMatches) >= 0.5;
+
+      const hasType = t => ps[t+'_w'] + ps[t+'_l'] > 0;
+
+      // Pick a representative team for display (last team they played on).
+      const teamIdsArr = Array.from(ps.teamIds);
+      const primaryTid = teamIdsArr[teamIdsArr.length - 1] || '';
+      const divNames = Array.from(ps.divIds).map(d => divNameById[d] || d).filter(Boolean);
+
+      return {
+        name:            playerNames[pid] || pid,
+        team_name:       teamNameById[primaryTid] || primaryTid,
+        team_name_full:  teamNameFullById[primaryTid] || teamNameById[primaryTid] || primaryTid,
+        division_name:   divNames.join(' / '),
+        wins:            ps.wins,
+        losses:          ps.losses,
+        points_for:      ps.points_for,
+        points_against:  ps.points_against,
+        rating:          rating,
+        qualified:       qualified,
+        team_match_count: teamMatches,
+        isWomens,
+        isMens,
+        womens_w: hasType('womens') ? ps.womens_w : null, womens_l: ps.womens_l, womens_diff: ps.womens_diff,
+        mens_w:   hasType('mens')   ? ps.mens_w   : null, mens_l:   ps.mens_l,   mens_diff:   ps.mens_diff,
+        mixed_w:  hasType('mixed')  ? ps.mixed_w  : null, mixed_l:  ps.mixed_l,  mixed_diff:  ps.mixed_diff,
+        coed_w:   hasType('coed')   ? ps.coed_w   : null, coed_l:   ps.coed_l,   coed_diff:   ps.coed_diff,
+      };
+    });
+
+  return JSON.stringify({ standings: [], playerStats, matches: [] });
 
 }
