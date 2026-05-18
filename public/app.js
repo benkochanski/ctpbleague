@@ -103,16 +103,26 @@
     }
 
     app.classList.remove('is-expanded');
+  }
 
+  // Push a new hash entry so the browser Back/Forward buttons step through
+  // navigation history. hashchange then drives navigate().
+  function routeTo(routeKey, param) {
+    const route = ROUTES[routeKey];
     const hashTarget = param ? `#${routeKey}/${param}` : `#${routeKey}`;
-    if (location.hash !== hashTarget) history.replaceState(null, '', hashTarget);
+    if (location.hash === hashTarget) {
+      // Same destination — just re-render (no duplicate history entry).
+      if (route) navigate(routeKey, param);
+    } else {
+      location.hash = hashTarget;
+    }
   }
 
   document.addEventListener('click', e => {
     const target = e.target.closest('[data-route]');
     if (!target) return;
     e.preventDefault();
-    navigate(target.dataset.route, target.dataset.param);
+    routeTo(target.dataset.route, target.dataset.param);
   });
 
   window.addEventListener('hashchange', () => {
@@ -128,7 +138,7 @@
 
     if (data.type !== 'cpbl-nav' || !data.route) return;
     if (!ROUTES[data.route]) return;
-    navigate(data.route, data.param);
+    routeTo(data.route, data.param);
   });
 
   // ==========================================================================
