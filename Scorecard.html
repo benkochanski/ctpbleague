@@ -554,6 +554,7 @@
   <div id="match-meta-bar" class="match-meta-bar">Loading&hellip;</div>
   <div id="meta-recorder" class="meta-recorder" style="display:none"></div>
   <div class="meta-selector">
+    <select class="cc-select" id="weekSelect" onchange="handleWeekChange()" style="display:none"></select>
     <select class="cc-select" id="divisionSelect" onchange="handleDivisionChange()"></select>
     <button class="meta-refresh" onclick="refreshCurrentMatch()">&#8635; Refresh</button>
   </div>
@@ -684,6 +685,7 @@
   let currentBranding      = null;
   let allMatches           = [];
   let currentDivisionKey   = '';
+  let currentWeekKey       = 0;   // commissioner-only; 0 means "not yet set"
   const timers             = {};
 
   // ── Boot ──────────────────────────────────────────────────────────────────
@@ -727,32 +729,58 @@
     }
   }
 
-  // ── Load matches (current week) ────────────────────────────────────────────
+  // Commissioners can enter/edit scores for any week (including completed matches).
+  function isCommissionerUser() {
+    const u = window.cpblScoreUser || {};
+    return !!(u.isCommissioner);
+  }
+
+  // ── Load matches ──────────────────────────────────────────────────────────
   function loadMatches() {
     setMain(loadingHtml());
     if (!window.__GAS_EXEC_URL__) {
       setMain(emptyHtml('⚠️', 'Server URL not configured.')); return;
     }
-    fetch(window.__GAS_EXEC_URL__ + '?page=openmatches')
+    const commish = isCommissionerUser();
+    const endpoint = commish ? '?page=allmatches' : '?page=openmatches';
+    fetch(window.__GAS_EXEC_URL__ + endpoint)
       .then(r => r.text())
       .then(raw => {
         try {
           const resp = JSON.parse(raw);
           const all  = Array.isArray(resp.rows) ? resp.rows : [];
-          // Filter to the current week; fall back to all if none found.
-          const wk   = pickCurrentWeek(all);
-          const wkMs = wk ? all.filter(m => extractWeekNum(m) === wk) : [];
-          allMatches = wkMs.length ? wkMs : all;
-          if (!allMatches.length) {
-            populateDivisions([]);
-            setMain(emptyHtml('🏓', 'No matches available.')); return;
+          if (commish) {
+            // Keep every match — commissioner picks the week explicitly.
+            allMatches = all;
+            if (!allMatches.length) {
+              populateWeeks([]); populateDivisions([]);
+              setMain(emptyHtml('🏓', 'No matches available.')); return;
+            }
+            populateWeeks(allMatches);
+            const filteredByWeek = matchesForWeek(currentWeekKey);
+            populateDivisions(filteredByWeek);
+            const filtered = matchesForFilters();
+            currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+            syncWeekDropdown();
+            syncDivDropdown();
+            if (currentMatchId) loadMatch(currentMatchId);
+            else setMain(emptyHtml('🏓', 'No match for this division/week.'));
+          } else {
+            // Non-commissioner: filter to current week; fall back to all if none found.
+            const wk   = pickCurrentWeek(all);
+            const wkMs = wk ? all.filter(m => extractWeekNum(m) === wk) : [];
+            allMatches = wkMs.length ? wkMs : all;
+            if (!allMatches.length) {
+              populateDivisions([]);
+              setMain(emptyHtml('🏓', 'No matches available.')); return;
+            }
+            populateDivisions(allMatches);
+            const filtered = matchesForDiv(currentDivisionKey);
+            currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+            syncDivDropdown();
+            if (currentMatchId) loadMatch(currentMatchId);
+            else setMain(emptyHtml('🏓', 'No match for this division.'));
           }
-          populateDivisions(allMatches);
-          const filtered = matchesForDiv(currentDivisionKey);
-          currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
-          syncDivDropdown();
-          if (currentMatchId) loadMatch(currentMatchId);
-          else setMain(emptyHtml('🏓', 'No match for this division.'));
         } catch (err) {
           setMain(emptyHtml('⚠️', 'Failed to load match list.'));
           console.error(err);
@@ -793,7 +821,7 @@
     const sel = document.getElementById('divisionSelect');
     if (!sel) return;
     currentDivisionKey = sel.value;
-    const filtered = matchesForDiv(currentDivisionKey);
+    const filtered = matchesForFilters();
     if (filtered.length) {
       currentMatchId = String(filtered[0].match_id);
       loadMatch(currentMatchId);
@@ -818,6 +846,57 @@
   function syncDivDropdown() {
     const d = document.getElementById('divisionSelect');
     if (d) d.value = currentDivisionKey;
+  }
+
+  // ── Week dropdown (commissioner only) ─────────────────────────────────────
+  function handleWeekChange() {
+    const sel = document.getElementById('weekSelect');
+    if (!sel) return;
+    currentWeekKey = Number(sel.value) || 0;
+    const inWeek = matchesForWeek(currentWeekKey);
+    populateDivisions(inWeek);
+    const filtered = matchesForFilters();
+    if (filtered.length) {
+      currentMatchId = String(filtered[0].match_id);
+      syncDivDropdown();
+      loadMatch(currentMatchId);
+    } else {
+      currentMatchId = '';
+      setMain(emptyHtml('🏓', 'No match for this week.'));
+    }
+  }
+
+  function populateWeeks(matches) {
+    const sel = document.getElementById('weekSelect');
+    if (!sel) return;
+    sel.style.display = '';  // reveal for commissioner
+    const weeks = Array.from(new Set(matches.map(extractWeekNum).filter(Boolean))).sort((a,b) => a-b);
+    sel.innerHTML = '';
+    if (!weeks.length) { sel.innerHTML = '<option value="0">No weeks</option>'; currentWeekKey = 0; return; }
+    weeks.forEach(w => { const o = document.createElement('option'); o.value = String(w); o.textContent = 'Week ' + w; sel.appendChild(o); });
+    // Default to current/upcoming week if not yet set
+    if (!currentWeekKey || weeks.indexOf(currentWeekKey) < 0) {
+      currentWeekKey = pickCurrentWeek(matches) || weeks[0];
+    }
+    sel.value = String(currentWeekKey);
+  }
+
+  function syncWeekDropdown() {
+    const d = document.getElementById('weekSelect');
+    if (d) d.value = String(currentWeekKey);
+  }
+
+  function matchesForWeek(w) {
+    if (!w) return allMatches;
+    return allMatches.filter(m => extractWeekNum(m) === Number(w));
+  }
+
+  function matchesForFilters() {
+    // Commissioner mode: filter by both week and division.
+    if (isCommissionerUser() && currentWeekKey) {
+      return allMatches.filter(m => extractWeekNum(m) === Number(currentWeekKey) && divKey(m) === currentDivisionKey);
+    }
+    return matchesForDiv(currentDivisionKey);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
