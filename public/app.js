@@ -607,7 +607,6 @@
           <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-vs">vs</span>
           <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
-          <span class="m-status m-status-scheduled">Scheduled</span>
         </button>`;
     }
 
