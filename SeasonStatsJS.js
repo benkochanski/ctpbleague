@@ -477,20 +477,29 @@ function getAllPlayersStatsV1_() {
       .forEach(pid => accum(pid, away, !homeWon, as_,  hs));
   });
 
-  // For Play% across multiple divisions: a player's "possible games" =
-  // sum of (their team's match count × 8) over every team they played for.
-  // Falls back to maxGms when a player has no team match info.
+  // Play% denominator for the All Players view is league-wide weeks × 8.
+  // A player can only play in one match per week (8 games / match), so the
+  // theoretical maximum for everyone is the same: (# weeks any match has
+  // been completed) × 8. We count distinct week numbers (W\d+ in the
+  // match_id) among matches that have at least one scored game.
+  const playedMatchIds = new Set();
+  Object.values(psMap).forEach(ps => ps.matchIds.forEach(id => playedMatchIds.add(id)));
+  const weekNums = new Set();
+  playedMatchIds.forEach(id => {
+    const m = String(id).match(/W(\d+)/i);
+    if (m) weekNums.add(m[1]);
+  });
+  const leagueWeeks = weekNums.size;
+  // team_match_count is consumed by the client as possGms = count * 8.
+  // Using leagueWeeks here gives every player the same denominator.
+  const teamMatchesGlobal = leagueWeeks || 1;
+
   const playerStats = Object.entries(psMap)
     .filter(([, ps]) => ps.wins > 0 || ps.losses > 0)
     .map(([pid, ps]) => {
       const gms = ps.wins + ps.losses;
-
-      let possMatches = 0;
-      ps.teamIds.forEach(tid => {
-        possMatches += (teamMatchSets[tid]?.size || 0);
-      });
-      // team_match_count is consumed by the client as possGms = count * 8.
-      const teamMatches = possMatches || ps.matchIds.size;
+      const teamMatches = teamMatchesGlobal;
+      const possMatches = teamMatchesGlobal;
 
       const g = playerGender[pid] || '';
       const isWomensGender = ['f','female','w','woman','women'].includes(g);
