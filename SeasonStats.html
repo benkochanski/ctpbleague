@@ -842,14 +842,30 @@
       return possGms > 0 ? gms / possGms : 0;
     };
 
+    // Sort rating uses the same 60/40 Win%/Pts% weighting shown in the
+    // Rating column — otherwise the qualified→rating sort visibly diverges
+    // from the rendered values.
+    const displayRating = p => {
+      const gms = (p.wins || 0) + (p.losses || 0);
+      if (!gms) return -999;
+      const winPct = p.wins / gms;
+      const ptsTot = (p.points_for || 0) + (p.points_against || 0);
+      const ptsPct = ptsTot > 0 ? (p.points_for / ptsTot) : 0;
+      return (winPct * 0.6 + ptsPct * 0.4) * 100;
+    };
+
     const markQ = (list) => {
       const maxGms = Math.max(...list.map(p => (p.wins || 0) + (p.losses || 0)));
-      return list.map(p => ({ ...p, qualified: computePlayPct(p, maxGms) >= 0.5 }));
+      return list.map(p => ({
+        ...p,
+        qualified:    computePlayPct(p, maxGms) >= 0.5,
+        _sortRating:  displayRating(p),
+      }));
     };
 
     const qualSortFn = (a, b) => {
       if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
-      return (b.rating ?? -999) - (a.rating ?? -999);
+      return (b._sortRating ?? -999) - (a._sortRating ?? -999);
     };
 
     const hasData = p => p.name && String(p.name).trim() && ((p.wins || 0) + (p.losses || 0)) > 0;
