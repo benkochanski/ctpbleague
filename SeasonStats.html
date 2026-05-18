@@ -545,10 +545,17 @@
       o.textContent = d.label || d.division_name || d.key || 'Division';
       sel.appendChild(o);
     });
+    // "All Divisions" — pivots the page to the league-wide player-stats view.
+    const allOpt = document.createElement('option');
+    allOpt.value = '__ALL__';
+    allOpt.textContent = 'All Divisions';
+    sel.appendChild(allOpt);
+
     if (INIT_DIVISION && [...sel.options].some(o => o.value === INIT_DIVISION)) {
       sel.value = INIT_DIVISION;
     }
     currentDivisionKey = sel.value;
+    applyAllDivisionsMode(currentDivisionKey === '__ALL__');
     loadSeasonData(currentDivisionKey);
   }
 
@@ -556,7 +563,20 @@
     const sel = document.getElementById('divisionSelect');
     if (!sel) return;
     currentDivisionKey = sel.value;
+    applyAllDivisionsMode(currentDivisionKey === '__ALL__');
     loadSeasonData(currentDivisionKey);
+  }
+
+  // In "All Divisions" mode the series/standings panel is meaningless — hide it
+  // so the player-stats table takes the full page.
+  function applyAllDivisionsMode(isAll) {
+    document.documentElement.classList.toggle('all-divisions-mode', !!isAll);
+    const top = document.getElementById('top-static');
+    const sp  = document.getElementById('seriesPanel');
+    if (sp)  sp.style.display  = isAll ? 'none' : '';
+    // Keep the dropdown visible so the user can switch back; just collapse the
+    // series card padding to nothing.
+    if (top) top.style.paddingBottom = isAll ? '0' : '';
   }
 
   // ── Season Data ───────────────────────────────────────────────────────────

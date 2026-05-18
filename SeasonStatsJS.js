@@ -20,6 +20,24 @@ function getSeasonDivisionsV1() {
 
 
 function getSeasonDataV1(divisionKey) {
+  // Aggregate across every active division — used by the "All Players" page.
+  if (String(divisionKey) === '__ALL__') {
+    const divsRaw = JSON.parse(getSeasonDivisionsV1());
+    const merged = [];
+    divsRaw.forEach(d => {
+      try {
+        const sub = JSON.parse(getSeasonDataV1(d.key));
+        (sub.playerStats || []).forEach(p => {
+          merged.push(Object.assign({}, p, {
+            division_id:   d.key,
+            division_name: d.label,
+          }));
+        });
+      } catch (e) { /* skip a broken division rather than failing the whole page */ }
+    });
+    return JSON.stringify({ standings: [], playerStats: merged, matches: [] });
+  }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ── Active season ──────────────────────────────────────────────────────

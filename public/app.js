@@ -22,6 +22,8 @@
     seasonstats:  { kind: 'iframe', label: 'Season Stats',
                     url: `${GAS_BASE}?page=seasonstats`,
                     urlFn: divId => `${GAS_BASE}?page=seasonstats${divId ? `&division=${encodeURIComponent(divId)}` : ''}` },
+    allplayers:   { kind: 'iframe', label: 'All Player Stats',
+                    url: `${GAS_BASE}?page=seasonstats&division=__ALL__` },
     players:      { kind: 'iframe', label: 'Players',         url: `${GAS_BASE}?page=players` },
     scoreboard:   { kind: 'iframe', label: 'Live Scoreboard',
                     urlFn: id => `${GAS_BASE}?page=scoreboard${id ? `&matchId=${encodeURIComponent(id)}` : ''}` },
