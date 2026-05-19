@@ -560,7 +560,9 @@ function getMvpLeaderboardV1(limit) {
       byPlayer[key] = {
         player_id: p.player_id || '',
         name: p.name || '',
+        team_id: p.team_id || '',
         team_name: p.team_name || '',
+        team_name_full: p.team_name_full || '',
         wins: 0, losses: 0,
         points_for: 0, points_against: 0,
         isWomens: false, isMens: false,
@@ -573,7 +575,11 @@ function getMvpLeaderboardV1(limit) {
     a.points_against += Number(p.points_against || 0);
     a.isWomens = a.isWomens || !!p.isWomens;
     a.isMens   = a.isMens   || !!p.isMens;
-    a.team_name = p.team_name || a.team_name;
+    // Most recent team (last row scanned) wins for display, like the
+    // aggregateByPlayer logic on the client.
+    a.team_id        = p.team_id        || a.team_id;
+    a.team_name      = p.team_name      || a.team_name;
+    a.team_name_full = p.team_name_full || a.team_name_full;
   });
 
   const computed = Object.values(byPlayer).map(p => {
@@ -596,7 +602,9 @@ function getMvpLeaderboardV1(limit) {
     place:     i + 1,
     player_id: p.player_id,
     name:      p.name,
+    team_id:   p.team_id,
     team_name: p.team_name,
+    team_name_full: p.team_name_full,
     gender:    p.isWomens ? 'F' : p.isMens ? 'M' : '',
     rating:    Math.round(p.rating * 10) / 10,
     qualified: p.qualified

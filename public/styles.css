@@ -2269,6 +2269,18 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 999px; font-size: 11px; font-weight: 800;
   background: var(--bg-soft); color: var(--muted);
 }
+.home-mvp .mvp-table td.mvp-logo-cell { width: 28px; padding-left: 6px; padding-right: 6px; }
+.home-mvp .mvp-logo {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px; overflow: hidden;
+  background: #fff; border: 1px solid var(--border-s);
+  flex-shrink: 0; vertical-align: middle;
+}
+.home-mvp .mvp-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.home-mvp .mvp-logo-fb {
+  font-family: 'Bebas Neue', sans-serif; font-size: 10px;
+  color: var(--league-navy); letter-spacing: .04em;
+}
 .home-mvp .mvp-place.gold   { background: #fff2c2; color: #6b5400; }
 .home-mvp .mvp-place.silver { background: #e7eaf0; color: #5a667a; }
 .home-mvp .mvp-place.bronze { background: #f5dfc2; color: #7a4f1f; }
