@@ -2298,7 +2298,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .home-mvp .mvp-table th:nth-child(1),
 .home-mvp .mvp-table td:nth-child(1) { width: 36px; padding-left: 14px; padding-right: 0; }
 .home-mvp .mvp-table th:nth-child(2),
-.home-mvp .mvp-table td:nth-child(2) { width: 54px; padding-left: 6px; padding-right: 6px; }
+.home-mvp .mvp-table td:nth-child(2) { width: 44px; padding-left: 4px; padding-right: 4px; text-align: center; }
 /* Column 3 is name — no explicit width, takes the rest. */
 .home-mvp .mvp-table th:nth-child(4),
 .home-mvp .mvp-table td:nth-child(4) { width: 44px; padding-left: 4px; padding-right: 4px; }
@@ -2314,15 +2314,21 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .home-mvp .mvp-place.silver { color: #5a667a; }
 .home-mvp .mvp-place.bronze { color: #7a4f1f; }
+/* Match the .logo-sq treatment from the All Player Stats page so the
+   MVP Race team badge looks identical to the one in that table. */
 .home-mvp .mvp-logo {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 10px; overflow: hidden;
+  width: 30px; height: 30px; border-radius: 7px; overflow: hidden;
   background: #fff; border: 1px solid var(--border-s);
+  box-shadow: 0 1px 5px rgba(0,0,0,.13);
   flex-shrink: 0; vertical-align: middle;
 }
-.home-mvp .mvp-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.home-mvp .mvp-logo img {
+  width: auto !important; height: 100% !important;
+  object-fit: contain !important; display: block;
+}
 .home-mvp .mvp-logo-fb {
-  font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 12px;
   color: var(--league-navy); letter-spacing: .04em;
 }
 .home-mvp .mvp-name {
