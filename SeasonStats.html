@@ -492,12 +492,12 @@
     <dt>W–L</dt><dd>Record in all games played</dd>
     <dt>+/–</dt><dd>Total points scored minus total points allowed in all games</dd>
     <dt>Per Gm</dt><dd>Average point differential per game</dd>
-    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in 50% of rounds to qualify (24 total games by end of season)</dd>
+    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in 35% of rounds to qualify (24 total games by end of season)</dd>
     <dt>Play%</dt><dd>Games played divided by total rounds</dd>
     <dt>Win%</dt><dd>Wins divided by games played</dd>
     <dt>Pts%</dt><dd>Total points scored ÷ (winning game score of 21 × games played)</dd>
     <dt>Game type</dt><dd>Women's / Men's / Mixed subset of total record and +/–</dd>
-    <dt>All / Q toggle</dt><dd>Column header above the Q indicator — click to show qualified players only (play% ≥ 50%), click again to show all</dd>
+    <dt>All / Q toggle</dt><dd>Column header above the Q indicator — click to show qualified players only (play% ≥ 35%), click again to show all</dd>
   </dl>
 </div>
 
@@ -889,7 +889,7 @@
       const maxGms = Math.max(...list.map(p => (p.wins || 0) + (p.losses || 0)));
       return list.map(p => ({
         ...p,
-        qualified:    computePlayPct(p, maxGms) >= 0.5,
+        qualified:    computePlayPct(p, maxGms) >= 0.35,
         _sortRating:  displayRating(p),
       }));
     };
@@ -1516,7 +1516,7 @@
         const gms = (p.wins||0)+(p.losses||0);
         const possGms = (p.team_match_count||0)*8 || maxG;
         const playPct = possGms > 0 ? gms/possGms : 0;
-        return { ...p, _q: playPct >= 0.5, _rating: getRating(p) };
+        return { ...p, _q: playPct >= 0.35, _rating: getRating(p) };
       }).sort((a,b) => {
         if (a._q !== b._q) return a._q ? -1 : 1;
         return (b._rating||0) - (a._rating||0);

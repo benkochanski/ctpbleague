@@ -293,8 +293,8 @@ function getSeasonDataV1(divisionKey) {
       const isWomens = isWomensGender || (!g && ps.gameTypes.has('womens'));
       const isMens   = isMensGender   || (!g && !ps.gameTypes.has('womens') && ps.gameTypes.has('mens'));
 
-      // Qualified: appeared in ≥ 50% of the division's rounds
-      const qualified = totalRounds > 0 && (ps.matchIds.size / totalRounds) >= 0.5;
+      // Qualified: appeared in ≥ 35% of the division's rounds
+      const qualified = totalRounds > 0 && (ps.matchIds.size / totalRounds) >= 0.35;
 
       // Rating: 60% Win% + 40% Pts% (0–100 scale). Matches the displayed
       // Rating in SeasonStats.html and the CSV export.
