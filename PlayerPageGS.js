@@ -193,14 +193,25 @@ function getPlayerPageData(playerId) {
     if (typeof getClubLogos_ === 'function') clubLogos = getClubLogos_(ss) || {};
   } catch (e) { /* leave empty — client will fall back to initials */ }
 
+  // Prefer the team from the player's most recent actual game over the
+  // roster sheet — rosters frequently carry stale or sub entries that put
+  // a player on the wrong team. gamelog is already sorted match_date desc.
+  const mostRecent = gamelog[0];
+  const recentTeamId   = mostRecent ? mostRecent.my_team_id   : '';
+  const recentTeamName = mostRecent ? mostRecent.my_team_name : '';
+  const rosterTeamId   = myTeam ? String(myTeam.team_id   || '').trim() : '';
+  const rosterTeamName = myTeam ? stripDivisionSuffix_(String(myTeam.team_name || '').trim()) : '';
+  const finalTeamId    = recentTeamId   || rosterTeamId;
+  const finalTeamName  = recentTeamName || rosterTeamName || playerClubName;
+
   return {
     player: {
       player_id:     cleanId,
       full_name:     String(player.name || player.full_name || [player.first_name, player.last_name].filter(Boolean).join(' ') || '').trim(),
       gender:        String(player.gender || '').trim(),
       dupr:          (player.registered_dupr ?? player.dupr) != null ? Number(player.registered_dupr ?? player.dupr) : null,
-      team_id:       myTeam ? String(myTeam.team_id  || '').trim() : '',
-      team_name:     stripDivisionSuffix_(myTeam ? String(myTeam.team_name || '').trim() : playerClubName),
+      team_id:       finalTeamId,
+      team_name:     finalTeamName,
       // Kept for backwards compatibility — client now prefers keyword
       // matching via brand.clubLogos.
       team_logo_url: ''
