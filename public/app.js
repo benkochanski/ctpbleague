@@ -407,7 +407,7 @@
     const body = document.getElementById('home-mvp-body');
     if (!body || _mvpLoaded) return;
     try {
-      const resp = await fetch(`${GAS_BASE}?page=mvpleaderboard&limit=10`);
+      const resp = await fetch(`${GAS_BASE}?page=mvpleaderboard&limit=8`);
       const data = await resp.json();
       const players = (data && data.players) || [];
       if (!players.length) {

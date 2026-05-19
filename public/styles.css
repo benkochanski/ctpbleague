@@ -403,6 +403,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow-y: auto;
   padding: 32px;
 }
+/* The home page has its own wide top-row layout that wants to use the
+   full viewport width, so trim the page chrome around it. */
+#page-home { padding: 18px 24px 24px; }
 .page.page-flush { padding: 0; display: flex; flex-direction: column; }
 .page-inner { max-width: 1100px; margin: 0 auto; }
 
@@ -1082,7 +1085,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .matches-table.is-compact { min-width: 0; font-size: 12px; }
 .matches-table.is-compact th { display: none; }
 .matches-table.is-compact tbody tr:first-child td { border-top: none; }
-.matches-table.is-compact td { padding: 10px 12px; }
+.matches-table.is-compact td { padding: 6px 10px; }
 .matches-table.is-compact .col-date { width: 70px; }
 .matches-table.is-compact .col-division { width: 1%; padding-right: 6px; }
 .matches-table.is-compact .date-md  { font-size: 16px; }
@@ -1468,20 +1471,20 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 18px 18px 14px;
+  padding: 14px 14px 10px;
   box-shadow: var(--sh);
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  min-height: 0;
 }
 .home-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   border-bottom: 2px solid var(--border-s);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .home-section-head h2 {
   font-family: 'Bebas Neue', sans-serif;
@@ -2033,7 +2036,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ── Hero ── */
 .home-series-wrap .series-hero {
   background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 48%, #0d5229 100%);
-  padding: 24px 24px 32px;
+  padding: 16px 20px 22px;
   display: grid;
   /* Tighter outer columns — the side columns used to be 1fr each which
      left a lot of dead space next to the main logos. Use auto so they
@@ -2043,7 +2046,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   grid-template-areas:
     "heading heading heading"
     "left    center  right";
-  align-items: center; gap: 14px 24px;
+  align-items: center; gap: 10px 18px;
   justify-content: center;
 }
 .home-series-wrap .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -2051,8 +2054,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .home-series-wrap .sh-team:last-of-type  { grid-area: right; justify-self: center; }
 .home-series-wrap .sh-center { grid-area: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .home-series-wrap .sh-logo-big {
-  height: 140px; width: auto; min-width: 88px; max-width: 240px; border-radius: 22px;
-  background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.32); overflow: hidden;
+  height: 110px; width: auto; min-width: 72px; max-width: 200px; border-radius: 18px;
+  background: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.30); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
 }
 .home-series-wrap .sh-logo-big img { width: auto !important; height: 100% !important; object-fit: contain !important; display: block; }
@@ -2065,9 +2068,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .home-series-wrap .sh-series-lbl { font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.40); margin-bottom: 2px; }
 .home-series-wrap .sh-score {
-  font-family: 'Bebas Neue', sans-serif; font-size: 84px; line-height: 1;
-  color: #fff; letter-spacing: -2px; white-space: nowrap;
-  min-width: 240px; text-align: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 64px; line-height: 1;
+  color: #fff; letter-spacing: -1.5px; white-space: nowrap;
+  min-width: 200px; text-align: center;
 }
 .home-series-wrap .sh-score em { color: var(--league-gold); font-style: normal; }
 .home-series-wrap .sh-leader { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--league-gold); text-align: center; margin-top: 4px; min-height: 14px; }
@@ -2080,16 +2083,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   align-items: stretch;
 }
 .home-series-wrap .gt-tile {
-  padding: 18px 20px; min-width: 0; background: var(--panel);
+  padding: 12px 16px; min-width: 0; background: var(--panel);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .home-series-wrap .hsc-sentence {
   display: grid; grid-template-columns: auto 1fr;
-  align-items: center; gap: 16px; width: 100%;
+  align-items: center; gap: 12px; width: 100%;
 }
 .home-series-wrap .hsc-sentence-logo {
-  height: 78px; width: 115px;
-  border-radius: 14px; border: 1.5px solid var(--border-s);
+  height: 56px; width: 86px;
+  border-radius: 12px; border: 1.5px solid var(--border-s);
   background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.13);
   overflow: hidden; display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
@@ -2100,8 +2103,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .home-series-wrap .hsc-sentence-text {
   font-family: 'DM Sans', sans-serif;
-  font-size: 18px; font-weight: 500;
-  color: var(--text); line-height: 1.35;
+  font-size: 15px; font-weight: 500;
+  color: var(--text); line-height: 1.3;
   min-width: 0;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -2242,8 +2245,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   width: 100%;
 }
 .home-top-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
-.home-top-main .home-series-wrap { margin-bottom: 0; }
-.home-top-main .home-split { margin: 0; }
+.home-top-main .home-series-wrap { margin-bottom: 0; flex-shrink: 0; }
+.home-top-main .home-split {
+  margin: 0;
+  flex: 1;  /* take all remaining vertical space so the two side-by-side
+               match sections bottom-out flush with the MVP panel on the
+               right. */
+  min-height: 0;
+}
+.home-top-main .home-split .home-section { height: 100%; }
 .home-top-side { min-width: 0; display: flex; }
 
 .home-mvp {
