@@ -520,7 +520,7 @@
     <dt>W–L</dt><dd>Record in all games played</dd>
     <dt>+/–</dt><dd>Total points scored minus total points allowed in all games</dd>
     <dt>Per Gm</dt><dd>Average point differential per game</dd>
-    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in 35% of rounds to qualify (24 total games by end of season)</dd>
+    <dt>Q / NQ</dt><dd>Indicates whether a player is qualified for the MVP award. Must play in at least 35% of league weeks to qualify.</dd>
     <dt>Play%</dt><dd>Games played divided by total rounds</dd>
     <dt>Win%</dt><dd>Wins divided by games played</dd>
     <dt>Pts%</dt><dd>Total points scored ÷ (winning game score of 21 × games played)</dd>
@@ -1225,7 +1225,7 @@
       const diffTip   = `${p.points_for || 0} points scored − ${p.points_against || 0} points allowed = ${diffStr}`;
       const dpgTip    = gms > 0 ? `${diffStr} point diff over ${gms} games` : '';
       const playTip   = `${gms} games played ÷ ${(p.team_match_count || 0) * 8} possible games`;
-      const qTip      = qual ? 'Qualified for MVP (played ≥ 50% of weeks)' : 'Not yet qualified for MVP — needs ≥ 50% participation';
+      const qTip      = qual ? 'Qualified for MVP (played ≥ 35% of weeks)' : 'Not yet qualified for MVP — needs ≥ 35% participation';
 
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
@@ -1262,7 +1262,7 @@
           <th class="th-sortable" data-sort="rec"    data-sort-type="num" title="Wins and losses across all games played">W–L</th>
           <th class="th-sortable" data-sort="diff"   data-sort-type="num" title="Point differential: points scored minus points allowed">+/–</th>
           <th class="th-sortable" data-sort="dpg"    data-sort-type="num" title="Average point differential per game">Per Gm</th>
-          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Qualified for MVP — must play in ≥ 50% of league weeks. Click to filter to qualified only."><span class="q-toggle-lbl">All</span></th>
+          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Qualified for MVP — must play in ≥ 35% of league weeks. Click to filter to qualified only."><span class="q-toggle-lbl">All</span></th>
           <th class="th-sortable" data-sort="play"   data-sort-type="num" title="Games played ÷ total possible games (league weeks × 8)">Play%</th>
           <th class="th-sortable" data-sort="winpct" data-sort-type="num" title="Wins ÷ games played">Win%</th>
           <th class="th-sortable" data-sort="ptspct" data-sort-type="num" title="Points scored ÷ total points in games played">Pts%</th>
