@@ -316,6 +316,23 @@
     .th-sort-asc::after  { content: ' ▲'; font-size: 9px; }
     .th-sort-desc::after { content: ' ▼'; font-size: 9px; }
 
+    /* ── All Players combined table ─────────────────────────────────────── */
+    .pst-all .sr { cursor: default; }
+    .pst-all .sr:hover td { background: #f5f8ff; }
+    .pst-all .td-name  { text-align: left; font-weight: 700; cursor: pointer; }
+    .pst-all .td-name:hover { color: var(--blue); text-decoration: underline; }
+    .pst-all .td-div   { font-size: 12px; color: var(--muted); text-align: left; white-space: nowrap; }
+    .pst-all .td-play,
+    .pst-all .td-winpct,
+    .pst-all .td-ptspct { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); white-space: nowrap; }
+    .pst-all .td-type  { font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
+    .pst-all .td-type-empty { color: #cbd5e1; }
+    .pst-all .td-type-rec  { font-weight: 700; }
+    .pst-all .td-type-diff.ok  { color: var(--ok); }
+    .pst-all .td-type-diff.dim { color: #8fa3be; }
+    .pst-all th { padding: 8px 4px; }
+    .pst-all .sr td { padding: 10px 4px; }
+
     /* ── Utility ── */
     .loading-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 20px; color: var(--muted); font-size: 12px; }
     .spinner { width: 30px; height: 30px; border: 3px solid var(--border-s); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
@@ -869,6 +886,14 @@
     };
 
     const hasData = p => p.name && String(p.name).trim() && ((p.wins || 0) + (p.losses || 0)) > 0;
+
+    // All Players view: one combined sortable/filterable list with detail
+    // stats inline. Bypasses the gender-split two-column layout.
+    if (currentDivisionKey === '__ALL__') {
+      buildAllPlayersTable(players.filter(hasData), markQ, qualSortFn, el);
+      return;
+    }
+
     const women = players.filter(p => p.isWomens && hasData(p));
     const men   = players.filter(p => p.isMens   && hasData(p));
     const other = players.filter(p => !p.isWomens && !p.isMens && hasData(p));
@@ -1009,6 +1034,111 @@
           // Clearing inline style lets class-based expand CSS take over for matching rows
           dr.style.display = match ? '' : 'none';
         }
+      });
+    });
+  }
+
+  // Single combined player-stats table used by the All Players view.
+  // No expand toggle, no gender split — every secondary stat is shown inline.
+  function buildAllPlayersTable(rawList, markQ, qualSortFn, el) {
+    const list = markQ(rawList).sort(qualSortFn);
+    if (!list.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ico">&#x1F3D3;</div>No player data.</div>';
+      return;
+    }
+
+    const buildRow = (p, i) => {
+      const gms     = (p.wins || 0) + (p.losses || 0);
+      const allDiff = (p.points_for || 0) - (p.points_against || 0);
+      const diffStr = allDiff > 0 ? '+' + allDiff : String(allDiff);
+      const diffCls = allDiff > 0 ? 'pos' : allDiff < 0 ? 'neg' : '';
+      const qual    = p.qualified;
+      const rankCls = qual ? 'q' : 'nq';
+
+      const winPctRaw = gms > 0 ? (p.wins / gms) : 0;
+      const ptsTot    = (p.points_for || 0) + (p.points_against || 0);
+      const ptsPctRaw = ptsTot > 0 ? (p.points_for / ptsTot) : 0;
+      const rating    = gms > 0 ? ((winPctRaw * 0.6 + ptsPctRaw * 0.4) * 100) : null;
+      const ratingStr = rating != null ? rating.toFixed(1) : '—';
+      const winPctStr = gms > 0 ? (winPctRaw * 100).toFixed(1) + '%' : '—';
+      const ptsPctStr = ptsTot > 0 ? (ptsPctRaw * 100).toFixed(1) + '%' : '—';
+      const possGms   = (p.team_match_count || 0) * 8 || 0;
+      const playPct   = possGms > 0 ? ((gms / possGms) * 100).toFixed(1) + '%' : '—';
+      const dpg       = gms > 0 ? (allDiff / gms) : 0;
+      const dpgStr    = (dpg >= 0 ? '+' : '') + dpg.toFixed(1);
+
+      const typeCell = (label, w, l, d) => {
+        if ((w === null || w === undefined) && !l && !d) return '<td class="td-type td-type-empty">—</td>';
+        const dStr = d > 0 ? '+' + d : String(d || 0);
+        const dCls = d > 0 ? 'ok' : d < 0 ? 'dim' : '';
+        return `<td class="td-type"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
+      };
+
+      return `<tr class="sr" data-player-name="${esc(p.name || '')}">
+        <td class="td-rank ${rankCls}">${i + 1}</td>
+        <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
+        <td class="td-name">${esc(p.name)}</td>
+        <td class="td-div">${esc(p.division_name || '')}</td>
+        <td class="td-gms">${gms}</td>
+        <td class="td-rating">${esc(ratingStr)}</td>
+        <td class="td-rec">${p.wins}–${p.losses}</td>
+        <td class="td-diff ${diffCls}">${esc(diffStr)}</td>
+        <td class="td-dpg ${diffCls}">${esc(dpgStr)}</td>
+        <td class="td-play">${esc(playPct)}</td>
+        <td class="td-winpct">${esc(winPctStr)}</td>
+        <td class="td-ptspct">${esc(ptsPctStr)}</td>
+        ${typeCell("Women's", p.womens_w, p.womens_l, p.womens_diff)}
+        ${typeCell("Men's",   p.mens_w,   p.mens_l,   p.mens_diff)}
+        ${typeCell('Mixed',   p.mixed_w,  p.mixed_l,  p.mixed_diff)}
+        ${typeCell('Coed',    p.coed_w,   p.coed_l,   p.coed_diff)}
+        <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}">${qual ? 'Q' : 'NQ'}</span></td>
+      </tr>`;
+    };
+
+    const tableHtml = `
+      <table class="pst pst-all">
+        <thead><tr>
+          <th class="th-l">#</th>
+          <th class="th-l"></th>
+          <th class="th-l th-sortable" data-sort="name" data-sort-type="str">Player</th>
+          <th class="th-sortable" data-sort="div"  data-sort-type="str">Division</th>
+          <th class="th-sortable" data-sort="gms"    data-sort-type="num">Gms</th>
+          <th class="th-sortable" data-sort="rating" data-sort-type="num">Rating</th>
+          <th class="th-sortable" data-sort="rec"    data-sort-type="num">W–L</th>
+          <th class="th-sortable" data-sort="diff"   data-sort-type="num">+/–</th>
+          <th class="th-sortable" data-sort="dpg"    data-sort-type="num">Per Gm</th>
+          <th class="th-sortable" data-sort="play"   data-sort-type="num">Play%</th>
+          <th class="th-sortable" data-sort="winpct" data-sort-type="num">Win%</th>
+          <th class="th-sortable" data-sort="ptspct" data-sort-type="num">Pts%</th>
+          <th class="th-sortable" data-sort="womens" data-sort-type="num">Women's</th>
+          <th class="th-sortable" data-sort="mens"   data-sort-type="num">Men's</th>
+          <th class="th-sortable" data-sort="mixed"  data-sort-type="num">Mixed</th>
+          <th class="th-sortable" data-sort="coed"   data-sort-type="num">Coed</th>
+          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
+        </tr></thead>
+        <tbody>${list.map(buildRow).join('')}</tbody>
+      </table>`;
+
+    el.innerHTML = `
+      <div class="sec-head">
+        <div class="sec-badge">P</div>
+        <span class="sec-label">All Player Stats</span>
+        <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players…">
+        <button class="ps-hdr-btn" onclick="downloadCSV()">↓ CSV</button>
+        <button class="ps-hdr-btn" onclick="downloadPDF()">↓ PDF</button>
+        <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
+      </div>
+      <div class="ps-scroll"><div class="ps-container" id="ps-container">${tableHtml}</div></div>`;
+
+    initSortableHeaders();
+
+    document.getElementById('psFilter')?.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('tr.sr').forEach(sr => {
+        const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
+        const team = (sr.querySelector('.td-div')?.textContent || '').toLowerCase();
+        const match = !q || name.includes(q) || team.includes(q);
+        sr.style.display = match ? '' : 'none';
       });
     });
   }
@@ -1182,7 +1312,15 @@
             if (dr) i++;
           }
         }
-        pairs.sort((a,b) => newDir === 'asc' ? a.val - b.val : b.val - a.val);
+        const isStr = this.dataset.sortType === 'str';
+        pairs.sort((a,b) => {
+          if (isStr) {
+            const av = String(a.val || '').toLowerCase();
+            const bv = String(b.val || '').toLowerCase();
+            return newDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+          }
+          return newDir === 'asc' ? a.val - b.val : b.val - a.val;
+        });
         // Remove existing pad row before re-ordering so it doesn't get pushed
         // to the top when the sr/dr rows are appended past it.
         tbody.querySelectorAll('tr.pst-pad').forEach(r => r.remove());
@@ -1194,10 +1332,22 @@
   }
 
   function getCellVal(row, key) {
-    const selectors = { gms: '.td-gms', rating: '.td-rating', diff: '.td-diff', dpg: '.td-dpg' };
+    const selectors = {
+      gms: '.td-gms', rating: '.td-rating', diff: '.td-diff', dpg: '.td-dpg',
+      play: '.td-play', winpct: '.td-winpct', ptspct: '.td-ptspct',
+    };
     const norm = s => s.replace(/–/g, '-');   // en-dash → hyphen
+    if (key === 'name') return row.querySelector('.td-name')?.textContent || '';
+    if (key === 'div')  return row.querySelector('.td-div')?.textContent  || '';
     if (key === 'rec') {
       const txt = norm(row.querySelector('.td-rec')?.textContent || '0');
+      return parseFloat(txt.split('-')[0]) || 0;
+    }
+    // Per-game-type columns sort by wins (first number in "W-L").
+    if (['womens','mens','mixed','coed'].includes(key)) {
+      const cells = row.querySelectorAll('.td-type');
+      const idx   = { womens: 0, mens: 1, mixed: 2, coed: 3 }[key];
+      const txt   = norm(cells[idx]?.querySelector('.td-type-rec')?.textContent || '0');
       return parseFloat(txt.split('-')[0]) || 0;
     }
     const sel = selectors[key];
