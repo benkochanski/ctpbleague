@@ -1104,24 +1104,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .match-cell.is-logo-only .m-team { justify-content: center; }
 .matches-table.is-compact .match-cell.is-logo-only { grid-template-columns: 1fr 90px 1fr; }
 
-/* This Week variant — replace teams with a time + venue block. */
+/* Next Matches variant — replace teams with two columns: time + host
+   ("at Camp" / "at Dill"). */
 .matches-table.is-compact .match-cell.is-when-where {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
   align-items: center;
-}
-.match-cell.is-when-where .m-when-where {
-  display: flex; flex-direction: column; align-items: flex-start;
-  gap: 2px; min-width: 0;
+  justify-items: start;
 }
 .match-cell.is-when-where .m-when {
   font-family: 'DM Sans', sans-serif; font-weight: 800; font-size: 14px;
   color: var(--league-navy); line-height: 1.1;
+  white-space: nowrap;
 }
 .match-cell.is-when-where .m-where {
-  font-size: 12px; color: var(--muted); line-height: 1.2;
+  font-size: 13px; font-weight: 600; color: var(--muted); line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%;
 }
+.match-cell.is-when-where .m-status { justify-self: end; }
 
 /* Tight phones: stack each match row into a card. Both the full Matches page
    and the compact home tables share the same layout: date in the upper-right,

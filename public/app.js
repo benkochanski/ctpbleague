@@ -599,7 +599,7 @@
     const renderHomeTable = (rows) => `
       <div class="matches-table-wrap is-compact">
         <table class="matches-table is-compact">
-          <tbody>${rows.map(m => homeMatchRowHtml(m, teamsById, divsById, teamLogo)).join('')}</tbody>
+          <tbody>${rows.map(m => homeMatchRowHtml(m, teamsById, divsById, teamLogo, clubsById)).join('')}</tbody>
         </table>
       </div>`;
 
@@ -642,7 +642,7 @@
 
   // Compact home-page row — same match-cell styling as the Matches page, with
   // a leading division pill so the layout mirrors the Matches table on phones.
-  function homeMatchRowHtml(m, teamsById, divsById, teamLogo) {
+  function homeMatchRowHtml(m, teamsById, divsById, teamLogo, clubsById) {
     const home     = teamName(teamsById, m.home_team_id);
     const away     = teamName(teamsById, m.away_team_id);
     const homeLogo = teamLogo(m.home_team_id);
@@ -677,24 +677,34 @@
           <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
         </button>`;
     } else {
-      // This Week: replace team names with time + location so the row tells
-      // the user when and where to show up. Click still opens the preview.
+      // Next Matches: time + host club ("at Camp" / "at Dill") in their own
+      // columns. Click still opens the preview (or matchcast when live).
       const displayDate = m._displayDate || m._date;
       const timeStr = displayDate
         ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(displayDate)
         : '';
-      const venue = String(m.venue || '').trim();
+
+      // Host venue label — prefer the home team's club name, fall back to
+      // sniffing the venue string for the camp/dill keyword if the team or
+      // club lookup is missing.
+      const homeClubId = (teamsById[m.home_team_id] || {}).club_id;
+      const homeClub   = (clubsById && homeClubId) ? clubsById[homeClubId] : null;
+      let hostName     = homeClub ? (homeClub.short_name || homeClub.club_name || '') : '';
+      if (!hostName) {
+        const v = String(m.venue || '').toLowerCase();
+        if (v.includes('camp')) hostName = 'Camp';
+        else if (v.includes('dill')) hostName = 'Dill';
+      }
+      const locLabel = hostName ? `at ${hostName}` : (String(m.venue || '').trim() || '—');
+
       const liveCls = live ? ' is-live' : '';
       const liveBadge = live ? '<span class="m-status m-status-live"><span class="live-dot"></span>Live</span>' : '';
       const route = live ? 'matchcast' : 'matchpreview';
       const tip   = live ? 'Watch live'   : 'Match preview';
       matchCell = `
         <button class="match-cell is-upcoming is-compact is-when-where${liveCls}" data-route="${route}" data-param="${escapeHtml(m.match_id)}" title="${tip}">
-          <span class="m-when-where">
-            ${timeStr ? `<span class="m-when">${escapeHtml(timeStr)}</span>` : ''}
-            ${venue   ? `<span class="m-where">${escapeHtml(venue)}</span>`  : ''}
-            ${!timeStr && !venue ? '<span class="m-when">TBD</span>' : ''}
-          </span>
+          <span class="m-when">${escapeHtml(timeStr || 'TBD')}</span>
+          <span class="m-where">${escapeHtml(locLabel)}</span>
           ${liveBadge}
         </button>`;
     }
