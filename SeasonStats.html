@@ -604,9 +604,10 @@
     const top = document.getElementById('top-static');
     const sp  = document.getElementById('seriesPanel');
     if (sp)  sp.style.display  = isAll ? 'none' : '';
-    // Keep the dropdown visible so the user can switch back; just collapse the
-    // series card padding to nothing.
-    if (top) top.style.paddingBottom = isAll ? '0' : '';
+    // In All Players mode the whole top-static bar (corner division dropdown
+    // + series card) is meaningless — the page has its own Division filter
+    // inside the player-stats header. Hide it so it doesn't bleed through.
+    if (top) top.style.display = isAll ? 'none' : '';
   }
 
   // ── Season Data ───────────────────────────────────────────────────────────
