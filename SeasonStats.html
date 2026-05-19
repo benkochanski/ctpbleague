@@ -1210,6 +1210,7 @@
           <option value="q">Qualified only</option>
           <option value="nq">Not qualified</option>
         </select>
+        <button class="ps-hdr-btn" id="apClearFilters" type="button">✕ Clear</button>
         <button class="ps-hdr-btn" onclick="downloadCSV()">↓ CSV</button>
         <button class="ps-hdr-btn" onclick="downloadPDF()">↓ PDF</button>
         <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
@@ -1255,10 +1256,19 @@
         : '<tr><td colspan="17" style="padding:24px;text-align:center;color:var(--muted);">No players match these filters.</td></tr>';
     }
 
-    ['psFilter','apFilterTeam','apFilterDiv','apFilterGender','apFilterQual'].forEach(id => {
+    const filterIds = ['psFilter','apFilterTeam','apFilterDiv','apFilterGender','apFilterQual'];
+    filterIds.forEach(id => {
       const node = document.getElementById(id);
       if (!node) return;
       node.addEventListener(node.tagName === 'SELECT' ? 'change' : 'input', renderRows);
+    });
+
+    document.getElementById('apClearFilters')?.addEventListener('click', () => {
+      filterIds.forEach(id => {
+        const node = document.getElementById(id);
+        if (node) node.value = '';
+      });
+      renderRows();
     });
 
     renderRows();
