@@ -127,8 +127,18 @@
     routeTo(target.dataset.route, target.dataset.param);
   });
 
+  // Decode hash params so an encoded space ("Helena%20Sun") becomes the
+  // raw value before urlFn re-encodes it. Without this, urlFn's own
+  // encodeURIComponent double-encodes the literal "%" and GAS receives
+  // "Helena%20Sun" as the player name (no match → blank page).
+  function decodeHashParam(p) {
+    if (!p) return p;
+    try { return decodeURIComponent(p); } catch (e) { return p; }
+  }
+
   window.addEventListener('hashchange', () => {
-    const [key, param] = (location.hash || '#home').slice(1).split('/');
+    const [key, rawParam] = (location.hash || '#home').slice(1).split('/');
+    const param = decodeHashParam(rawParam);
     if (ROUTES[key]) navigate(key, param);
   });
 
@@ -1679,6 +1689,6 @@
     if (banner) banner.style.display = '';
   }
 
-  const [initialKey, initialParam] = (location.hash || '#home').slice(1).split('/');
-  navigate(initialKey || 'home', initialParam);
+  const [initialKey, initialRawParam] = (location.hash || '#home').slice(1).split('/');
+  navigate(initialKey || 'home', decodeHashParam(initialRawParam));
 })();
