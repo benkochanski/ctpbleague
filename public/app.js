@@ -240,7 +240,9 @@
       if (isTied || total === 0) {
         textEl.innerHTML = `tied at <strong>${_hscFmt(cpV)}</strong> ${noun}`;
       } else {
-        textEl.innerHTML = `${verb} <strong>${_hscFmt(diff)}</strong> more ${noun},<span class="hsc-counts"> <strong>${_hscFmt(leadV)}&ndash;${_hscFmt(lossV)}</strong></span>`;
+        // Always put the lead/loss counts on a second line — the sentence
+        // sits next to a logo in a narrow column so the comma reads awkwardly.
+        textEl.innerHTML = `${verb} <strong>${_hscFmt(diff)}</strong> more ${noun}<br><span class="hsc-counts"><strong>${_hscFmt(leadV)}&ndash;${_hscFmt(lossV)}</strong></span>`;
       }
     };
     updateSentence('gw', d.cpGw, d.dillGw, 'has won',    'games',  'wins');
@@ -418,7 +420,7 @@
       const rows = players.map(p => `
         <tr>
           <td><span class="mvp-place ${placeCls(p.place)}">${p.place}</span></td>
-          <td><button class="mvp-name" data-route="player" data-param="${escapeHtml(p.name || '')}" title="View ${escapeHtml(p.name || '')}'s profile">${escapeHtml(p.name || '—')}</button></td>
+          <td class="mvp-name-cell"><button class="mvp-name" data-route="player" data-param="${escapeHtml(p.name || '')}" title="View ${escapeHtml(p.name || '')}'s profile">${escapeHtml(p.name || '—')}</button></td>
           <td class="center"><span class="mvp-gender-pill ${genderCls(p.gender)}">${escapeHtml(p.gender || '—')}</span></td>
           <td class="num"><span class="mvp-rating">${(p.rating != null) ? p.rating.toFixed(1) : '—'}</span></td>
         </tr>`).join('');
