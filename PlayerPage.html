@@ -268,6 +268,24 @@ let allPlayers  = [];
 let allGamelog  = [];
 let glFilters   = { season: '', type: '', match: '', partner: '', opp: '' };
 let glSearch    = '';
+let currentBrand = null;
+
+// Resolve a team's logo by keyword-matching team_name against the
+// canonical clubLogos map returned by the backend. Mirrors the logic in
+// SeasonStats.html / Scorecard.html so all pages share one source of truth
+// instead of relying on a per-club URL lookup that often picked the wrong
+// club and rendered everyone's logo as Team Camp.
+function resolveTeamLogoHtml(teamName, fallbackUrl) {
+  const t = String(teamName || '').toLowerCase();
+  const logos = (currentBrand && currentBrand.clubLogos) || {};
+  for (const [kw, url] of Object.entries(logos)) {
+    if (url && t.includes(String(kw).toLowerCase())) {
+      return `<img src="${esc(url)}" alt="${esc(teamName || '')}">`;
+    }
+  }
+  if (fallbackUrl) return `<img src="${esc(fallbackUrl)}" alt="${esc(teamName || '')}">`;
+  return `<div class="ph-logo-fb">${esc(String(teamName || '?').substring(0,2).toUpperCase())}</div>`;
+}
 let ddOpen      = false;
 
 /* ─────────────────────────────────────────────────────────
@@ -382,6 +400,7 @@ function renderAll(data) {
   allGamelog = gamelog || [];
   glFilters  = { season: '', type: '', match: '', partner: '', opp: '' };
   glSearch   = '';
+  currentBrand = brand || {};
 
   const logo = document.getElementById('league-logo');
   const fb   = document.getElementById('league-logo-fb');
@@ -413,9 +432,7 @@ function renderHero(player, gamelog) {
   document.getElementById('playerHero').innerHTML = `
     <div class="player-hero">
       <div class="ph-logo">
-        ${player.team_logo_url
-          ? `<img src="${esc(player.team_logo_url)}" alt="">`
-          : `<div class="ph-logo-fb">${esc((player.team_name||'?').substring(0,2).toUpperCase())}</div>`}
+        ${resolveTeamLogoHtml(player.team_name, player.team_logo_url)}
       </div>
       <div class="ph-info">
         <div class="ph-name">${esc(player.full_name)}</div>

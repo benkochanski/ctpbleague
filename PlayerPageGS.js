@@ -182,6 +182,17 @@ function getPlayerPageData(playerId) {
     };
   }).sort((a, b) => String(b.match_date).localeCompare(String(a.match_date)));
 
+  // Pull the canonical club-logo map (short_name → image URL) so the client
+  // can resolve a team's logo by keyword-matching the team_name, the same
+  // way Season Stats and the Scorecard do. The per-team club_id lookup
+  // above was unreliable when club_id was blank or the substring fallback
+  // hit the wrong club.
+  let clubLogos = {};
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (typeof getClubLogos_ === 'function') clubLogos = getClubLogos_(ss) || {};
+  } catch (e) { /* leave empty — client will fall back to initials */ }
+
   return {
     player: {
       player_id:     cleanId,
@@ -190,12 +201,15 @@ function getPlayerPageData(playerId) {
       dupr:          (player.registered_dupr ?? player.dupr) != null ? Number(player.registered_dupr ?? player.dupr) : null,
       team_id:       myTeam ? String(myTeam.team_id  || '').trim() : '',
       team_name:     stripDivisionSuffix_(myTeam ? String(myTeam.team_name || '').trim() : playerClubName),
-      team_logo_url: driveImageUrl_(logoId)
+      // Kept for backwards compatibility — client now prefers keyword
+      // matching via brand.clubLogos.
+      team_logo_url: ''
     },
     gamelog,
     brand: {
       leagueLogoUrl: driveImageUrl_(LEAGUE_LOGO_FILE_ID),
-      leagueTitle:   'Connecticut Pickleball League'
+      leagueTitle:   'Connecticut Pickleball League',
+      clubLogos:     clubLogos
     }
   };
 }
