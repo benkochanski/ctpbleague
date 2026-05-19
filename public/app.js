@@ -400,6 +400,44 @@
   // HOME (upcoming + recent previews)
   // ==========================================================================
 
+  let _mvpLoaded = false;
+  async function renderMvpLeaderboard() {
+    const body = document.getElementById('home-mvp-body');
+    if (!body || _mvpLoaded) return;
+    try {
+      const resp = await fetch(`${GAS_BASE}?page=mvpleaderboard&limit=10`);
+      const data = await resp.json();
+      const players = (data && data.players) || [];
+      if (!players.length) {
+        body.innerHTML = '<div class="mvp-empty">No qualified players yet.</div>';
+        _mvpLoaded = true;
+        return;
+      }
+      const placeCls = i => i === 1 ? 'gold' : i === 2 ? 'silver' : i === 3 ? 'bronze' : '';
+      const genderCls = g => g === 'F' ? 'f' : g === 'M' ? 'm' : 'x';
+      const rows = players.map(p => `
+        <tr>
+          <td><span class="mvp-place ${placeCls(p.place)}">${p.place}</span></td>
+          <td><button class="mvp-name" data-route="player" data-param="${escapeHtml(p.name || '')}" title="View ${escapeHtml(p.name || '')}'s profile">${escapeHtml(p.name || '—')}</button></td>
+          <td class="center"><span class="mvp-gender-pill ${genderCls(p.gender)}">${escapeHtml(p.gender || '—')}</span></td>
+          <td class="num"><span class="mvp-rating">${(p.rating != null) ? p.rating.toFixed(1) : '—'}</span></td>
+        </tr>`).join('');
+      body.innerHTML = `
+        <table class="mvp-table">
+          <thead><tr>
+            <th>#</th>
+            <th>Name</th>
+            <th class="center">Gender</th>
+            <th class="num">Rating</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      _mvpLoaded = true;
+    } catch (err) {
+      body.innerHTML = '<div class="mvp-empty">Couldn’t load MVP leaderboard.</div>';
+    }
+  }
+
   async function renderHome() {
     const upcomingEl = document.getElementById('home-upcoming');
     const recentEl   = document.getElementById('home-recent');
@@ -511,6 +549,9 @@
         statsEl.dataset.loaded = '1';
       }
     }
+
+    // ---- MVP leaderboard (right-side panel) ----
+    renderMvpLeaderboard();
 
     // Override displayed date + time per league rules:
     //   D1–D4 play Saturdays; D5 plays Sundays.

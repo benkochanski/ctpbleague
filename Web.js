@@ -334,6 +334,13 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (page === 'mvpleaderboard') {
+    const limit = Number(params.limit || 10);
+    return ContentService
+      .createTextOutput(getMvpLeaderboardV1(limit))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (page === 'previewdupr') {
     const weekNum = Number(params.week || 0);
     return ContentService

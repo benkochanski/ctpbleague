@@ -2010,11 +2010,16 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 48%, #0d5229 100%);
   padding: 24px 24px 32px;
   display: grid;
-  grid-template-columns: 1fr 360px 1fr;
+  /* Tighter outer columns — the side columns used to be 1fr each which
+     left a lot of dead space next to the main logos. Use auto so they
+     hug the logo widths, freeing horizontal room for the MVP side
+     panel on the right of the home page. */
+  grid-template-columns: auto 1fr auto;
   grid-template-areas:
     "heading heading heading"
     "left    center  right";
-  align-items: center; gap: 14px 16px;
+  align-items: center; gap: 14px 24px;
+  justify-content: center;
 }
 .home-series-wrap .sh-team { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .home-series-wrap .sh-team:first-of-type { grid-area: left; justify-self: center; }
@@ -2073,6 +2078,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-size: 18px; font-weight: 500;
   color: var(--text); line-height: 1.35;
   min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .home-series-wrap .hsc-sentence-text strong {
   font-weight: 800; color: var(--league-navy);
@@ -2193,4 +2200,99 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .home-series-wrap .hsc-sentence-text { font-size: 15px; line-height: 1.35; }
   /* Always wrap the raw counts onto their own line on mobile */
   .home-series-wrap .hsc-counts { display: block; margin-top: 2px; }
+}
+
+/* ==========================================================================
+   Home top row — hero + MVP leaderboard side panel
+   ========================================================================== */
+.home-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+.home-top-main { min-width: 0; }
+.home-top-main .home-series-wrap { margin-bottom: 0; height: 100%; }
+.home-top-side { min-width: 0; display: flex; }
+
+.home-mvp {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--border-s);
+  border-radius: 18px; box-shadow: 0 14px 40px rgba(8,30,67,.16);
+  overflow: hidden;
+}
+.home-mvp .mvp-head {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 100%);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; color: #fff;
+}
+.home-mvp .mvp-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: .16em;
+  color: var(--league-gold); text-transform: uppercase;
+}
+.home-mvp .mvp-link {
+  background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30);
+  color: #fff; font-size: 11px; letter-spacing: .04em; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  white-space: nowrap;
+}
+.home-mvp .mvp-link:hover { background: rgba(255,255,255,.22); }
+
+.home-mvp .mvp-body { flex: 1; padding: 4px 0 8px; }
+.home-mvp .mvp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.home-mvp .mvp-table th {
+  text-align: left; font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 8px 14px; border-bottom: 1px solid var(--border-s);
+  background: var(--bg-soft);
+}
+.home-mvp .mvp-table th.num,
+.home-mvp .mvp-table td.num { text-align: right; }
+.home-mvp .mvp-table th.center,
+.home-mvp .mvp-table td.center { text-align: center; }
+.home-mvp .mvp-table td {
+  padding: 8px 14px; border-bottom: 1px solid var(--border-s);
+  vertical-align: middle;
+}
+.home-mvp .mvp-table tr:last-child td { border-bottom: none; }
+.home-mvp .mvp-place {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; font-size: 11px; font-weight: 800;
+  background: var(--bg-soft); color: var(--muted);
+}
+.home-mvp .mvp-place.gold   { background: #fff2c2; color: #6b5400; }
+.home-mvp .mvp-place.silver { background: #e7eaf0; color: #5a667a; }
+.home-mvp .mvp-place.bronze { background: #f5dfc2; color: #7a4f1f; }
+.home-mvp .mvp-name {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-weight: 700; color: var(--text); text-align: left;
+  font-family: inherit; font-size: inherit;
+}
+.home-mvp .mvp-name:hover { color: var(--league-blue); text-decoration: underline; }
+.home-mvp .mvp-rating {
+  font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text);
+}
+.home-mvp .mvp-gender-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 800; line-height: 20px;
+  border: 1px solid transparent; color: #fff;
+}
+.home-mvp .mvp-gender-pill.f { background: #d5a6bd; border-color: #d5a6bd; }
+.home-mvp .mvp-gender-pill.m { background: #6fa8dc; border-color: #6fa8dc; }
+.home-mvp .mvp-gender-pill.x { background: #eef3f9; color: #526983; border-color: #d8e2ee; }
+
+.home-mvp .mvp-empty {
+  padding: 24px 18px; text-align: center; color: var(--muted); font-size: 13px;
+}
+
+/* Stack on narrower viewports so the hero gets full width. */
+@media (max-width: 1100px) {
+  .home-top { grid-template-columns: 1fr; }
+  .home-top-side { min-height: 0; }
+  .home-top-main .home-series-wrap { margin-bottom: 0; }
 }

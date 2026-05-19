@@ -540,3 +540,67 @@ function getAllPlayersStatsV1_() {
   return JSON.stringify({ standings: [], playerStats, matches: [], leagueWeeks });
 
 }
+
+// MVP leaderboard for the home page side panel. Aggregates the per-(player,
+// division) rows returned by getAllPlayersStatsV1_() into one row per
+// player, computes the 60/40 Win%/Pts% rating and the qualified flag, and
+// returns the top N qualified players sorted by rating desc.
+function getMvpLeaderboardV1(limit) {
+  const n = Math.max(1, Math.min(50, Number(limit) || 10));
+  const raw = JSON.parse(getAllPlayersStatsV1_());
+  const rows = Array.isArray(raw.playerStats) ? raw.playerStats : [];
+  const leagueWeeks = Number(raw.leagueWeeks) || 1;
+  const possGmsGlobal = leagueWeeks * 8;
+
+  // Group by player_id and sum across divisions.
+  const byPlayer = {};
+  rows.forEach(p => {
+    const key = p.player_id || p.name;
+    if (!byPlayer[key]) {
+      byPlayer[key] = {
+        player_id: p.player_id || '',
+        name: p.name || '',
+        team_name: p.team_name || '',
+        wins: 0, losses: 0,
+        points_for: 0, points_against: 0,
+        isWomens: false, isMens: false,
+      };
+    }
+    const a = byPlayer[key];
+    a.wins           += Number(p.wins || 0);
+    a.losses         += Number(p.losses || 0);
+    a.points_for     += Number(p.points_for || 0);
+    a.points_against += Number(p.points_against || 0);
+    a.isWomens = a.isWomens || !!p.isWomens;
+    a.isMens   = a.isMens   || !!p.isMens;
+    a.team_name = p.team_name || a.team_name;
+  });
+
+  const computed = Object.values(byPlayer).map(p => {
+    const gms = p.wins + p.losses;
+    const winPct = gms > 0 ? p.wins / gms : 0;
+    const ptsTot = p.points_for + p.points_against;
+    const ptsPct = ptsTot > 0 ? p.points_for / ptsTot : 0;
+    const rating = (winPct * 0.6 + ptsPct * 0.4) * 100;
+    const qualified = possGmsGlobal > 0 && (gms / possGmsGlobal) >= 0.35;
+    return Object.assign(p, { gms, rating, qualified });
+  });
+
+  // Qualified first, descending by rating.
+  computed.sort((a, b) => {
+    if (a.qualified !== b.qualified) return a.qualified ? -1 : 1;
+    return b.rating - a.rating;
+  });
+
+  const top = computed.slice(0, n).map((p, i) => ({
+    place:     i + 1,
+    player_id: p.player_id,
+    name:      p.name,
+    team_name: p.team_name,
+    gender:    p.isWomens ? 'F' : p.isMens ? 'M' : '',
+    rating:    Math.round(p.rating * 10) / 10,
+    qualified: p.qualified
+  }));
+
+  return JSON.stringify({ ok: true, leagueWeeks, players: top });
+}

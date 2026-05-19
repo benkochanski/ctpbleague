@@ -173,7 +173,24 @@
 
     <!-- Home view -->
     <div class="page" id="page-home">
-      <div id="home-stats"></div>
+      <div class="home-top">
+        <div id="home-stats" class="home-top-main"></div>
+        <aside class="home-top-side">
+          <div id="home-mvp" class="home-mvp">
+            <div class="mvp-head">
+              <span class="mvp-title">MVP Leaderboard</span>
+              <button class="home-link mvp-link" data-route="allplayers">View all player stats
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mvp-body" id="home-mvp-body">
+              <div class="loading-card">Loading MVP leaderboard…</div>
+            </div>
+          </div>
+        </aside>
+      </div>
       <div class="page-inner">
         <div class="home-split">
           <section class="home-section">
