@@ -335,6 +335,7 @@
     .pst-all .td-name  { text-align: left; font-weight: 700; cursor: pointer; }
     .pst-all .td-name:hover { color: var(--blue); text-decoration: underline; }
     .pst-all .td-div   { font-size: 12px; color: var(--muted); text-align: left; white-space: nowrap; }
+    .pst-all .td-gender { font-size: 12px; color: var(--muted); text-align: left; white-space: nowrap; }
     .pst-all .td-play,
     .pst-all .td-winpct,
     .pst-all .td-ptspct { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); white-space: nowrap; }
@@ -1107,8 +1108,17 @@
           a[t+'_diff'] += (p[t+'_diff'] || 0);
         });
       });
+      // Sort division names numerically — "Division 1" before "Division 2"
+      // before "Division 10", regardless of which division a player's
+      // games happened to be scanned first.
+      const divNum = s => {
+        const mt = String(s || '').match(/(\d+)/);
+        return mt ? Number(mt[1]) : Number.MAX_SAFE_INTEGER;
+      };
       return Object.values(m).map(a => {
-        a.division_name = Array.from(a._divs).join(' / ');
+        a.division_name = Array.from(a._divs)
+          .sort((x, y) => divNum(x) - divNum(y) || String(x).localeCompare(String(y)))
+          .join(' / ');
         delete a._divs;
         return a;
       });
@@ -1148,10 +1158,12 @@
         return `<td class="td-type"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
       };
 
+      const genderLabel = p.isWomens ? 'Women' : p.isMens ? 'Men' : '—';
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
         <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
         <td class="td-name">${esc(p.name)}</td>
+        <td class="td-gender">${esc(genderLabel)}</td>
         <td class="td-div">${esc(p.division_name || '')}</td>
         <td class="td-gms">${gms}</td>
         <td class="td-rating">${esc(ratingStr)}</td>
@@ -1175,6 +1187,7 @@
           <th class="th-l">#</th>
           <th class="th-l"></th>
           <th class="th-l th-sortable" data-sort="name" data-sort-type="str">Player</th>
+          <th class="th-sortable" data-sort="gender" data-sort-type="str">Gender</th>
           <th class="th-sortable" data-sort="div"  data-sort-type="str">Division</th>
           <th class="th-sortable" data-sort="gms"    data-sort-type="num">Gms</th>
           <th class="th-sortable" data-sort="rating" data-sort-type="num">Rating</th>
@@ -1254,7 +1267,7 @@
       if (!tbody) return;
       tbody.innerHTML = list.length
         ? list.map(buildRow).join('')
-        : '<tr><td colspan="17" style="padding:24px;text-align:center;color:var(--muted);">No players match these filters.</td></tr>';
+        : '<tr><td colspan="18" style="padding:24px;text-align:center;color:var(--muted);">No players match these filters.</td></tr>';
     }
 
     const filterIds = ['psFilter','apFilterTeam','apFilterDiv','apFilterGender','apFilterQual'];
@@ -1472,8 +1485,9 @@
       play: '.td-play', winpct: '.td-winpct', ptspct: '.td-ptspct',
     };
     const norm = s => s.replace(/–/g, '-');   // en-dash → hyphen
-    if (key === 'name') return row.querySelector('.td-name')?.textContent || '';
-    if (key === 'div')  return row.querySelector('.td-div')?.textContent  || '';
+    if (key === 'name')   return row.querySelector('.td-name')?.textContent   || '';
+    if (key === 'gender') return row.querySelector('.td-gender')?.textContent || '';
+    if (key === 'div')    return row.querySelector('.td-div')?.textContent    || '';
     if (key === 'rec') {
       const txt = norm(row.querySelector('.td-rec')?.textContent || '0');
       return parseFloat(txt.split('-')[0]) || 0;
