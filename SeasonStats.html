@@ -316,6 +316,19 @@
     .th-sort-asc::after  { content: ' ▲'; font-size: 9px; }
     .th-sort-desc::after { content: ' ▼'; font-size: 9px; }
 
+    /* ── All Players filter row ─────────────────────────────────────────── */
+    .ap-sec-head { flex-wrap: wrap; gap: 6px; }
+    .ap-filter {
+      height: 28px; padding: 0 22px 0 10px; border-radius: 7px;
+      background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30);
+      font-size: 12px; color: rgba(255,255,255,.95); font-weight: 600;
+      cursor: pointer; outline: none; -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='white'><path d='M0 0l6 8 6-8z' opacity='.7'/></svg>");
+      background-repeat: no-repeat; background-position: right 7px center; background-size: 9px;
+    }
+    .ap-filter:hover { background-color: rgba(255,255,255,.22); }
+    .ap-filter option { color: var(--text); background: #fff; }
+
     /* ── All Players combined table ─────────────────────────────────────── */
     .pst-all .sr { cursor: default; }
     .pst-all .sr:hover td { background: #f5f8ff; }
@@ -1119,11 +1132,30 @@
         <tbody>${list.map(buildRow).join('')}</tbody>
       </table>`;
 
+    // Build dropdown option lists from the data.
+    const uniqSorted = arr => Array.from(new Set(arr.filter(Boolean))).sort();
+    const teams = uniqSorted(list.map(p => p.team_name || ''));
+    const divs  = uniqSorted(list.map(p => p.division_name || ''));
+    const opt   = v => `<option value="${esc(v)}">${esc(v)}</option>`;
+
     el.innerHTML = `
-      <div class="sec-head">
+      <div class="sec-head ap-sec-head">
         <div class="sec-badge">P</div>
         <span class="sec-label">All Player Stats</span>
         <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players…">
+        <select class="ap-filter" id="apFilterTeam"><option value="">All Teams</option>${teams.map(opt).join('')}</select>
+        <select class="ap-filter" id="apFilterDiv"><option value="">All Divisions</option>${divs.map(opt).join('')}</select>
+        <select class="ap-filter" id="apFilterGender">
+          <option value="">All Genders</option>
+          <option value="womens">Women</option>
+          <option value="mens">Men</option>
+          <option value="other">Other</option>
+        </select>
+        <select class="ap-filter" id="apFilterQual">
+          <option value="">All Players</option>
+          <option value="q">Qualified only</option>
+          <option value="nq">Not qualified</option>
+        </select>
         <button class="ps-hdr-btn" onclick="downloadCSV()">↓ CSV</button>
         <button class="ps-hdr-btn" onclick="downloadPDF()">↓ PDF</button>
         <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
@@ -1132,14 +1164,51 @@
 
     initSortableHeaders();
 
-    document.getElementById('psFilter')?.addEventListener('input', function() {
-      const q = this.value.toLowerCase().trim();
-      document.querySelectorAll('tr.sr').forEach(sr => {
+    // Stash isWomens/isMens onto the rendered row so the gender filter
+    // doesn't have to re-derive them from the DOM.
+    const rows = el.querySelectorAll('tr.sr');
+    rows.forEach((sr, i) => {
+      const p = list[i] || {};
+      sr.dataset.gender = p.isWomens ? 'womens' : p.isMens ? 'mens' : 'other';
+      sr.dataset.team   = p.team_name || '';
+      sr.dataset.div    = p.division_name || '';
+    });
+
+    function applyAllFilters() {
+      const q       = (document.getElementById('psFilter')?.value || '').toLowerCase().trim();
+      const teamF   = document.getElementById('apFilterTeam')?.value   || '';
+      const divF    = document.getElementById('apFilterDiv')?.value    || '';
+      const genderF = document.getElementById('apFilterGender')?.value || '';
+      const qualF   = document.getElementById('apFilterQual')?.value   || '';
+
+      let visible = 0;
+      el.querySelectorAll('tr.sr').forEach(sr => {
         const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
-        const team = (sr.querySelector('.td-div')?.textContent || '').toLowerCase();
-        const match = !q || name.includes(q) || team.includes(q);
-        sr.style.display = match ? '' : 'none';
+        const team = sr.dataset.team || '';
+        const div  = sr.dataset.div  || '';
+        const gen  = sr.dataset.gender || '';
+        const isQ  = !!sr.querySelector('.q-chip.q');
+
+        const matchText   = !q || name.includes(q) || team.toLowerCase().includes(q) || div.toLowerCase().includes(q);
+        const matchTeam   = !teamF   || team === teamF;
+        const matchDiv    = !divF    || div  === divF;
+        const matchGender = !genderF || gen  === genderF;
+        const matchQual   = !qualF   || (qualF === 'q' ? isQ : !isQ);
+
+        const show = matchText && matchTeam && matchDiv && matchGender && matchQual;
+        sr.style.display = show ? '' : 'none';
+        if (show) {
+          visible++;
+          const rk = sr.querySelector('.td-rank');
+          if (rk) rk.textContent = visible;
+        }
       });
+    }
+
+    ['psFilter','apFilterTeam','apFilterDiv','apFilterGender','apFilterQual'].forEach(id => {
+      const node = document.getElementById(id);
+      if (!node) return;
+      node.addEventListener(node.tagName === 'SELECT' ? 'change' : 'input', applyAllFilters);
     });
   }
 
