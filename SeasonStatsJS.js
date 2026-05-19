@@ -417,10 +417,14 @@ function getAllPlayersStatsV1_() {
 
   const VALID_TYPES = new Set(['womens','mens','mixed','coed']);
 
+  // Accumulate one bucket per (player, division). The client groups these
+  // into one row per player by default and falls back to the raw per-div
+  // rows when a single division is selected.
   const psMap = {};
-  const initPs = () => ({
-    teamIds:       new Set(),
-    divIds:        new Set(),
+  const initPs = (pid, divId, teamId) => ({
+    player_id:     pid,
+    division_id:   divId,
+    team_id:       teamId,
     wins:          0, losses:        0,
     points_for:    0, points_against:0,
     womens_w:0, womens_l:0, womens_diff:0,
@@ -445,6 +449,7 @@ function getAllPlayersStatsV1_() {
     const winner  = String(r[gWinIdx]);
     const homeWon = winner === home;
     const validGt = VALID_TYPES.has(gt);
+    const matchDiv = matchIdToDiv[matchId];
 
     if (!teamMatchSets[home]) teamMatchSets[home] = new Set();
     if (!teamMatchSets[away]) teamMatchSets[away] = new Set();
@@ -452,11 +457,10 @@ function getAllPlayersStatsV1_() {
     teamMatchSets[away].add(matchId);
 
     const accum = (pid, teamId, won, pf, pa) => {
-      if (!psMap[pid]) psMap[pid] = initPs();
-      const ps = psMap[pid];
-      ps.teamIds.add(teamId);
-      const dId = teamDivById[teamId] || matchIdToDiv[matchId] || '';
-      if (dId) ps.divIds.add(dId);
+      const divId = teamDivById[teamId] || matchDiv || '';
+      const key = pid + '|' + divId;
+      if (!psMap[key]) psMap[key] = initPs(pid, divId, teamId);
+      const ps = psMap[key];
       if (won) ps.wins++; else ps.losses++;
       ps.points_for     += pf;
       ps.points_against += pa;
@@ -477,11 +481,11 @@ function getAllPlayersStatsV1_() {
       .forEach(pid => accum(pid, away, !homeWon, as_,  hs));
   });
 
-  // Play% denominator for the All Players view is league-wide weeks × 8.
-  // A player can only play in one match per week (8 games / match), so the
-  // theoretical maximum for everyone is the same: (# weeks any match has
-  // been completed) × 8. We count distinct week numbers (W\d+ in the
-  // match_id) among matches that have at least one scored game.
+  // Play% denominator: a player can only play one match per week (8 games),
+  // so the league-wide max is (distinct weeks any match has been completed)
+  // × 8. Also compute per-division team-match counts so a single-division
+  // filtered view uses the same denominator that the per-division Season
+  // Stats page uses.
   const playedMatchIds = new Set();
   Object.values(psMap).forEach(ps => ps.matchIds.forEach(id => playedMatchIds.add(id)));
   const weekNums = new Set();
@@ -489,17 +493,12 @@ function getAllPlayersStatsV1_() {
     const m = String(id).match(/W(\d+)/i);
     if (m) weekNums.add(m[1]);
   });
-  const leagueWeeks = weekNums.size;
-  // team_match_count is consumed by the client as possGms = count * 8.
-  // Using leagueWeeks here gives every player the same denominator.
-  const teamMatchesGlobal = leagueWeeks || 1;
+  const leagueWeeks = weekNums.size || 1;
 
-  const playerStats = Object.entries(psMap)
-    .filter(([, ps]) => ps.wins > 0 || ps.losses > 0)
-    .map(([pid, ps]) => {
-      const gms = ps.wins + ps.losses;
-      const teamMatches = teamMatchesGlobal;
-      const possMatches = teamMatchesGlobal;
+  const playerStats = Object.values(psMap)
+    .filter(ps => ps.wins > 0 || ps.losses > 0)
+    .map(ps => {
+      const pid = ps.player_id;
 
       const g = playerGender[pid] || '';
       const isWomensGender = ['f','female','w','woman','women'].includes(g);
@@ -507,32 +506,27 @@ function getAllPlayersStatsV1_() {
       const isWomens = isWomensGender || (!g && ps.gameTypes.has('womens'));
       const isMens   = isMensGender   || (!g && !ps.gameTypes.has('womens') && ps.gameTypes.has('mens'));
 
-      // Rating: 60% Win% + 40% Pts% (matches per-division code + UI).
-      const winPct = gms > 0 ? ps.wins / gms : 0;
-      const ptsTot = ps.points_for + ps.points_against;
-      const ptsPct = ptsTot > 0 ? ps.points_for / ptsTot : 0;
-      const rating = (winPct * 0.6 + ptsPct * 0.4) * 100;
-
-      const qualified = possMatches > 0 && (ps.matchIds.size / possMatches) >= 0.5;
-
       const hasType = t => ps[t+'_w'] + ps[t+'_l'] > 0;
 
-      // Pick a representative team for display (last team they played on).
-      const teamIdsArr = Array.from(ps.teamIds);
-      const primaryTid = teamIdsArr[teamIdsArr.length - 1] || '';
-      const divNames = Array.from(ps.divIds).map(d => divNameById[d] || d).filter(Boolean);
+      // Per-division team-match count (number of matches the player's team
+      // played in this division). The client uses this as the Play%
+      // denominator (× 8) when the user filters to a single division.
+      const teamMatches = teamMatchSets[ps.team_id]?.size || 0;
+
+      const divName = divNameById[ps.division_id] || ps.division_id || '';
 
       return {
+        player_id:       pid,
         name:            playerNames[pid] || pid,
-        team_name:       teamNameById[primaryTid] || primaryTid,
-        team_name_full:  teamNameFullById[primaryTid] || teamNameById[primaryTid] || primaryTid,
-        division_name:   divNames.join(' / '),
+        team_id:         ps.team_id,
+        team_name:       teamNameById[ps.team_id]     || ps.team_id,
+        team_name_full:  teamNameFullById[ps.team_id] || teamNameById[ps.team_id] || ps.team_id,
+        division_id:     ps.division_id,
+        division_name:   divName,
         wins:            ps.wins,
         losses:          ps.losses,
         points_for:      ps.points_for,
         points_against:  ps.points_against,
-        rating:          rating,
-        qualified:       qualified,
         team_match_count: teamMatches,
         isWomens,
         isMens,
@@ -543,6 +537,6 @@ function getAllPlayersStatsV1_() {
       };
     });
 
-  return JSON.stringify({ standings: [], playerStats, matches: [] });
+  return JSON.stringify({ standings: [], playerStats, matches: [], leagueWeeks });
 
 }

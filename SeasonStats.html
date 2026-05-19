@@ -1053,12 +1053,72 @@
 
   // Single combined player-stats table used by the All Players view.
   // No expand toggle, no gender split — every secondary stat is shown inline.
+  //
+  // rawList is per-(player, division). By default (no division filter)
+  // we aggregate by player_id into one row per player. When a single
+  // division is selected the raw rows for that division are shown as-is,
+  // which gives the same stats a user would see on the per-division
+  // Season Stats page.
   function buildAllPlayersTable(rawList, markQ, qualSortFn, el) {
-    const list = markQ(rawList).sort(qualSortFn);
-    if (!list.length) {
+    if (!rawList.length) {
       el.innerHTML = '<div class="empty-state"><div class="ico">&#x1F3D3;</div>No player data.</div>';
       return;
     }
+    const leagueWeeks = (currentData && currentData.leagueWeeks) || 1;
+    const TYPE_KEYS = ['womens','mens','mixed','coed'];
+
+    function aggregateByPlayer(rows) {
+      const m = {};
+      rows.forEach(p => {
+        const key = p.player_id || p.name;
+        if (!m[key]) {
+          m[key] = {
+            player_id: p.player_id, name: p.name,
+            team_name: p.team_name, team_name_full: p.team_name_full,
+            division_name: '',
+            _divs: new Set(),
+            wins: 0, losses: 0, points_for: 0, points_against: 0,
+            isWomens: false, isMens: false,
+            team_match_count: leagueWeeks,
+          };
+          TYPE_KEYS.forEach(t => {
+            m[key][t+'_w'] = null;  // null = never played
+            m[key][t+'_l'] = 0;
+            m[key][t+'_diff'] = 0;
+          });
+        }
+        const a = m[key];
+        if (p.division_name) a._divs.add(p.division_name);
+        a.wins += p.wins || 0;
+        a.losses += p.losses || 0;
+        a.points_for += p.points_for || 0;
+        a.points_against += p.points_against || 0;
+        a.isWomens = a.isWomens || !!p.isWomens;
+        a.isMens   = a.isMens   || !!p.isMens;
+        // Most recent team they played on wins for display.
+        a.team_name      = p.team_name      || a.team_name;
+        a.team_name_full = p.team_name_full || a.team_name_full;
+        TYPE_KEYS.forEach(t => {
+          if (p[t+'_w'] !== null && p[t+'_w'] !== undefined) {
+            a[t+'_w'] = (a[t+'_w'] || 0) + (p[t+'_w'] || 0);
+          }
+          a[t+'_l']    += (p[t+'_l']    || 0);
+          a[t+'_diff'] += (p[t+'_diff'] || 0);
+        });
+      });
+      return Object.values(m).map(a => {
+        a.division_name = Array.from(a._divs).join(' / ');
+        delete a._divs;
+        return a;
+      });
+    }
+
+    // Dropdown option lists come from the raw per-division data so every
+    // team / division a player belongs to is selectable.
+    const uniqSorted = arr => Array.from(new Set(arr.filter(Boolean))).sort();
+    const teams = uniqSorted(rawList.map(p => p.team_name || ''));
+    const divs  = uniqSorted(rawList.map(p => p.division_name || ''));
+    const opt   = v => `<option value="${esc(v)}">${esc(v)}</option>`;
 
     const buildRow = (p, i) => {
       const gms     = (p.wins || 0) + (p.losses || 0);
@@ -1108,7 +1168,7 @@
       </tr>`;
     };
 
-    const tableHtml = `
+    const tableShell = `
       <table class="pst pst-all">
         <thead><tr>
           <th class="th-l">#</th>
@@ -1129,14 +1189,8 @@
           <th class="th-sortable" data-sort="coed"   data-sort-type="num">Coed</th>
           <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
         </tr></thead>
-        <tbody>${list.map(buildRow).join('')}</tbody>
+        <tbody id="ap-tbody"></tbody>
       </table>`;
-
-    // Build dropdown option lists from the data.
-    const uniqSorted = arr => Array.from(new Set(arr.filter(Boolean))).sort();
-    const teams = uniqSorted(list.map(p => p.team_name || ''));
-    const divs  = uniqSorted(list.map(p => p.division_name || ''));
-    const opt   = v => `<option value="${esc(v)}">${esc(v)}</option>`;
 
     el.innerHTML = `
       <div class="sec-head ap-sec-head">
@@ -1160,56 +1214,57 @@
         <button class="ps-hdr-btn" onclick="downloadPDF()">↓ PDF</button>
         <button class="ps-hdr-btn" onclick="toggleLegend()">Legend</button>
       </div>
-      <div class="ps-scroll"><div class="ps-container" id="ps-container">${tableHtml}</div></div>`;
+      <div class="ps-scroll"><div class="ps-container" id="ps-container">${tableShell}</div></div>`;
 
-    initSortableHeaders();
-
-    // Stash isWomens/isMens onto the rendered row so the gender filter
-    // doesn't have to re-derive them from the DOM.
-    const rows = el.querySelectorAll('tr.sr');
-    rows.forEach((sr, i) => {
-      const p = list[i] || {};
-      sr.dataset.gender = p.isWomens ? 'womens' : p.isMens ? 'mens' : 'other';
-      sr.dataset.team   = p.team_name || '';
-      sr.dataset.div    = p.division_name || '';
-    });
-
-    function applyAllFilters() {
+    function renderRows() {
       const q       = (document.getElementById('psFilter')?.value || '').toLowerCase().trim();
       const teamF   = document.getElementById('apFilterTeam')?.value   || '';
       const divF    = document.getElementById('apFilterDiv')?.value    || '';
       const genderF = document.getElementById('apFilterGender')?.value || '';
       const qualF   = document.getElementById('apFilterQual')?.value   || '';
 
-      let visible = 0;
-      el.querySelectorAll('tr.sr').forEach(sr => {
-        const name = (sr.querySelector('.td-name')?.textContent || '').toLowerCase();
-        const team = sr.dataset.team || '';
-        const div  = sr.dataset.div  || '';
-        const gen  = sr.dataset.gender || '';
-        const isQ  = !!sr.querySelector('.q-chip.q');
+      // When a single division is selected, show the raw per-division rows
+      // so stats reflect only that division. Otherwise aggregate across all
+      // divisions a player appeared in.
+      let rows = divF
+        ? rawList.filter(p => p.division_name === divF)
+        : aggregateByPlayer(rawList);
 
-        const matchText   = !q || name.includes(q) || team.toLowerCase().includes(q) || div.toLowerCase().includes(q);
-        const matchTeam   = !teamF   || team === teamF;
-        const matchDiv    = !divF    || div  === divF;
-        const matchGender = !genderF || gen  === genderF;
-        const matchQual   = !qualF   || (qualF === 'q' ? isQ : !isQ);
+      if (teamF)   rows = rows.filter(p => (p.team_name || '') === teamF);
+      if (genderF) {
+        rows = rows.filter(p => {
+          const gen = p.isWomens ? 'womens' : p.isMens ? 'mens' : 'other';
+          return gen === genderF;
+        });
+      }
+      if (q) {
+        rows = rows.filter(p =>
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.team_name || '').toLowerCase().includes(q) ||
+          (p.division_name || '').toLowerCase().includes(q));
+      }
 
-        const show = matchText && matchTeam && matchDiv && matchGender && matchQual;
-        sr.style.display = show ? '' : 'none';
-        if (show) {
-          visible++;
-          const rk = sr.querySelector('.td-rank');
-          if (rk) rk.textContent = visible;
-        }
-      });
+      let list = markQ(rows).sort(qualSortFn);
+      if      (qualF === 'q')  list = list.filter(p => p.qualified);
+      else if (qualF === 'nq') list = list.filter(p => !p.qualified);
+
+      const tbody = el.querySelector('#ap-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = list.length
+        ? list.map(buildRow).join('')
+        : '<tr><td colspan="17" style="padding:24px;text-align:center;color:var(--muted);">No players match these filters.</td></tr>';
     }
 
     ['psFilter','apFilterTeam','apFilterDiv','apFilterGender','apFilterQual'].forEach(id => {
       const node = document.getElementById(id);
       if (!node) return;
-      node.addEventListener(node.tagName === 'SELECT' ? 'change' : 'input', applyAllFilters);
+      node.addEventListener(node.tagName === 'SELECT' ? 'change' : 'input', renderRows);
     });
+
+    renderRows();
+    // Wire up sort headers exactly once — the thead persists across renderRows
+    // calls, so stacking handlers per render would multi-fire on each click.
+    initSortableHeaders();
   }
 
   function equalizePsColHeights() {
