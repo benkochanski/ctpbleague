@@ -2263,13 +2263,28 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--league-gold); text-transform: uppercase;
 }
 .home-mvp .mvp-link {
-  background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.30);
-  color: #fff; font-size: 11px; letter-spacing: .04em; font-weight: 700;
-  padding: 4px 10px; border-radius: 999px;
-  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
-  white-space: nowrap;
+  /* Used inside the footer now — solid league-navy chip so it reads
+     as the primary action on the panel. */
+  background: var(--league-navy); border: 1px solid var(--league-navy);
+  color: #fff; font-size: 12px; letter-spacing: .04em; font-weight: 800;
+  padding: 8px 14px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  white-space: nowrap; align-self: flex-end;
+  text-transform: uppercase;
 }
-.home-mvp .mvp-link:hover { background: rgba(255,255,255,.22); }
+.home-mvp .mvp-link:hover { background: #0d2b5c; border-color: #0d2b5c; }
+
+.home-mvp .mvp-foot {
+  border-top: 1px solid var(--border-s);
+  padding: 14px 18px 16px;
+  background: var(--bg-soft);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.home-mvp .mvp-notes { display: flex; flex-direction: column; gap: 6px; }
+.home-mvp .mvp-notes p {
+  margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted);
+}
+.home-mvp .mvp-notes strong { color: var(--text); font-weight: 800; }
 
 .home-mvp .mvp-body { flex: 1; padding: 0; }
 .home-mvp .mvp-table {
@@ -2301,9 +2316,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .home-mvp .mvp-table td:nth-child(2) { width: 44px; padding-left: 4px; padding-right: 4px; text-align: center; }
 /* Column 3 is name — no explicit width, takes the rest. */
 .home-mvp .mvp-table th:nth-child(4),
-.home-mvp .mvp-table td:nth-child(4) { width: 44px; padding-left: 4px; padding-right: 4px; }
+.home-mvp .mvp-table td:nth-child(4) { width: 64px; padding-left: 6px; padding-right: 8px; }
 .home-mvp .mvp-table th:nth-child(5),
-.home-mvp .mvp-table td:nth-child(5) { width: 56px; padding-left: 4px; padding-right: 14px; }
+.home-mvp .mvp-table td:nth-child(5) { width: 72px; padding-left: 6px; padding-right: 16px; }
 
 /* Plain rank numeral — no bubble — bold Bebas Neue. */
 .home-mvp .mvp-place {

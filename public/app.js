@@ -444,7 +444,7 @@
           <thead><tr>
             <th>#</th>
             <th></th>
-            <th>Name</th>
+            <th>Player</th>
             <th class="center">Gender</th>
             <th class="num">Rating</th>
           </tr></thead>
