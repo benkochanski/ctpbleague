@@ -1128,8 +1128,21 @@
     // team / division a player belongs to is selectable.
     const uniqSorted = arr => Array.from(new Set(arr.filter(Boolean))).sort();
     const teams = uniqSorted(rawList.map(p => p.team_name || ''));
-    const divs  = uniqSorted(rawList.map(p => p.division_name || ''));
+    // Sort divisions numerically and show just the number ("1", "2", …)
+    // while keeping the full division_name as the option value so it can
+    // still be matched against rawList rows.
+    const divNumOf = s => {
+      const mt = String(s || '').match(/(\d+)/);
+      return mt ? Number(mt[1]) : Number.MAX_SAFE_INTEGER;
+    };
+    const divs  = Array.from(new Set(rawList.map(p => p.division_name || '').filter(Boolean)))
+      .sort((a, b) => divNumOf(a) - divNumOf(b) || String(a).localeCompare(String(b)));
     const opt   = v => `<option value="${esc(v)}">${esc(v)}</option>`;
+    const divOpt = v => {
+      const mt = String(v).match(/(\d+)/);
+      const label = mt ? mt[1] : v;
+      return `<option value="${esc(v)}">${esc(label)}</option>`;
+    };
 
     const buildRow = (p, i) => {
       const gms     = (p.wins || 0) + (p.losses || 0);
@@ -1159,12 +1172,23 @@
       };
 
       const genderLabel = p.isWomens ? 'F' : p.isMens ? 'M' : '—';
+      // Strip the word "Division" so the column reads as just numbers
+      // ("1" or "1 / 2" for multi-division players).
+      const divDisplay = String(p.division_name || '')
+        .split('/')
+        .map(s => {
+          const t = s.trim();
+          const mt = t.match(/(\d+)/);
+          return mt ? mt[1] : t;
+        })
+        .filter(Boolean)
+        .join(' / ');
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
         <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
         <td class="td-name">${esc(p.name)}</td>
         <td class="td-gender">${esc(genderLabel)}</td>
-        <td class="td-div">${esc(p.division_name || '')}</td>
+        <td class="td-div">${esc(divDisplay)}</td>
         <td class="td-gms">${gms}</td>
         <td class="td-rating">${esc(ratingStr)}</td>
         <td class="td-rec">${p.wins}–${p.losses}</td>
@@ -1212,7 +1236,7 @@
         <span class="sec-label">All Player Stats</span>
         <input type="text" class="ps-filter-input" id="psFilter" placeholder="Filter players…">
         <select class="ap-filter" id="apFilterTeam"><option value="">All Teams</option>${teams.map(opt).join('')}</select>
-        <select class="ap-filter" id="apFilterDiv"><option value="">All Divisions</option>${divs.map(opt).join('')}</select>
+        <select class="ap-filter" id="apFilterDiv"><option value="">All Divisions</option>${divs.map(divOpt).join('')}</select>
         <select class="ap-filter" id="apFilterGender">
           <option value="">All Genders</option>
           <option value="womens">F</option>
