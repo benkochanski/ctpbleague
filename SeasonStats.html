@@ -1195,14 +1195,15 @@
         if ((w === null || w === undefined) && !l && !d) return '<td class="td-type td-type-empty">—</td>';
         const dStr = d > 0 ? '+' + d : String(d || 0);
         const dCls = d > 0 ? 'ok' : d < 0 ? 'dim' : '';
-        return `<td class="td-type"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
+        return `<td class="td-type" title="${(w||0)} wins · ${(l||0)} losses · ${dStr} point diff in ${label}"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
       };
 
       // Gender pill (F / M / —). Uses a colour-keyed pill that mirrors the
       // division pill style on the hub.
       const genderKey = p.isWomens ? 'f' : p.isMens ? 'm' : '';
       const genderLbl = p.isWomens ? 'F' : p.isMens ? 'M' : '—';
-      const genderHtml = `<span class="gender-pill ${genderKey}">${esc(genderLbl)}</span>`;
+      const genderTip = p.isWomens ? 'Woman' : p.isMens ? 'Man' : 'Unspecified';
+      const genderHtml = `<span class="gender-pill ${genderKey}" title="${esc(genderTip)}">${esc(genderLbl)}</span>`;
 
       // One pill per division the player appeared in, colour-keyed
       // (.div-1, .div-2, …). Numeric order is already established by
@@ -1215,24 +1216,32 @@
         })
         .filter(Boolean);
       const divHtml = divNums.length
-        ? divNums.map(n => `<span class="div-pill div-${esc(n)}">D${esc(n)}</span>`).join('')
+        ? divNums.map(n => `<span class="div-pill div-${esc(n)}" title="Played in Division ${esc(n)}">D${esc(n)}</span>`).join('')
         : '<span class="div-pill">—</span>';
+
+      const ratingTip = rating != null
+        ? `Rating ${ratingStr} = 60% × Win% (${winPctStr}) + 40% × Pts% (${ptsPctStr})`
+        : 'No games played yet';
+      const diffTip   = `${p.points_for || 0} points scored − ${p.points_against || 0} points allowed = ${diffStr}`;
+      const dpgTip    = gms > 0 ? `${diffStr} point diff over ${gms} games` : '';
+      const playTip   = `${gms} games played ÷ ${(p.team_match_count || 0) * 8} possible games`;
+      const qTip      = qual ? 'Qualified for MVP (played ≥ 50% of weeks)' : 'Not yet qualified for MVP — needs ≥ 50% participation';
 
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
-        <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
-        <td class="td-name">${esc(p.name)}</td>
+        <td class="td-logo"><div class="logo-sq" title="${esc(p.team_name_full || p.team_name || '')}">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
+        <td class="td-name" title="${esc(p.name)} — ${esc(p.team_name || '')}">${esc(p.name)}</td>
         <td class="td-gender">${genderHtml}</td>
         <td class="td-div">${divHtml}</td>
-        <td class="td-gms">${gms}</td>
-        <td class="td-rating">${esc(ratingStr)}</td>
-        <td class="td-rec">${p.wins}–${p.losses}</td>
-        <td class="td-diff ${diffCls}">${esc(diffStr)}</td>
-        <td class="td-dpg ${diffCls}">${esc(dpgStr)}</td>
-        <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}">${qual ? 'Q' : 'NQ'}</span></td>
-        <td class="td-play">${esc(playPct)}</td>
-        <td class="td-winpct">${esc(winPctStr)}</td>
-        <td class="td-ptspct">${esc(ptsPctStr)}</td>
+        <td class="td-gms" title="${gms} games played">${gms}</td>
+        <td class="td-rating" title="${esc(ratingTip)}">${esc(ratingStr)}</td>
+        <td class="td-rec" title="${p.wins} wins · ${p.losses} losses">${p.wins}–${p.losses}</td>
+        <td class="td-diff ${diffCls}" title="${esc(diffTip)}">${esc(diffStr)}</td>
+        <td class="td-dpg ${diffCls}" title="${esc(dpgTip)}">${esc(dpgStr)}</td>
+        <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}" title="${esc(qTip)}">${qual ? 'Q' : 'NQ'}</span></td>
+        <td class="td-play" title="${esc(playTip)}">${esc(playPct)}</td>
+        <td class="td-winpct" title="${p.wins} wins ÷ ${gms} games">${esc(winPctStr)}</td>
+        <td class="td-ptspct" title="${p.points_for || 0} ÷ ${(p.points_for || 0) + (p.points_against || 0)} total points">${esc(ptsPctStr)}</td>
         ${typeCell("Women's", p.womens_w, p.womens_l, p.womens_diff)}
         ${typeCell("Men's",   p.mens_w,   p.mens_l,   p.mens_diff)}
         ${typeCell('Mixed',   p.mixed_w,  p.mixed_l,  p.mixed_diff)}
@@ -1243,24 +1252,24 @@
     const tableShell = `
       <table class="pst pst-all">
         <thead><tr>
-          <th class="th-l">#</th>
-          <th class="th-l"></th>
-          <th class="th-l th-sortable" data-sort="name" data-sort-type="str">Player</th>
-          <th class="th-sortable" data-sort="gender" data-sort-type="str">Gender</th>
-          <th class="th-sortable" data-sort="div"  data-sort-type="str">Division</th>
-          <th class="th-sortable" data-sort="gms"    data-sort-type="num">Gms</th>
-          <th class="th-sortable" data-sort="rating" data-sort-type="num">Rating</th>
-          <th class="th-sortable" data-sort="rec"    data-sort-type="num">W–L</th>
-          <th class="th-sortable" data-sort="diff"   data-sort-type="num">+/–</th>
-          <th class="th-sortable" data-sort="dpg"    data-sort-type="num">Per Gm</th>
-          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
-          <th class="th-sortable" data-sort="play"   data-sort-type="num">Play%</th>
-          <th class="th-sortable" data-sort="winpct" data-sort-type="num">Win%</th>
-          <th class="th-sortable" data-sort="ptspct" data-sort-type="num">Pts%</th>
-          <th class="th-sortable" data-sort="womens" data-sort-type="num">Women's</th>
-          <th class="th-sortable" data-sort="mens"   data-sort-type="num">Men's</th>
-          <th class="th-sortable" data-sort="mixed"  data-sort-type="num">Mixed</th>
-          <th class="th-sortable" data-sort="coed"   data-sort-type="num">Coed</th>
+          <th class="th-l" title="Rank within the current filter and sort">#</th>
+          <th class="th-l" title="Team logo"></th>
+          <th class="th-l th-sortable" data-sort="name" data-sort-type="str" title="Player name — click to open profile">Player</th>
+          <th class="th-sortable" data-sort="gender" data-sort-type="str" title="Player gender (F = Woman, M = Man)">Gender</th>
+          <th class="th-sortable" data-sort="div"  data-sort-type="str" title="Division(s) this player has appeared in this season">Division</th>
+          <th class="th-sortable" data-sort="gms"    data-sort-type="num" title="Total games played this season">Gms</th>
+          <th class="th-sortable" data-sort="rating" data-sort-type="num" title="Overall rating — 60% Win% + 40% Pts%, scaled to 0–100">Rating</th>
+          <th class="th-sortable" data-sort="rec"    data-sort-type="num" title="Wins and losses across all games played">W–L</th>
+          <th class="th-sortable" data-sort="diff"   data-sort-type="num" title="Point differential: points scored minus points allowed">+/–</th>
+          <th class="th-sortable" data-sort="dpg"    data-sort-type="num" title="Average point differential per game">Per Gm</th>
+          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Qualified for MVP — must play in ≥ 50% of league weeks. Click to filter to qualified only."><span class="q-toggle-lbl">All</span></th>
+          <th class="th-sortable" data-sort="play"   data-sort-type="num" title="Games played ÷ total possible games (league weeks × 8)">Play%</th>
+          <th class="th-sortable" data-sort="winpct" data-sort-type="num" title="Wins ÷ games played">Win%</th>
+          <th class="th-sortable" data-sort="ptspct" data-sort-type="num" title="Points scored ÷ total points in games played">Pts%</th>
+          <th class="th-sortable" data-sort="womens" data-sort-type="num" title="Record and point differential in Women's games">Women's</th>
+          <th class="th-sortable" data-sort="mens"   data-sort-type="num" title="Record and point differential in Men's games">Men's</th>
+          <th class="th-sortable" data-sort="mixed"  data-sort-type="num" title="Record and point differential in Mixed games">Mixed</th>
+          <th class="th-sortable" data-sort="coed"   data-sort-type="num" title="Record and point differential in Coed games">Coed</th>
         </tr></thead>
         <tbody id="ap-tbody"></tbody>
       </table>`;
