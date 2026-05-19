@@ -304,6 +304,31 @@
     .th-q-toggle.q-toggle-active { color: var(--ok); background: #e8f9ef; }
     .q-toggle-lbl { display: block; }
     .q-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; font-size: 10px; font-weight: 800; }
+
+    /* Division + gender pills used in the All Players table — colour-keyed
+       so divisions/genders are scannable at a glance. Matches the .div-pill
+       palette used on the hub (public/styles.css). */
+    .pst-all .div-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 24px; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; line-height: 1.4;
+      border: 1px solid rgba(8,31,67,.18); background: rgba(8,31,67,.06); color: var(--navy);
+    }
+    .pst-all .div-pill + .div-pill { margin-left: 4px; }
+    .pst-all .div-pill.div-1 { background: rgba(8,31,67,.10);   color: #081f43; border-color: rgba(8,31,67,.22); }
+    .pst-all .div-pill.div-2 { background: rgba(11,58,124,.10); color: #123a7c; border-color: rgba(11,58,124,.24); }
+    .pst-all .div-pill.div-3 { background: rgba(11,126,57,.10); color: #0b7e39; border-color: rgba(11,126,57,.24); }
+    .pst-all .div-pill.div-4 { background: rgba(201,106,0,.10); color: #c96a00; border-color: rgba(201,106,0,.24); }
+    .pst-all .div-pill.div-5 { background: rgba(255,213,46,.18); color: #8a6800; border-color: rgba(243,196,0,.40); }
+
+    .pst-all .gender-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; line-height: 1.4;
+      border: 1px solid var(--border-s); background: var(--soft); color: var(--muted);
+    }
+    .pst-all .gender-pill.f { background: rgba(8,31,67,.10);   color: #081f43; border-color: rgba(8,31,67,.22); }
+    .pst-all .gender-pill.m { background: rgba(11,126,57,.10); color: #0b7e39; border-color: rgba(11,126,57,.24); }
     .q-chip.q  { background: #e3f7ec; color: var(--ok); border: 1px solid #a8e6c0; }
     .q-chip.nq { background: var(--soft); color: var(--muted); border: 1px solid var(--border-s); }
 
@@ -1171,24 +1196,32 @@
         return `<td class="td-type"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
       };
 
-      const genderLabel = p.isWomens ? 'F' : p.isMens ? 'M' : '—';
-      // Strip the word "Division" so the column reads as just numbers
-      // ("1" or "1 / 2" for multi-division players).
-      const divDisplay = String(p.division_name || '')
+      // Gender pill (F / M / —). Uses a colour-keyed pill that mirrors the
+      // division pill style on the hub.
+      const genderKey = p.isWomens ? 'f' : p.isMens ? 'm' : '';
+      const genderLbl = p.isWomens ? 'F' : p.isMens ? 'M' : '—';
+      const genderHtml = `<span class="gender-pill ${genderKey}">${esc(genderLbl)}</span>`;
+
+      // One pill per division the player appeared in, colour-keyed
+      // (.div-1, .div-2, …). Numeric order is already established by
+      // aggregateByPlayer.
+      const divNums = String(p.division_name || '')
         .split('/')
         .map(s => {
-          const t = s.trim();
-          const mt = t.match(/(\d+)/);
-          return mt ? mt[1] : t;
+          const mt = s.trim().match(/(\d+)/);
+          return mt ? mt[1] : '';
         })
-        .filter(Boolean)
-        .join(' / ');
+        .filter(Boolean);
+      const divHtml = divNums.length
+        ? divNums.map(n => `<span class="div-pill div-${esc(n)}">${esc(n)}</span>`).join('')
+        : '<span class="div-pill">—</span>';
+
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
         <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
         <td class="td-name">${esc(p.name)}</td>
-        <td class="td-gender">${esc(genderLabel)}</td>
-        <td class="td-div">${esc(divDisplay)}</td>
+        <td class="td-gender">${genderHtml}</td>
+        <td class="td-div">${divHtml}</td>
         <td class="td-gms">${gms}</td>
         <td class="td-rating">${esc(ratingStr)}</td>
         <td class="td-rec">${p.wins}–${p.losses}</td>
