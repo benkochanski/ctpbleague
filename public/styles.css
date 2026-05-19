@@ -2246,12 +2246,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .home-mvp .mvp-link:hover { background: rgba(255,255,255,.22); }
 
-.home-mvp .mvp-body { flex: 1; padding: 4px 0 8px; }
-.home-mvp .mvp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.home-mvp .mvp-body { flex: 1; padding: 0; }
+.home-mvp .mvp-table { width: 100%; border-collapse: collapse; font-size: 15px; }
 .home-mvp .mvp-table th {
-  text-align: left; font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-align: left; font-size: 10px; font-weight: 800; letter-spacing: .10em;
   text-transform: uppercase; color: var(--muted);
-  padding: 8px 14px; border-bottom: 1px solid var(--border-s);
+  padding: 10px 12px; border-bottom: 1px solid var(--border-s);
   background: var(--bg-soft);
 }
 .home-mvp .mvp-table th.num,
@@ -2259,36 +2259,37 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .home-mvp .mvp-table th.center,
 .home-mvp .mvp-table td.center { text-align: center; }
 .home-mvp .mvp-table td {
-  padding: 8px 14px; border-bottom: 1px solid var(--border-s);
+  padding: 10px 12px; border-bottom: 1px solid var(--border-s);
   vertical-align: middle;
 }
 .home-mvp .mvp-table tr:last-child td { border-bottom: none; }
+/* Plain rank numeral — no bubble — bold Bebas Neue. Qualified players
+   default to league green; silver/bronze tints for 2nd / 3rd. */
 .home-mvp .mvp-place {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 20px; padding: 0 6px;
-  border-radius: 999px; font-size: 11px; font-weight: 800;
-  background: var(--bg-soft); color: var(--muted);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: .04em; line-height: 1;
+  color: var(--league-green);
+  display: inline-block; min-width: 18px; text-align: center;
 }
-.home-mvp .mvp-table td.mvp-logo-cell { width: 28px; padding-left: 6px; padding-right: 6px; }
+.home-mvp .mvp-place.silver { color: #5a667a; }
+.home-mvp .mvp-place.bronze { color: #7a4f1f; }
+.home-mvp .mvp-table td.mvp-logo-cell { width: 44px; padding-left: 8px; padding-right: 4px; }
 .home-mvp .mvp-logo {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 6px; overflow: hidden;
+  width: 36px; height: 36px; border-radius: 9px; overflow: hidden;
   background: #fff; border: 1px solid var(--border-s);
   flex-shrink: 0; vertical-align: middle;
 }
 .home-mvp .mvp-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .home-mvp .mvp-logo-fb {
-  font-family: 'Bebas Neue', sans-serif; font-size: 10px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px;
   color: var(--league-navy); letter-spacing: .04em;
 }
-.home-mvp .mvp-place.gold   { background: #fff2c2; color: #6b5400; }
-.home-mvp .mvp-place.silver { background: #e7eaf0; color: #5a667a; }
-.home-mvp .mvp-place.bronze { background: #f5dfc2; color: #7a4f1f; }
 .home-mvp .mvp-name {
   background: none; border: none; padding: 0; cursor: pointer;
-  font-weight: 700; color: var(--text); text-align: left;
-  font-family: inherit; font-size: inherit;
-  /* Always one row — truncate with ellipsis instead of wrapping. */
+  font-weight: 800; color: var(--league-navy); text-align: left;
+  font-family: inherit; font-size: 16px; line-height: 1.2;
+  /* Truncate with ellipsis when the panel can't fit the full name. */
   display: inline-block; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   vertical-align: middle;
