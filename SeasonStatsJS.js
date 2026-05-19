@@ -598,6 +598,9 @@ function getMvpLeaderboardV1(limit) {
     return b.rating - a.rating;
   });
 
+  const totalPlayers     = computed.length;
+  const qualifiedPlayers = computed.filter(p => p.qualified).length;
+
   const top = computed.slice(0, n).map((p, i) => ({
     place:     i + 1,
     player_id: p.player_id,
@@ -610,5 +613,11 @@ function getMvpLeaderboardV1(limit) {
     qualified: p.qualified
   }));
 
-  return JSON.stringify({ ok: true, leagueWeeks, players: top });
+  return JSON.stringify({
+    ok: true,
+    leagueWeeks,
+    totalPlayers,
+    qualifiedPlayers,
+    players: top
+  });
 }

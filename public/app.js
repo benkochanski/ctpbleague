@@ -448,8 +448,18 @@
             <th class="center">Gender</th>
             <th class="num">Rating</th>
           </tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${rows}
+            <tr class="mvp-filler"><td colspan="5"></td></tr>
+          </tbody>
         </table>`;
+
+      // Footer note: "(N qualified / M total players)".
+      const counts = document.getElementById('home-mvp-counts');
+      if (counts) {
+        const q = Number(data.qualifiedPlayers || 0);
+        const t = Number(data.totalPlayers || 0);
+        counts.textContent = `${q} qualified / ${t} total players.`;
+      }
       _mvpLoaded = true;
     } catch (err) {
       body.innerHTML = '<div class="mvp-empty">Couldn’t load MVP leaderboard.</div>';
