@@ -1157,6 +1157,7 @@
         <td class="td-rec">${p.wins}–${p.losses}</td>
         <td class="td-diff ${diffCls}">${esc(diffStr)}</td>
         <td class="td-dpg ${diffCls}">${esc(dpgStr)}</td>
+        <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}">${qual ? 'Q' : 'NQ'}</span></td>
         <td class="td-play">${esc(playPct)}</td>
         <td class="td-winpct">${esc(winPctStr)}</td>
         <td class="td-ptspct">${esc(ptsPctStr)}</td>
@@ -1164,7 +1165,6 @@
         ${typeCell("Men's",   p.mens_w,   p.mens_l,   p.mens_diff)}
         ${typeCell('Mixed',   p.mixed_w,  p.mixed_l,  p.mixed_diff)}
         ${typeCell('Coed',    p.coed_w,   p.coed_l,   p.coed_diff)}
-        <td class="td-q"><span class="q-chip ${qual ? 'q' : 'nq'}">${qual ? 'Q' : 'NQ'}</span></td>
       </tr>`;
     };
 
@@ -1180,6 +1180,7 @@
           <th class="th-sortable" data-sort="rec"    data-sort-type="num">W–L</th>
           <th class="th-sortable" data-sort="diff"   data-sort-type="num">+/–</th>
           <th class="th-sortable" data-sort="dpg"    data-sort-type="num">Per Gm</th>
+          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
           <th class="th-sortable" data-sort="play"   data-sort-type="num">Play%</th>
           <th class="th-sortable" data-sort="winpct" data-sort-type="num">Win%</th>
           <th class="th-sortable" data-sort="ptspct" data-sort-type="num">Pts%</th>
@@ -1187,7 +1188,6 @@
           <th class="th-sortable" data-sort="mens"   data-sort-type="num">Men's</th>
           <th class="th-sortable" data-sort="mixed"  data-sort-type="num">Mixed</th>
           <th class="th-sortable" data-sort="coed"   data-sort-type="num">Coed</th>
-          <th class="th-q-toggle" onclick="toggleQFilter(this)" title="Toggle qualified only"><span class="q-toggle-lbl">All</span></th>
         </tr></thead>
         <tbody id="ap-tbody"></tbody>
       </table>`;
