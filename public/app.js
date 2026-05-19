@@ -664,8 +664,10 @@
       const winnerIsHome = m.winning_team_id
         ? m.winning_team_id === m.home_team_id
         : (m.home_games_won || 0) > (m.away_games_won || 0);
+      // Latest Scores: logos only (no team names). The is-logo-only flag
+      // suppresses the name span via CSS.
       matchCell = `
-        <button class="match-cell is-final is-compact" data-route="matchreport" data-param="${escapeHtml(m.match_id)}" title="View match report">
+        <button class="match-cell is-final is-compact is-logo-only" data-route="matchreport" data-param="${escapeHtml(m.match_id)}" title="View match report">
           <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
           <span class="m-score">
             <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
@@ -674,20 +676,26 @@
           </span>
           <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
         </button>`;
-    } else if (live) {
-      matchCell = `
-        <button class="match-cell is-upcoming is-compact is-live" data-route="matchcast" data-param="${escapeHtml(m.match_id)}" title="Watch live">
-          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
-          <span class="m-vs">vs</span>
-          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
-          <span class="m-status m-status-live"><span class="live-dot"></span>Live</span>
-        </button>`;
     } else {
+      // This Week: replace team names with time + location so the row tells
+      // the user when and where to show up. Click still opens the preview.
+      const displayDate = m._displayDate || m._date;
+      const timeStr = displayDate
+        ? new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(displayDate)
+        : '';
+      const venue = String(m.venue || '').trim();
+      const liveCls = live ? ' is-live' : '';
+      const liveBadge = live ? '<span class="m-status m-status-live"><span class="live-dot"></span>Live</span>' : '';
+      const route = live ? 'matchcast' : 'matchpreview';
+      const tip   = live ? 'Watch live'   : 'Match preview';
       matchCell = `
-        <button class="match-cell is-upcoming is-compact" data-route="matchpreview" data-param="${escapeHtml(m.match_id)}" title="Match preview">
-          <span class="m-team m-team-home">${teamBadgeHtml(home, homeLogo)}</span>
-          <span class="m-vs">vs</span>
-          <span class="m-team m-team-away">${teamBadgeHtml(away, awayLogo)}</span>
+        <button class="match-cell is-upcoming is-compact is-when-where${liveCls}" data-route="${route}" data-param="${escapeHtml(m.match_id)}" title="${tip}">
+          <span class="m-when-where">
+            ${timeStr ? `<span class="m-when">${escapeHtml(timeStr)}</span>` : ''}
+            ${venue   ? `<span class="m-where">${escapeHtml(venue)}</span>`  : ''}
+            ${!timeStr && !venue ? '<span class="m-when">TBD</span>' : ''}
+          </span>
+          ${liveBadge}
         </button>`;
     }
 

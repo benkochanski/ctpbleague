@@ -1099,6 +1099,30 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .matches-table.is-compact .m-score-sep { font-size: 16px; }
 .matches-table.is-compact .m-vs { font-size: 9px; letter-spacing: 1.2px; }
 
+/* Latest Scores variant — hide team names so only the logos + score show. */
+.match-cell.is-logo-only .m-team-name { display: none; }
+.match-cell.is-logo-only .m-team { justify-content: center; }
+.matches-table.is-compact .match-cell.is-logo-only { grid-template-columns: 1fr 90px 1fr; }
+
+/* This Week variant — replace teams with a time + venue block. */
+.matches-table.is-compact .match-cell.is-when-where {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.match-cell.is-when-where .m-when-where {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 2px; min-width: 0;
+}
+.match-cell.is-when-where .m-when {
+  font-family: 'DM Sans', sans-serif; font-weight: 800; font-size: 14px;
+  color: var(--league-navy); line-height: 1.1;
+}
+.match-cell.is-when-where .m-where {
+  font-size: 12px; color: var(--muted); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 /* Tight phones: stack each match row into a card. Both the full Matches page
    and the compact home tables share the same layout: date in the upper-right,
    match (logos + score) on the row below. The Matches page also shows a
