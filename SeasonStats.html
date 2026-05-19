@@ -1158,7 +1158,7 @@
         return `<td class="td-type"><span class="td-type-rec">${w||0}–${l||0}</span> <span class="td-type-diff ${dCls}">${esc(dStr)}</span></td>`;
       };
 
-      const genderLabel = p.isWomens ? 'Women' : p.isMens ? 'Men' : '—';
+      const genderLabel = p.isWomens ? 'Woman' : p.isMens ? 'Man' : '—';
       return `<tr class="sr" data-player-name="${esc(p.name || '')}">
         <td class="td-rank ${rankCls}">${i + 1}</td>
         <td class="td-logo"><div class="logo-sq">${buildLogoHtml(p.team_name_full || p.team_name, 'xs')}</div></td>
@@ -1215,8 +1215,8 @@
         <select class="ap-filter" id="apFilterDiv"><option value="">All Divisions</option>${divs.map(opt).join('')}</select>
         <select class="ap-filter" id="apFilterGender">
           <option value="">All Genders</option>
-          <option value="womens">Women</option>
-          <option value="mens">Men</option>
+          <option value="womens">Woman</option>
+          <option value="mens">Man</option>
           <option value="other">Other</option>
         </select>
         <select class="ap-filter" id="apFilterQual">
