@@ -674,17 +674,27 @@
       const winnerIsHome = m.winning_team_id
         ? m.winning_team_id === m.home_team_id
         : (m.home_games_won || 0) > (m.away_games_won || 0);
-      // Latest Scores: logos only (no team names). The is-logo-only flag
-      // suppresses the name span via CSS.
+
+      // Latest Scores: always show the winning team on the left so the
+      // table scans as "winner — score — loser" regardless of which
+      // side was the home team for that match.
+      const leftTeam   = winnerIsHome ? home     : away;
+      const leftLogo   = winnerIsHome ? homeLogo : awayLogo;
+      const leftScore  = winnerIsHome ? (m.home_games_won || 0) : (m.away_games_won || 0);
+      const rightTeam  = winnerIsHome ? away     : home;
+      const rightLogo  = winnerIsHome ? awayLogo : homeLogo;
+      const rightScore = winnerIsHome ? (m.away_games_won || 0) : (m.home_games_won || 0);
+      const isTie      = leftScore === rightScore;
+
       matchCell = `
         <button class="match-cell is-final is-compact is-logo-only" data-route="matchreport" data-param="${escapeHtml(m.match_id)}" title="View match report">
-          <span class="m-team m-team-home ${winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(home, homeLogo)}</span>
+          <span class="m-team m-team-home ${isTie ? '' : 'is-winner'}">${teamBadgeHtml(leftTeam, leftLogo)}</span>
           <span class="m-score">
-            <span class="m-score-num ${winnerIsHome ? 'is-win' : ''}">${m.home_games_won || 0}</span>
+            <span class="m-score-num ${isTie ? '' : 'is-win'}">${leftScore}</span>
             <span class="m-score-sep">–</span>
-            <span class="m-score-num ${!winnerIsHome ? 'is-win' : ''}">${m.away_games_won || 0}</span>
+            <span class="m-score-num">${rightScore}</span>
           </span>
-          <span class="m-team m-team-away ${!winnerIsHome ? 'is-winner' : ''}">${teamBadgeHtml(away, awayLogo)}</span>
+          <span class="m-team m-team-away">${teamBadgeHtml(rightTeam, rightLogo)}</span>
         </button>`;
     } else {
       // Next Matches: time + host club ("at Camp" / "at Dill") in their own
