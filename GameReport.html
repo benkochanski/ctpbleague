@@ -682,12 +682,6 @@
 </div>
 
 <script>
-  const CPBL_API_BASE = 'https://ctpbleague.com/api';
-  function cpblApi(page, params) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return fetch(`${CPBL_API_BASE}/${page}${qs}`, { credentials: 'omit' })
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-  }
   // ── State ─────────────────────────────────────────────────────────────────
   let currentMatchId       = '';
   let currentScorecardData = null;
@@ -782,9 +776,14 @@
 
   // ── Branding ──────────────────────────────────────────────────────────────
   function loadBranding() {
-    cpblApi('scorebranding')
-      .then(data => { currentBranding = data || {}; applyBranding(currentBranding); })
-      .catch(e => console.error(e));
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); }
+        catch (e) { console.error(e); }
+      })
+      .withFailureHandler(e => console.error(e))
+      .getScorecardBrandingV1();
   }
 
   function applyBranding(b) {
@@ -798,61 +797,80 @@
 
   // ── Player gender registry ────────────────────────────────────────────────
   function loadPlayerGenders() {
-    cpblApi('playergenders')
-      .then(data => { playerGenders = data || {}; })
-      .catch(e => console.error('playerGenders load error', e));
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { playerGenders = JSON.parse(raw) || {}; }
+        catch (e) { console.error('playerGenders parse error', e); }
+      })
+      .withFailureHandler(e => console.error('playerGenders load error', e))
+      .getPlayerGendersV1();
   }
 
   // ── Load matches ──────────────────────────────────────────────────────────
   function loadMatches() {
     setMain(loadingHtml());
-    cpblApi('openmatches')
-      .then(resp => {
-        const all  = Array.isArray(resp.rows) ? resp.rows : [];
-        const w2   = all.filter(m => extractWeekNum(m) === 2);
-        allMatches = w2.length ? w2 : all;
-        if (!all.length) {
-          populateDivisions([]);
-          setMain(emptyHtml('🏓', 'No open matches available.')); return;
-        }
-        populateDivisions(allMatches);
-
-        // Honour INITIAL_MATCH_ID if provided
-        const pinned = window.INITIAL_MATCH_ID;
-        if (pinned) {
-          const pm = allMatches.find(m => String(m.match_id) === pinned);
-          if (pm) {
-            currentDivisionKey = divKey(pm);
-            document.getElementById('divisionSelect').value = currentDivisionKey;
-            currentMatchId = pinned;
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try {
+          const resp    = JSON.parse(raw);
+          const all  = Array.isArray(resp.rows) ? resp.rows : [];
+          const w2   = all.filter(m => extractWeekNum(m) === 2);
+          allMatches = w2.length ? w2 : all;
+          if (!all.length) {
+            populateDivisions([]);
+            setMain(emptyHtml('🏓', 'No open matches available.')); return;
           }
-        }
+          populateDivisions(allMatches);
 
-        if (!currentMatchId) {
-          const filtered = matchesForDiv(currentDivisionKey);
-          currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
-        }
-        syncMatchSelect();
+          // Honour INITIAL_MATCH_ID if provided
+          const pinned = window.INITIAL_MATCH_ID;
+          if (pinned) {
+            const pm = allMatches.find(m => String(m.match_id) === pinned);
+            if (pm) {
+              currentDivisionKey = divKey(pm);
+              document.getElementById('divisionSelect').value = currentDivisionKey;
+              currentMatchId = pinned;
+            }
+          }
 
-        if (currentMatchId) { loadMatch(currentMatchId); schedulePoll(); }
-        else setMain(emptyHtml('🏓', 'No match for this division.'));
+          if (!currentMatchId) {
+            const filtered = matchesForDiv(currentDivisionKey);
+            currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+          }
+          syncMatchSelect();
+
+          if (currentMatchId) { loadMatch(currentMatchId); schedulePoll(); }
+          else setMain(emptyHtml('🏓', 'No match for this division.'));
+        } catch (err) {
+          setMain(emptyHtml('⚠️', 'Failed to load match list.'));
+          console.error(err);
+        }
       })
-      .catch(err => {
+      .withFailureHandler(err => {
         setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err?.message || err))));
-      });
+      })
+      .getOpenMatchesForScoreEntryV5();
   }
 
   // ── Load scorecard ────────────────────────────────────────────────────────
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
-    cpblApi('scorecarddata', { matchId })
-      .then(data => {
-        currentScorecardData = data;
-        renderDisplay(currentScorecardData);
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try {
+          currentScorecardData = JSON.parse(raw);
+          renderDisplay(currentScorecardData);
+        } catch (err) {
+          setMain(emptyHtml('⚠️', 'Render error: ' + esc(err.message || String(err))));
+        }
       })
-      .catch(err => {
+      .withFailureHandler(err => {
         setMain(emptyHtml('⚠️', 'Load error: ' + esc(err.message || String(err))));
-      });
+      })
+      .getScorecardDataV5(matchId);
   }
 
   function schedulePoll() {

@@ -7,6 +7,10 @@
  * grouped-friendly for the selector dropdown.
  */
 function getPlayerListV1() {
+  return cachedObject_('playerlist_v1', 600, getPlayerListV1Impl_);
+}
+
+function getPlayerListV1Impl_() {
   const players = getObjects_(SHEETS.PLAYERS);
 
   return players.map(p => {
@@ -36,6 +40,13 @@ function getPlayerListV1() {
 function getPlayerPageData(playerId) {
   const cleanId = String(playerId || '').trim();
   if (!cleanId) throw new Error('Missing playerId');
+  return cachedObject_('playerpagedata_v1_' + cleanId, 300, function() {
+    return getPlayerPageDataImpl_(cleanId);
+  });
+}
+
+function getPlayerPageDataImpl_(playerId) {
+  const cleanId = String(playerId || '').trim();
 
   // ── Load all sheets ──────────────────────────────────────────────────────
   const allPlayers  = getObjects_(SHEETS.PLAYERS);

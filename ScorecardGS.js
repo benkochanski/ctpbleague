@@ -572,17 +572,23 @@ function saveGameScoreFromUiV4(payload) {
 }
 
 function getOpenMatchesForScoreEntryV5() {
-  const rows = getOpenMatchesForScoreEntryV2();
-  return JSON.stringify({
-    ok: true,
-    source: 'getOpenMatchesForScoreEntryV5',
-    rows: rows
+  return cachedJsonString_('openmatches_v5', 300, function() {
+    const rows = getOpenMatchesForScoreEntryV2();
+    return JSON.stringify({
+      ok: true,
+      source: 'getOpenMatchesForScoreEntryV5',
+      rows: rows
+    });
   });
 }
 
 // Same as V5 but includes completed matches so the public scoreboard can
 // deep-link into any match (past or present).
 function getAllMatchesForScoreboardV1() {
+  return cachedJsonString_('allmatches_v1', 300, getAllMatchesForScoreboardV1Impl_);
+}
+
+function getAllMatchesForScoreboardV1Impl_() {
   const ss = getBackendSpreadsheet_();
   const matchesSheet = ss.getSheetByName('Matches');
   const teamsSheet   = ss.getSheetByName('Teams');
@@ -617,25 +623,30 @@ function getAllMatchesForScoreboardV1() {
 }
 
 function getScorecardDataV5(matchId) {
-  const data = getScorecardDataV2(matchId);
-  return JSON.stringify(data);
+  const key = 'scorecarddata_v5_' + String(matchId || '');
+  return cachedJsonString_(key, 15, function() {
+    const data = getScorecardDataV2(matchId);
+    return JSON.stringify(data);
+  });
 }
 
 
 
 function getPlayerGendersV1() {
-  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Players');
-  const rows    = sheet.getDataRange().getValues();
-  const headers = rows[0].map(h => String(h).toLowerCase().trim());
-  const nameCol   = headers.indexOf('name');
-  const genderCol = headers.indexOf('gender');
-  const map = {};
-  for (let i = 1; i < rows.length; i++) {
-    const name   = String(rows[i][nameCol]   || '').trim();
-    const gender = String(rows[i][genderCol] || '').trim().toLowerCase();
-    if (name) map[name] = gender; // 'w' or 'm'
-  }
-  return JSON.stringify(map);
+  return cachedJsonString_('playergenders_v1', 1800, function() {
+    const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Players');
+    const rows    = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h).toLowerCase().trim());
+    const nameCol   = headers.indexOf('name');
+    const genderCol = headers.indexOf('gender');
+    const map = {};
+    for (let i = 1; i < rows.length; i++) {
+      const name   = String(rows[i][nameCol]   || '').trim();
+      const gender = String(rows[i][genderCol] || '').trim().toLowerCase();
+      if (name) map[name] = gender; // 'w' or 'm'
+    }
+    return JSON.stringify(map);
+  });
 }
 
 function saveGameScoreFromUiV5(payload) {
@@ -718,15 +729,17 @@ function resetGameScoreV1(payload) {
 const SCORECARD_LEAGUE_LOGO_FILE_ID = '1PA1pVhADGrUO4aIn1pz6srSwI50r41EZ';
 
 function getScorecardBrandingV1() {
-  const branding = getBranding_ ? getBranding_() : {};
-  const fallbackLogoUrl = SCORECARD_LEAGUE_LOGO_FILE_ID ? driveImageUrl_(SCORECARD_LEAGUE_LOGO_FILE_ID) : '';
-  return JSON.stringify({
-    leagueTitle:   'Connecticut Pickleball League',
-    subtitle:      'Official Match Score Entry',
-    leagueLogoUrl: branding.leagueLogoUrl || fallbackLogoUrl,
-    campLogoUrl:   branding.campLogoUrl   || '',
-    dillLogoUrl:   branding.dillLogoUrl   || '',
-    clubLogos:     branding.clubLogos     || {}
+  return cachedJsonString_('scorecardbranding_v1', 1800, function() {
+    const branding = getBranding_ ? getBranding_() : {};
+    const fallbackLogoUrl = SCORECARD_LEAGUE_LOGO_FILE_ID ? driveImageUrl_(SCORECARD_LEAGUE_LOGO_FILE_ID) : '';
+    return JSON.stringify({
+      leagueTitle:   'Connecticut Pickleball League',
+      subtitle:      'Official Match Score Entry',
+      leagueLogoUrl: branding.leagueLogoUrl || fallbackLogoUrl,
+      campLogoUrl:   branding.campLogoUrl   || '',
+      dillLogoUrl:   branding.dillLogoUrl   || '',
+      clubLogos:     branding.clubLogos     || {}
+    });
   });
 }
 

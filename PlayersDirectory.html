@@ -1373,12 +1373,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const CPBL_API_BASE = 'https://ctpbleague.com/api';
-    function cpblApi(page, params) {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return fetch(`${CPBL_API_BASE}/${page}${qs}`, { credentials: 'omit' })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-    }
     let allPlayers = [];
     let showAllPlayers = false;
 
@@ -1401,15 +1395,18 @@
       searchPanel.style.top = `calc(env(safe-area-inset-top, 0px) + ${shellHeight}px)`;
     }
 
-    cpblApi('playersdirectorydata')
-      .then(data => {
-        allPlayers = Array.isArray(data.players) ? data.players : [];
-        applyBranding(data.branding || {});
-        updateStickyOffsets();
-        renderAll();
-        showToast('Player directory loaded');
-      })
-      .catch(err => showToast('Load failed: ' + getErrorMessage(err)));
+    google.script.run
+  .withSuccessHandler((data) => {
+    allPlayers = Array.isArray(data.players) ? data.players : [];
+    applyBranding(data.branding || {});
+    updateStickyOffsets();
+    renderAll();
+    showToast('Player directory loaded');
+  })
+  .withFailureHandler((err) => {
+    showToast('Load failed: ' + getErrorMessage(err));
+  })
+  .getPlayersDirectoryData();
 
     function applyBranding(branding) {
       const leagueLogo = document.getElementById('league-logo');

@@ -4,22 +4,30 @@ function testPlayers() {
 }
 
 function getSeasonDivisionsV1() {
-  const ss      = SpreadsheetApp.getActiveSpreadsheet();
-  const rows    = ss.getSheetByName('Divisions').getDataRange().getValues();
-  const h       = rows[0];
-  const idIdx   = h.indexOf('division_id');
-  const nameIdx = h.indexOf('division_name');
-  const actIdx  = h.indexOf('active');
+  return cachedJsonString_('seasondivisions_v1', 600, function() {
+    const ss      = SpreadsheetApp.getActiveSpreadsheet();
+    const rows    = ss.getSheetByName('Divisions').getDataRange().getValues();
+    const h       = rows[0];
+    const idIdx   = h.indexOf('division_id');
+    const nameIdx = h.indexOf('division_name');
+    const actIdx  = h.indexOf('active');
 
-  const divs = rows.slice(1)
-    .filter(r => String(r[actIdx]).toLowerCase() === 'true')
-    .map(r => ({ key: String(r[idIdx]), label: String(r[nameIdx]) }));
+    const divs = rows.slice(1)
+      .filter(r => String(r[actIdx]).toLowerCase() === 'true')
+      .map(r => ({ key: String(r[idIdx]), label: String(r[nameIdx]) }));
 
-  return JSON.stringify(divs);
+    return JSON.stringify(divs);
+  });
 }
 
 
 function getSeasonDataV1(divisionKey) {
+  return cachedJsonString_('seasondata_v1_' + String(divisionKey || ''), 300, function() {
+    return getSeasonDataV1Impl_(divisionKey);
+  });
+}
+
+function getSeasonDataV1Impl_(divisionKey) {
   // League-wide player stats: scan Match_Games once and accumulate per
   // player across every active division, so a player who appears in
   // multiple divisions sees one row with combined totals.

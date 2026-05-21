@@ -1,8 +1,10 @@
 function getPlayersDirectoryData() {
-  return {
-    players: getLeaguePlayers_(),
-    branding: getPlayersDirectoryBranding_()
-  };
+  return cachedObject_('playersdirectorydata_v1', 300, function() {
+    return {
+      players: getLeaguePlayers_(),
+      branding: getPlayersDirectoryBranding_()
+    };
+  });
 }
 
 function getLeaguePlayers_() {

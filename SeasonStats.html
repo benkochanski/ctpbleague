@@ -531,13 +531,6 @@
 
 <script>
   const GAS_WEB_APP_URL  = '<?= webAppUrl ?>';
-  // Same-origin (from the hub) KV-cached read API. ~20-50ms vs 1-3s GAS.
-  const CPBL_API_BASE = 'https://ctpbleague.com/api';
-  function cpblApi(page, params) {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return fetch(`${CPBL_API_BASE}/${page}${qs}`, { credentials: 'omit' })
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-  }
   let currentDivisionKey = '';
   let currentBranding    = null;
   let currentData        = null;
@@ -565,9 +558,14 @@
 
   // ── Branding ──────────────────────────────────────────────────────────────
   function loadBranding() {
-    cpblApi('scorebranding')
-      .then(data => { currentBranding = data || {}; applyBranding(currentBranding); })
-      .catch(e => console.error(e));
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); }
+        catch (e) { console.error(e); }
+      })
+      .withFailureHandler(e => console.error(e))
+      .getScorecardBrandingV1();
   }
 
   function applyBranding(b) {
@@ -581,9 +579,14 @@
 
   // ── Divisions ─────────────────────────────────────────────────────────────
   function loadDivisions() {
-    cpblApi('seasondivisions')
-      .then(divs => populateDivisions(divs || []))
-      .catch(() => setSeriesEmpty('Failed to load divisions.'));
+    if (!hasGas()) { setSeriesEmpty('No GAS connection.'); return; }
+    google.script.run
+      .withSuccessHandler(raw => {
+        try { populateDivisions(JSON.parse(raw) || []); }
+        catch (e) { setSeriesEmpty('Failed to load divisions.'); }
+      })
+      .withFailureHandler(() => setSeriesEmpty('Server error.'))
+      .getSeasonDivisionsV1();
   }
 
   function populateDivisions(divs) {
@@ -639,13 +642,20 @@
   function loadSeasonData(divisionKey) {
     setSeriesLoading();
     setPlayerLoading();
-    cpblApi('seasondata', { division: divisionKey })
-      .then(data => {
-        currentData = data;
-        renderSeries(currentData.standings || []);
-        renderPlayerStats(currentData.playerStats || []);
+    if (!hasGas()) return;
+    google.script.run
+      .withSuccessHandler(raw => {
+        try {
+          currentData = JSON.parse(raw);
+          renderSeries(currentData.standings || []);
+          renderPlayerStats(currentData.playerStats || []);
+        } catch (e) {
+          setSeriesEmpty('Render error: ' + esc(e.message || String(e)));
+          console.error(e);
+        }
       })
-      .catch(e => setSeriesEmpty('Load error: ' + esc(e?.message || String(e))));
+      .withFailureHandler(e => setSeriesEmpty('Load error: ' + esc(e?.message || String(e))))
+      .getSeasonDataV1(divisionKey);
   }
 
   // ── Render Series / Standings ─────────────────────────────────────────────

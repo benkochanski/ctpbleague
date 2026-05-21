@@ -107,3 +107,31 @@ function normalizeBool_(value) {
   const s = String(value).trim().toLowerCase();
   return ['true', 'yes', 'y', '1'].includes(s);
 }
+
+// ── Read-side caching helpers ─────────────────────────────────────────────
+// Wrap slow sheet-reading functions in CacheService so repeat calls within
+// `ttlSec` skip the sheet I/O. Two flavors: _jsonString preserves a
+// function whose contract is to return a JSON-encoded string;
+// _object preserves a function whose contract is to return an object/array.
+//
+// CacheService has a 100KB per-entry limit. Entries larger than that
+// silently fail to cache — the wrapped function still works, just uncached.
+function cachedJsonString_(key, ttlSec, computeFn) {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get(key);
+  if (hit !== null) return hit;
+  const result = computeFn();
+  try { cache.put(key, result, ttlSec); } catch (e) { /* >100KB */ }
+  return result;
+}
+
+function cachedObject_(key, ttlSec, computeFn) {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get(key);
+  if (hit !== null) {
+    try { return JSON.parse(hit); } catch (e) { /* fall through and recompute */ }
+  }
+  const obj = computeFn();
+  try { cache.put(key, JSON.stringify(obj), ttlSec); } catch (e) { /* >100KB */ }
+  return obj;
+}
