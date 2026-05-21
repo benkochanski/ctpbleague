@@ -1,0 +1,103 @@
+// Cloudflare Worker for ctpbleague.com
+//
+// Serves the static hub from ./public (via the ASSETS binding) and adds
+// fast same-origin JSON endpoints under /api/* backed by KV. Each endpoint
+// is a thin cache in front of the Google Apps Script /exec backend.
+//
+// Cache strategy: stale-while-revalidate. KV holds the last fetched JSON
+// plus a soft expiry timestamp. If a request lands before soft expiry, we
+// serve from KV. If past soft expiry, we still serve from KV immediately
+// and kick off a background refresh via ctx.waitUntil — the next request
+// sees the new data. A hard TTL on the KV entry keeps it from growing
+// stale forever if GAS is down for a long stretch.
+
+const GAS_PROD =
+  'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
+
+// Map /api/* path → upstream GAS page name. Add new endpoints here.
+const API_ROUTES = {
+  '/api/publicdata':     { page: 'publicdata',     softTtl: 300, hardTtl: 3600 },
+  '/api/homedata':       { page: 'homedata',       softTtl: 300, hardTtl: 3600 },
+  '/api/mvpleaderboard': { page: 'mvpleaderboard', softTtl: 300, hardTtl: 3600, passQuery: ['limit'] },
+  '/api/scorebranding':  { page: 'scorebranding',  softTtl: 1800, hardTtl: 86400 },
+};
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const route = API_ROUTES[url.pathname];
+    if (route) return handleApi(url, route, env, ctx);
+    return env.ASSETS.fetch(request);
+  },
+};
+
+function buildUpstreamUrl(route, url) {
+  const u = new URL(GAS_PROD);
+  u.searchParams.set('page', route.page);
+  (route.passQuery || []).forEach(key => {
+    const v = url.searchParams.get(key);
+    if (v != null) u.searchParams.set(key, v);
+  });
+  return u.toString();
+}
+
+function cacheKey(route, url) {
+  // Different query params (e.g. ?limit=10 vs ?limit=20) get distinct keys.
+  const parts = [route.page];
+  (route.passQuery || []).forEach(key => {
+    const v = url.searchParams.get(key);
+    if (v != null) parts.push(`${key}=${v}`);
+  });
+  return parts.join('|');
+}
+
+async function handleApi(url, route, env, ctx) {
+  const key = cacheKey(route, url);
+  const cached = await env.CPBL_CACHE.get(key, { type: 'json' });
+  const now = Math.floor(Date.now() / 1000);
+
+  if (cached && cached.body) {
+    const isStale = !cached.softExpiresAt || cached.softExpiresAt < now;
+    if (isStale) {
+      // Background refresh; do NOT await — return cached immediately.
+      ctx.waitUntil(refresh(url, route, env, key).catch(() => {}));
+    }
+    return jsonResponse(cached.body, { hit: true, stale: isStale });
+  }
+
+  // Cold cache: fetch synchronously so the user gets fresh data, then store.
+  try {
+    const body = await refresh(url, route, env, key);
+    return jsonResponse(body, { hit: false, stale: false });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'upstream_failed', detail: String(err) }),
+      { status: 502, headers: { 'content-type': 'application/json' } }
+    );
+  }
+}
+
+async function refresh(url, route, env, key) {
+  const upstream = buildUpstreamUrl(route, url);
+  const resp = await fetch(upstream, { cf: { cacheTtl: 0 } });
+  if (!resp.ok) throw new Error(`upstream ${resp.status}`);
+  const body = await resp.json();
+  const entry = {
+    body,
+    softExpiresAt: Math.floor(Date.now() / 1000) + route.softTtl,
+    fetchedAt:     Math.floor(Date.now() / 1000),
+  };
+  await env.CPBL_CACHE.put(key, JSON.stringify(entry), { expirationTtl: route.hardTtl });
+  return body;
+}
+
+function jsonResponse(body, meta) {
+  return new Response(JSON.stringify(body), {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      // Allow short browser cache so rapid re-fetches don't even hit the Worker.
+      'cache-control': 'public, max-age=30',
+      'x-cpbl-cache': meta.hit ? (meta.stale ? 'STALE' : 'HIT') : 'MISS',
+    },
+  });
+}

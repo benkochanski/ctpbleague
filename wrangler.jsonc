@@ -1,9 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "morning-wind-da2a",
+  "main": "worker/index.js",
   "compatibility_date": "2026-04-22",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CPBL_CACHE",
+      "id": "d44f256b37ec4531ab58d3ba763c83d2"
+    }
+  ]
 }

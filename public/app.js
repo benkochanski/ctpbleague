@@ -11,6 +11,17 @@
   // Expose for sibling scripts (e.g. registration.js).
   window.__CPBL_GAS_BASE__ = GAS_BASE;
 
+  // Same-origin read API backed by the Cloudflare Worker + KV cache.
+  // Only used when the hub is served from a Cloudflare-routed origin
+  // (ctpbleague.com, *.workers.dev). Falls back to GAS_BASE locally or
+  // when ?staging=1 is set, since staging needs to hit GAS directly.
+  const USE_KV_API = !IS_STAGING && /(^|\.)ctpbleague\.com$|workers\.dev$/.test(location.hostname);
+  const API_BASE   = USE_KV_API ? '' : GAS_BASE;
+  function apiUrl(page, params) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return USE_KV_API ? `/api/${page}${qs}` : `${GAS_BASE}?page=${page}${qs ? '&' + qs.slice(1) : ''}`;
+  }
+
   const ROUTES = {
     home:         { kind: 'page', label: 'ctpbleague.com',    onEnter: renderHome },
     matches:      { kind: 'page', label: 'Matches',           onEnter: renderMatches },
@@ -254,7 +265,7 @@
   function fetchPublicData() {
     if (publicData) return Promise.resolve(publicData);
     if (publicDataPromise) return publicDataPromise;
-    publicDataPromise = fetch(`${GAS_BASE}?page=publicdata`)
+    publicDataPromise = fetch(apiUrl('publicdata'))
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -272,7 +283,7 @@
     if (publicData) return Promise.resolve(publicData);
     if (homeData) return Promise.resolve(homeData);
     if (homeDataPromise) return homeDataPromise;
-    homeDataPromise = fetch(`${GAS_BASE}?page=homedata`)
+    homeDataPromise = fetch(apiUrl('homedata'))
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -439,7 +450,7 @@
     const body = document.getElementById('home-mvp-body');
     if (!body || _mvpLoaded) return;
     try {
-      const resp = await fetch(`${GAS_BASE}?page=mvpleaderboard&limit=8`);
+      const resp = await fetch(apiUrl('mvpleaderboard', { limit: 8 }));
       const data = await resp.json();
       const players = (data && data.players) || [];
       if (!players.length) {
@@ -1204,7 +1215,7 @@
   function fetchScBranding() {
     if (_scBranding) return Promise.resolve(_scBranding);
     if (_scBrandingPromise) return _scBrandingPromise;
-    _scBrandingPromise = fetch(`${GAS_BASE}?page=scorebranding`)
+    _scBrandingPromise = fetch(apiUrl('scorebranding'))
       .then(r => r.ok ? r.json() : {})
       .then(b => { _scBranding = b; return b; })
       .catch(() => { _scBrandingPromise = null; return {}; });
