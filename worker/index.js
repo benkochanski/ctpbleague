@@ -46,6 +46,9 @@ const CORS_HEADERS = {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/invalidate') {
+      return handleInvalidate(request, env);
+    }
     const route = API_ROUTES[url.pathname];
     if (route) {
       if (request.method === 'OPTIONS') {
@@ -56,6 +59,52 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+// POST /api/invalidate
+// Body: { keys: [{page: 'publicdata'}, {page: 'scorecarddata', params: {matchId: 'M123'}}, ...] }
+// Auth: Authorization: Bearer <CPBL_INVALIDATE_TOKEN>
+//
+// Computes the same KV key the API_ROUTES handler would and deletes it.
+async function handleInvalidate(request, env) {
+  if (request.method !== 'POST') {
+    return new Response('method not allowed', { status: 405, headers: CORS_HEADERS });
+  }
+  const auth = request.headers.get('authorization') || '';
+  const expected = 'Bearer ' + (env.CPBL_INVALIDATE_TOKEN || '');
+  if (!env.CPBL_INVALIDATE_TOKEN || auth !== expected) {
+    return new Response('unauthorized', { status: 401, headers: CORS_HEADERS });
+  }
+
+  let body;
+  try { body = await request.json(); }
+  catch (e) { return new Response('bad body', { status: 400, headers: CORS_HEADERS }); }
+
+  const items = Array.isArray(body && body.keys) ? body.keys : [];
+  const deleted = [];
+  // Look up each route's passQuery order so the computed key matches the
+  // canonical one set by cacheKey() — order matters.
+  const routeByPage = {};
+  for (const path in API_ROUTES) {
+    routeByPage[API_ROUTES[path].page] = API_ROUTES[path];
+  }
+  for (const item of items) {
+    const page = item && item.page;
+    if (!page) continue;
+    const route = routeByPage[page];
+    if (!route) continue;
+    const parts = [page];
+    const params = (item.params && typeof item.params === 'object') ? item.params : {};
+    (route.passQuery || []).forEach(k => {
+      if (params[k] != null) parts.push(`${k}=${params[k]}`);
+    });
+    const key = parts.join('|');
+    await env.CPBL_CACHE.delete(key);
+    deleted.push(key);
+  }
+  return new Response(JSON.stringify({ ok: true, deleted }), {
+    headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+  });
+}
 
 function buildUpstreamUrl(route, url) {
   const u = new URL(GAS_PROD);

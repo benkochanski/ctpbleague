@@ -218,7 +218,7 @@ function getScorecardDataV2(matchId) {
 }
 
 function saveGameScoreFromUiV2(payload) {
-  return recordGameScoreV2(
+  const result = recordGameScoreV2(
     payload.gameId,
     payload.homeScore,
     payload.awayScore,
@@ -226,6 +226,8 @@ function saveGameScoreFromUiV2(payload) {
     payload.reason || 'Entered from scorecard UI',
     { userId: payload.userId || '', email: payload.userEmail || '', name: payload.userName || '' }
   );
+  invalidateOnScoreSave_(payload.matchId || '');
+  return result;
 }
 
 function recordGameScoreV2(gameId, homeScore, awayScore, changedByUserId, reason, actor) {
@@ -717,6 +719,7 @@ function resetGameScoreV1(payload) {
     }
   } catch (e) { /* never fail the reset because of audit-log issues */ }
 
+  invalidateOnScoreSave_(matchId);
   return JSON.stringify({
     ok: true,
     source: 'resetGameScoreV1',
@@ -785,6 +788,7 @@ function savePlayerSubstitutionV1(payload) {
 
   setCellByHeaderScorecard_(gamesSheet, gamesTable.headerMap, gameRow.rowNumber, col, playerId);
 
+  invalidateOnScoreSave_(payload.matchId || '');
   return JSON.stringify({ ok: true, gameId, position, playerId, playerName: newPlayerName });
 }
 

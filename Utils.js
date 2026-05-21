@@ -135,3 +135,77 @@ function cachedObject_(key, ttlSec, computeFn) {
   try { cache.put(key, JSON.stringify(obj), ttlSec); } catch (e) { /* >100KB */ }
   return obj;
 }
+
+// Invalidation helpers — called from write paths so the next read recomputes
+// instead of serving stale cached data. CacheService.removeAll() takes up to
+// 30 keys at a time; we only list keys that *actually* change for the
+// triggering action. Per-division/per-player keys naturally roll over within
+// their (short) TTLs; clearing them precisely would require enumerating live
+// keys, which CacheService doesn't support.
+function invalidateOnScoreSave_(matchId) {
+  const keys = [
+    'openmatches_v5',
+    'allmatches_v1',
+    'publicSiteData_v7',
+    'homeSiteData_v1',
+  ];
+  if (matchId) keys.push('scorecarddata_v5_' + String(matchId));
+  try { CacheService.getScriptCache().removeAll(keys); } catch (e) {}
+  // Also purge the Cloudflare Worker KV so the hub doesn't serve a stale
+  // copy until its soft TTL expires.
+  const workerKeys = [
+    { page: 'openmatches' },
+    { page: 'allmatches' },
+    { page: 'publicdata' },
+    { page: 'homedata' },
+    { page: 'seasondata' },
+    { page: 'seasondata', params: { division: '__ALL__' } },
+    { page: 'mvpleaderboard' },
+    { page: 'mvpleaderboard', params: { limit: 8 } },
+  ];
+  if (matchId) workerKeys.push({ page: 'scorecarddata', params: { matchId: String(matchId) } });
+  invalidateWorkerKv_(workerKeys);
+}
+
+function invalidateOnLineupSave_(matchId) {
+  const keys = ['openmatches_v5', 'allmatches_v1'];
+  if (matchId) keys.push('scorecarddata_v5_' + String(matchId));
+  try { CacheService.getScriptCache().removeAll(keys); } catch (e) {}
+  const workerKeys = [{ page: 'openmatches' }, { page: 'allmatches' }];
+  if (matchId) workerKeys.push({ page: 'scorecarddata', params: { matchId: String(matchId) } });
+  invalidateWorkerKv_(workerKeys);
+}
+
+function invalidateOnPlayerChange_() {
+  try {
+    CacheService.getScriptCache().removeAll([
+      'playerlist_v1',
+      'playersdirectorydata_v1',
+      'playergenders_v1',
+    ]);
+  } catch (e) {}
+  invalidateWorkerKv_([
+    { page: 'playerlist' },
+    { page: 'playersdirectorydata' },
+    { page: 'playergenders' },
+  ]);
+}
+
+// Fire-and-forget POST to the Cloudflare Worker to delete the matching KV
+// entries. Never throws — write paths must not fail because the cache layer
+// is down. Falls back to a no-op if the local token isn't configured.
+function invalidateWorkerKv_(workerKeys) {
+  if (!Array.isArray(workerKeys) || !workerKeys.length) return;
+  if (typeof getInvalidateToken_ !== 'function') return;
+  const token = getInvalidateToken_();
+  if (!token) return;
+  try {
+    UrlFetchApp.fetch('https://ctpbleague.com/api/invalidate', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + token },
+      payload: JSON.stringify({ keys: workerKeys }),
+      muteHttpExceptions: true,
+    });
+  } catch (e) { /* never fail a write because of cache invalidation */ }
+}

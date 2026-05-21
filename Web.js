@@ -734,6 +734,7 @@ function saveCaptainLineupDraft(email, matchId, teamId, assignments) {
     response.staleAssignmentCount = droppedCount;
   }
 
+  invalidateOnLineupSave_(cleanMatchId);
   return response;
 }
 
@@ -786,6 +787,7 @@ function submitCaptainLineup(email, matchId, teamId, assignments) {
 
   notifyLineupSubmitted_(cleanMatchId, cleanTeamId, access);
 
+  invalidateOnLineupSave_(cleanMatchId);
   return {
     ok: true,
     message: 'Official lineup submitted'
