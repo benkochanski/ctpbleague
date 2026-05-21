@@ -261,6 +261,12 @@
 
 </div>
 <script>
+const CPBL_API_BASE = 'https://ctpbleague.com/api';
+function cpblApi(page, params) {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+  return fetch(`${CPBL_API_BASE}/${page}${qs}`, { credentials: 'omit' })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
 /* ─────────────────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────────────────── */
@@ -292,10 +298,7 @@ let ddOpen      = false;
    INIT
 ───────────────────────────────────────────────────────── */
 (function init() {
-  google.script.run
-    .withSuccessHandler(onPlayersLoaded)
-    .withFailureHandler(e => console.error(e))
-    .getPlayerListV1();
+  cpblApi('playerlist').then(onPlayersLoaded).catch(e => console.error(e));
 
   document.addEventListener('click', e => {
     if (!e.target.closest('.player-search-wrap')) closeDropdown();
@@ -383,13 +386,12 @@ function loadPlayer(playerId) {
   document.getElementById('statsCol').style.display  = 'none';
   document.getElementById('gamelogCol').style.display = 'none';
 
-  google.script.run
-    .withSuccessHandler(renderAll)
-    .withFailureHandler(err => {
+  cpblApi('playerpagedata', { id: playerId })
+    .then(renderAll)
+    .catch(err => {
       document.getElementById('playerHero').innerHTML =
         `<div class="empty-hero">Error: ${esc(String(err.message || err))}</div>`;
-    })
-    .getPlayerPageData(playerId);
+    });
 }
 
 /* ─────────────────────────────────────────────────────────

@@ -445,6 +445,12 @@
 </div>
 
 <script>
+  const CPBL_API_BASE = 'https://ctpbleague.com/api';
+  function cpblApi(page, params) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return fetch(`${CPBL_API_BASE}/${page}${qs}`, { credentials: 'omit' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
   // ── State ──────────────────────────────────────────────────────────────────
   let currentMatchId       = '';
   let currentScorecardData = null;
@@ -481,14 +487,9 @@
 
   // ── Branding ───────────────────────────────────────────────────────────────
   function loadBranding() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
-        try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); updateStickyOffset(); }
-        catch (e) { console.error('Branding parse error:', e); }
-      })
-      .withFailureHandler(e => console.error('Branding load error:', e))
-      .getScorecardBrandingV1();
+    cpblApi('scorebranding')
+      .then(data => { currentBranding = data || {}; applyBranding(currentBranding); updateStickyOffset(); })
+      .catch(e => console.error('Branding load error:', e));
   }
 
   function applyBranding(b) {
@@ -502,55 +503,42 @@
 
   // ── Player gender registry ─────────────────────────────────────────────────
   function loadPlayerGenders() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
-        try { playerGenders = JSON.parse(raw) || {}; }
-        catch (e) { console.error('playerGenders parse error', e); }
-      })
-      .withFailureHandler(e => console.error('playerGenders load error', e))
-      .getPlayerGendersV1();
+    cpblApi('playergenders')
+      .then(data => { playerGenders = data || {}; })
+      .catch(e => console.error('playerGenders load error', e));
   }
 
   // ── Load matches ───────────────────────────────────────────────────────────
   function loadMatches() {
     setMain(loadingHtml());
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
-        try {
-          const resp = JSON.parse(raw);
-          allMatches = Array.isArray(resp.rows) ? resp.rows : [];
-          if (!allMatches.length) {
-            populateDivisions([]);
-            setMain(emptyHtml('🏓', 'No matches available.'));
-            return;
-          }
-          populateDivisions(allMatches);
-
-          const pinned = window.INITIAL_MATCH_ID;
-          const pinnedMatch = pinned && allMatches.find(m => String(m.match_id) === pinned);
-          if (pinnedMatch) {
-            currentDivisionKey = String(pinnedMatch.division_id || '');
-            syncDivDropdown();
-            currentMatchId = pinned;
-          } else {
-            const filtered = matchesForDiv(currentDivisionKey);
-            currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
-            syncDivDropdown();
-          }
-
-          if (currentMatchId) { loadMatch(currentMatchId); startPolling(); }
-          else setMain(emptyHtml('🏓', 'No match for this division.'));
-        } catch (err) {
-          setMain(emptyHtml('⚠️', 'Failed to load match list.'));
-          console.error(err);
+    cpblApi('allmatches')
+      .then(resp => {
+        allMatches = Array.isArray(resp.rows) ? resp.rows : [];
+        if (!allMatches.length) {
+          populateDivisions([]);
+          setMain(emptyHtml('🏓', 'No matches available.'));
+          return;
         }
+        populateDivisions(allMatches);
+
+        const pinned = window.INITIAL_MATCH_ID;
+        const pinnedMatch = pinned && allMatches.find(m => String(m.match_id) === pinned);
+        if (pinnedMatch) {
+          currentDivisionKey = String(pinnedMatch.division_id || '');
+          syncDivDropdown();
+          currentMatchId = pinned;
+        } else {
+          const filtered = matchesForDiv(currentDivisionKey);
+          currentMatchId = filtered.length ? String(filtered[0].match_id) : '';
+          syncDivDropdown();
+        }
+
+        if (currentMatchId) { loadMatch(currentMatchId); startPolling(); }
+        else setMain(emptyHtml('🏓', 'No match for this division.'));
       })
-      .withFailureHandler(err => {
+      .catch(err => {
         setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err?.message || err))));
-      })
-      .getAllMatchesForScoreboardV1();
+      });
   }
 
   // ── Division handling ──────────────────────────────────────────────────────
@@ -595,22 +583,15 @@
   // ── Load match ─────────────────────────────────────────────────────────────
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
-        try {
-          currentScorecardData = JSON.parse(raw);
-          renderDisplay(currentScorecardData);
-          updateLastUpdated();
-        } catch (err) {
-          setMain(emptyHtml('⚠️', 'Render error: ' + esc(String(err?.message || err))));
-          console.error(err);
-        }
+    cpblApi('scorecarddata', { matchId })
+      .then(data => {
+        currentScorecardData = data;
+        renderDisplay(currentScorecardData);
+        updateLastUpdated();
       })
-      .withFailureHandler(err => {
+      .catch(err => {
         setMain(emptyHtml('⚠️', 'Load error: ' + esc(String(err?.message || err))));
-      })
-      .getScorecardDataV5(matchId);
+      });
   }
 
   // ── Polling ────────────────────────────────────────────────────────────────

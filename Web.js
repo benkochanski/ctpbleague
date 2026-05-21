@@ -340,6 +340,31 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Read-only JSON shims so the Cloudflare Worker can KV-cache the GAS read
+  // functions that were previously called via google.script.run from the
+  // iframe pages. Each shim normalizes the underlying function's return
+  // value to a JSON string before serving.
+  if (page === 'seasondivisions') {
+    return jsonOutput_(getSeasonDivisionsV1());
+  }
+  if (page === 'seasondata') {
+    const div = String(params.division || '').trim();
+    return jsonOutput_(getSeasonDataV1(div));
+  }
+  if (page === 'playerlist') {
+    return jsonOutput_(getPlayerListV1());
+  }
+  if (page === 'playerpagedata') {
+    const pid = String(params.id || params.playerId || '').trim();
+    return jsonOutput_(getPlayerPageData(pid));
+  }
+  if (page === 'playersdirectorydata') {
+    return jsonOutput_(getPlayersDirectoryData());
+  }
+  if (page === 'playergenders') {
+    return jsonOutput_(getPlayerGendersV1());
+  }
+
   if (page === 'regdata') {
     return ContentService
       .createTextOutput(JSON.stringify(getRegistrationFormData_()))
@@ -855,6 +880,13 @@ function getPublicDashboardData() {
  * Bundle of read-only data for the ctpbleague.com public hub.
  * Cached in CacheService for 60s to cut sheet reads under load.
  */
+function jsonOutput_(v) {
+  const json = (typeof v === 'string') ? v : JSON.stringify(v);
+  return ContentService
+    .createTextOutput(json)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function getPublicSiteData_() {
   const cache = CacheService.getScriptCache();
   const cached = cache.get('publicSiteData_v7');

@@ -4,6 +4,9 @@ dill-dinkers/**
 scorecard/**
 little-league-app/**
 
+# Cloudflare Worker code (ES modules, not GAS)
+worker/**
+
 # Exclude local tooling and config
 .claude/**
 .DS_Store

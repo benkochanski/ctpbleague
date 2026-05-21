@@ -15,18 +15,44 @@ const GAS_PROD =
   'https://script.google.com/macros/s/AKfycbzuzujnOWumYMPb64hQw6LCiAGPVqDd79WnBQa8X6ZabAxrNUhVVAHfHYJnCKvxlBvD/exec';
 
 // Map /api/* path → upstream GAS page name. Add new endpoints here.
+// `passQuery` lists query parameters that are forwarded to GAS and that
+// participate in the cache key.
 const API_ROUTES = {
-  '/api/publicdata':     { page: 'publicdata',     softTtl: 300, hardTtl: 3600 },
-  '/api/homedata':       { page: 'homedata',       softTtl: 300, hardTtl: 3600 },
-  '/api/mvpleaderboard': { page: 'mvpleaderboard', softTtl: 300, hardTtl: 3600, passQuery: ['limit'] },
-  '/api/scorebranding':  { page: 'scorebranding',  softTtl: 1800, hardTtl: 86400 },
+  '/api/publicdata':           { page: 'publicdata',           softTtl: 300,  hardTtl: 3600 },
+  '/api/homedata':             { page: 'homedata',             softTtl: 300,  hardTtl: 3600 },
+  '/api/mvpleaderboard':       { page: 'mvpleaderboard',       softTtl: 300,  hardTtl: 3600, passQuery: ['limit'] },
+  '/api/scorebranding':        { page: 'scorebranding',        softTtl: 1800, hardTtl: 86400 },
+  // Read-only data backing the slow iframe pages.
+  '/api/seasondivisions':      { page: 'seasondivisions',      softTtl: 600,  hardTtl: 3600 },
+  '/api/seasondata':           { page: 'seasondata',           softTtl: 300,  hardTtl: 3600, passQuery: ['division'] },
+  '/api/playerlist':           { page: 'playerlist',           softTtl: 600,  hardTtl: 3600 },
+  '/api/playerpagedata':       { page: 'playerpagedata',       softTtl: 300,  hardTtl: 3600, passQuery: ['id', 'playerId'] },
+  '/api/playersdirectorydata': { page: 'playersdirectorydata', softTtl: 300,  hardTtl: 3600 },
+  '/api/playergenders':        { page: 'playergenders',        softTtl: 1800, hardTtl: 86400 },
+  '/api/openmatches':          { page: 'openmatches',          softTtl: 300,  hardTtl: 3600 },
+  '/api/allmatches':           { page: 'allmatches',           softTtl: 300,  hardTtl: 3600 },
+  // Live scorecard: short TTL so live matches refresh quickly, but repeat
+  // polls within ~15s still come from cache instead of hammering GAS.
+  '/api/scorecarddata':        { page: 'scorecarddata',        softTtl: 15,   hardTtl: 300, passQuery: ['matchId'] },
+};
+
+const CORS_HEADERS = {
+  'access-control-allow-origin':  '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'content-type',
+  'access-control-max-age':       '86400',
 };
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const route = API_ROUTES[url.pathname];
-    if (route) return handleApi(url, route, env, ctx);
+    if (route) {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
+      }
+      return handleApi(url, route, env, ctx);
+    }
     return env.ASSETS.fetch(request);
   },
 };
@@ -72,7 +98,7 @@ async function handleApi(url, route, env, ctx) {
   } catch (err) {
     return new Response(
       JSON.stringify({ error: 'upstream_failed', detail: String(err) }),
-      { status: 502, headers: { 'content-type': 'application/json' } }
+      { status: 502, headers: { ...CORS_HEADERS, 'content-type': 'application/json' } }
     );
   }
 }
@@ -94,6 +120,7 @@ async function refresh(url, route, env, key) {
 function jsonResponse(body, meta) {
   return new Response(JSON.stringify(body), {
     headers: {
+      ...CORS_HEADERS,
       'content-type': 'application/json; charset=utf-8',
       // Allow short browser cache so rapid re-fetches don't even hit the Worker.
       'cache-control': 'public, max-age=30',
