@@ -334,6 +334,18 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (page === 'homedata') {
+    return ContentService
+      .createTextOutput(JSON.stringify(getHomeSiteData_()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (page === 'regdata') {
+    return ContentService
+      .createTextOutput(JSON.stringify(getRegistrationFormData_()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (page === 'mvpleaderboard') {
     const limit = Number(params.limit || 10);
     return ContentService
@@ -1017,8 +1029,179 @@ function getPublicSiteData_() {
     standings
   };
 
-  cache.put('publicSiteData_v7', JSON.stringify(payload), 60);
+  cache.put('publicSiteData_v7', JSON.stringify(payload), 600);
   return payload;
+}
+
+// Lightweight payload for the Home view. Same shape as getPublicSiteData_()
+// but skips the Match_Games tally fallback (trusts Matches sheet values) and
+// trims matches to a ±60-day window so the JSON is smaller. If the full
+// publicdata payload is already in cache, slice that instead — no extra
+// sheet reads.
+function getHomeSiteData_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('homeSiteData_v1');
+  if (hit) return JSON.parse(hit);
+
+  const sliceMatches = (matches) => {
+    const today = Utilities.formatDate(new Date(), 'America/New_York', 'yyyy-MM-dd');
+    const within = matches.filter(m => {
+      if (!m.match_date) return false;
+      // Keep last 60 + next 120 days. Cheap string compare on ISO dates.
+      const d = m.match_date;
+      const lo = _addDaysIso_(today, -60);
+      const hi = _addDaysIso_(today, 120);
+      return d >= lo && d <= hi;
+    });
+    return within;
+  };
+
+  const fullCached = cache.get('publicSiteData_v7');
+  if (fullCached) {
+    const full = JSON.parse(fullCached);
+    const payload = Object.assign({}, full, { matches: sliceMatches(full.matches || []) });
+    cache.put('homeSiteData_v1', JSON.stringify(payload), 600);
+    return payload;
+  }
+
+  const str = (v) => String(v == null ? '' : v).trim();
+  const num = (v) => (v === '' || v == null || isNaN(Number(v))) ? 0 : Number(v);
+  const sheetTz = 'America/New_York';
+  const toIsoDate = (v) => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      return Utilities.formatDate(v, sheetTz, 'yyyy-MM-dd');
+    }
+    const s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) {
+      const [mo, da, yr] = s.split('/');
+      const y = yr.length === 2 ? '20' + yr : yr;
+      return y + '-' + mo.padStart(2, '0') + '-' + da.padStart(2, '0');
+    }
+    const d = new Date(s);
+    return !isNaN(d.getTime()) ? Utilities.formatDate(d, sheetTz, 'yyyy-MM-dd') : s;
+  };
+  const toClockTime = (v) => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      if (isNaN(v.getTime())) return '';
+      let h = v.getHours(); const min = v.getMinutes();
+      if (h === 0 && min === 0) return '';
+      const ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return min === 0 ? `${h} ${ap}` : `${h}:${String(min).padStart(2,'0')} ${ap}`;
+    }
+    return String(v).trim();
+  };
+
+  const divisions = getObjects_(SHEETS.DIVISIONS).map(d => ({
+    division_id:    str(d.division_id),
+    division_name:  str(d.division_name || d.division_id),
+    division_order: num(d.division_order),
+    active:         normalizeBool_(d.active)
+  })).filter(d => d.active !== false);
+
+  const resolveClubLogo = (c) => {
+    const raw = str(c.logo_url) || str(c.logo_id) || str(c.logo_file_id) || str(c.image_file_id);
+    if (!raw) return '';
+    return raw.startsWith('http') ? raw : driveImageUrl_(raw);
+  };
+
+  const clubs = getObjects_(SHEETS.CLUBS).map(c => ({
+    club_id:    str(c.club_id),
+    club_name:  str(c.club_name),
+    short_name: str(c.short_name),
+    logo_url:   resolveClubLogo(c)
+  }));
+
+  const teams = getObjects_(SHEETS.TEAMS).map(t => ({
+    team_id:     str(t.team_id),
+    team_name:   stripDivisionSuffix_(str(t.team_name)),
+    club_id:     str(t.club_id),
+    division_id: str(t.division_id)
+  }));
+
+  // No MATCH_GAMES read — trust the Matches sheet's rollup columns.
+  const matchesAll = getDisplayObjects_(SHEETS.MATCHES).map(m => {
+    const matchId = str(m.match_id);
+    const homeId  = str(m.home_team_id);
+    const awayId  = str(m.away_team_id);
+    const hgw = num(m.home_games_won);
+    const agw = num(m.away_games_won);
+    let winId = str(m.winning_team_id);
+    if (!winId && (hgw || agw)) {
+      if (hgw > agw) winId = homeId;
+      else if (agw > hgw) winId = awayId;
+    }
+    return {
+      match_id:        matchId,
+      season_id:       str(m.season_id),
+      division_id:     str(m.division_id),
+      home_team_id:    homeId,
+      away_team_id:    awayId,
+      match_date:      toIsoDate(m.match_date),
+      start_time:      toClockTime(m.start_time),
+      venue:           str(m.venue),
+      status:          str(m.status).toLowerCase(),
+      home_rounds_won: num(m.home_rounds_won),
+      away_rounds_won: num(m.away_rounds_won),
+      home_games_won:  hgw,
+      away_games_won:  agw,
+      winning_team_id: winId
+    };
+  });
+
+  const standings = getObjects_(SHEETS.STANDINGS_SUMMARY).map(s => ({
+    season_id:      str(s.season_id),
+    division_id:    str(s.division_id),
+    team_id:        str(s.team_id),
+    matches_played: num(s.matches_played),
+    match_wins:     num(s.match_wins),
+    match_losses:   num(s.match_losses),
+    rounds_won:     num(s.rounds_won),
+    rounds_lost:    num(s.rounds_lost),
+    games_won:      num(s.games_won),
+    games_lost:     num(s.games_lost),
+    points_for:     num(s.points_for),
+    points_against: num(s.points_against),
+    point_diff:     num(s.point_diff),
+    standings_rank: num(s.standings_rank)
+  }));
+
+  const seasons = getObjects_(SHEETS.SEASONS).map(s => ({
+    season_id:   str(s.season_id),
+    season_name: str(s.season_name),
+    start_date:  str(s.start_date),
+    end_date:    str(s.end_date),
+    status:      str(s.status).toLowerCase()
+  }));
+
+  const currentSeason =
+    seasons.find(s => s.status === 'active') ||
+    seasons.find(s => s.status === 'open') ||
+    seasons[seasons.length - 1] || null;
+
+  const payload = {
+    generatedAt:   new Date().toISOString(),
+    currentSeason: currentSeason || null,
+    seasons,
+    divisions,
+    clubs,
+    teams,
+    matches: sliceMatches(matchesAll),
+    standings
+  };
+  cache.put('homeSiteData_v1', JSON.stringify(payload), 600);
+  return payload;
+}
+
+function _addDaysIso_(isoDate, days) {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return Utilities.formatDate(dt, 'UTC', 'yyyy-MM-dd');
 }
 
 function getUserDisplayMap_() {
@@ -1039,4 +1222,23 @@ function getUserDisplayMap_() {
   });
 
   return map;
+}
+
+// ── POST handler ────────────────────────────────────────────────────────────
+// GAS routes JSON POSTs here. Use Content-Type: 'text/plain' from the browser
+// to avoid CORS preflight. The body comes through as e.postData.contents.
+function doPost(e) {
+  const params = (e && e.parameter) || {};
+  const page = String(params.page || '').toLowerCase();
+  const body = (e && e.postData && e.postData.contents) || '';
+
+  if (page === 'register') {
+    return ContentService
+      .createTextOutput(JSON.stringify(registerPlayerSubmit(body)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: false, error: 'unknown POST route: ' + page }))
+    .setMimeType(ContentService.MimeType.JSON);
 }

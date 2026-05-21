@@ -20,8 +20,9 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="registration.css">
 </head>
 <body>
 
@@ -289,44 +290,92 @@
       <div class="page-inner">
         <div class="reg-hero">
           <div class="reg-hero-text">
-            <div class="reg-badge">2026 Season</div>
+            <div class="reg-badge" id="regSeasonBadge">2026 Season</div>
             <h1>Player Registration</h1>
-            <p>Sign up to play in the upcoming Connecticut Pickleball League season. Registration is open throughout the season.</p>
-            <a class="btn-gold btn-lg" href="https://docs.google.com/forms/d/1HUwhw7flT2vvkEJKigFxLJoHK8sMUR1O_W7DVOK36r8/viewform" target="_blank" rel="noopener">
-              Register Now
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="7" y1="17" x2="17" y2="7"/>
-                <polyline points="7 7 17 7 17 17"/>
-              </svg>
-            </a>
+            <p>Sign up to play in the Connecticut Pickleball League. Link your DUPR account to have your league matches count toward your DUPR rating.</p>
           </div>
         </div>
 
-        <div class="reg-callouts">
-          <div class="reg-callout">
-            <div class="reg-callout-head">
-              <span class="reg-num">1</span>
-              <h3>Club authorization</h3>
+        <!-- Step 1: DUPR link (optional but encouraged) -->
+        <section class="reg-step" id="regStepDupr">
+          <header class="reg-step-head">
+            <span class="reg-step-num">1</span>
+            <div>
+              <h2>Link your DUPR account</h2>
+              <p class="reg-step-sub">Sign in to DUPR (or create a free account in the popup) so we can pre-fill your info and post your league results.</p>
             </div>
-            <p>Please register <strong>only if authorized by a club official</strong>. If you haven't heard from a club, reach out before submitting.</p>
+            <div class="reg-step-status" id="regDuprStatus">Not linked</div>
+          </header>
+          <div class="reg-dupr-actions">
+            <button class="btn-gold" type="button" id="regLinkDuprBtn">Link DUPR account</button>
+            <button class="btn-ghost" type="button" id="regSkipDuprBtn">I don't have DUPR — continue without</button>
           </div>
-          <div class="reg-callout">
-            <div class="reg-callout-head">
-              <span class="reg-num">2</span>
-              <h3>$20 registration fee</h3>
+          <div class="reg-dupr-card" id="regDuprCard" style="display:none;">
+            <div class="reg-dupr-name" id="regDuprName"></div>
+            <div class="reg-dupr-meta">
+              <span><b>DUPR ID:</b> <code id="regDuprId"></code></span>
+              <span id="regDuprRating"></span>
             </div>
-            <p>The league fee covers administrative costs and is paid directly to your club once your registration is confirmed.</p>
+            <button class="btn-link" type="button" id="regUnlinkDuprBtn">Unlink</button>
           </div>
-          <div class="reg-callout">
-            <div class="reg-callout-head">
-              <span class="reg-num">3</span>
-              <h3>What you'll need</h3>
+        </section>
+
+        <!-- Step 2: Form -->
+        <section class="reg-step" id="regStepForm">
+          <header class="reg-step-head">
+            <span class="reg-step-num">2</span>
+            <div>
+              <h2>Your details</h2>
+              <p class="reg-step-sub">A captain or commissioner will confirm your team assignment after you submit.</p>
             </div>
-            <p>Basic contact info, your club and team, DUPR (if you have one), and a photo for the player directory.</p>
+          </header>
+          <form id="regForm" class="reg-form" autocomplete="on">
+            <div class="reg-row">
+              <label>First name<input name="firstName" required autocomplete="given-name" /></label>
+              <label>Last name<input name="lastName" required autocomplete="family-name" /></label>
+            </div>
+            <div class="reg-row">
+              <label>Email<input name="email" type="email" required autocomplete="email" /></label>
+              <label>Phone<input name="phone" type="tel" autocomplete="tel" /></label>
+            </div>
+            <div class="reg-row">
+              <label>Gender
+                <select name="gender" required>
+                  <option value="">—</option>
+                  <option value="F">Female</option>
+                  <option value="M">Male</option>
+                  <option value="X">Other</option>
+                </select>
+              </label>
+              <label>DUPR rating<input name="dupr" type="number" step="0.01" min="2" max="8" placeholder="Auto-filled from DUPR" /></label>
+            </div>
+            <div class="reg-row">
+              <label>Club
+                <select name="clubId" id="regClubSelect" required><option value="">Loading…</option></select>
+              </label>
+              <label>Team (optional)
+                <select name="teamId" id="regTeamSelect"><option value="">—</option></select>
+              </label>
+            </div>
+            <p class="reg-disclaimer">By submitting, you confirm you've been authorized by a club official to register. A $20 league fee may be due to your club once confirmed.</p>
+            <div class="reg-submit-row">
+              <button class="btn-gold btn-lg" type="submit" id="regSubmitBtn">Submit registration</button>
+              <span class="reg-submit-msg" id="regSubmitMsg"></span>
+            </div>
+          </form>
+        </section>
+
+        <!-- DUPR SSO modal -->
+        <div class="reg-modal" id="regDuprModal" style="display:none;" role="dialog" aria-modal="true">
+          <div class="reg-modal-backdrop" id="regDuprBackdrop"></div>
+          <div class="reg-modal-body">
+            <header class="reg-modal-head">
+              <h3>Link your DUPR account</h3>
+              <button class="reg-modal-close" id="regDuprClose" aria-label="Close">×</button>
+            </header>
+            <iframe id="regDuprFrame" allow="payment" title="DUPR sign-in"></iframe>
           </div>
         </div>
-
-        <p class="reg-note">Having trouble with the form? Email your club captain or the league commissioner.</p>
       </div>
     </div>
 
@@ -404,5 +453,6 @@
 
 <!-- Auth modal -->
 <script src="app.js"></script>
+<script src="registration.js"></script>
 </body>
 </html>

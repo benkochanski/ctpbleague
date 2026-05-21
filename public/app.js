@@ -8,13 +8,15 @@
   const GAS_STAGING = 'https://script.google.com/macros/s/AKfycbzjVryG88l3GHDqTglfeB9UmN8Ju6VYU_YVADWCwdMi5WQhomJhFramhpg1MZQHZKy-/exec';
   const IS_STAGING  = new URLSearchParams(location.search).get('staging') === '1';
   const GAS_BASE    = IS_STAGING ? GAS_STAGING : GAS_PROD;
+  // Expose for sibling scripts (e.g. registration.js).
+  window.__CPBL_GAS_BASE__ = GAS_BASE;
 
   const ROUTES = {
     home:         { kind: 'page', label: 'ctpbleague.com',    onEnter: renderHome },
     matches:      { kind: 'page', label: 'Matches',           onEnter: renderMatches },
     standings:    { kind: 'page', label: 'Standings',         onEnter: renderStandings },
     rules:        { kind: 'page', label: 'Rules & Handbook' },
-    registration: { kind: 'page', label: 'Registration' },
+    registration: { kind: 'page', label: 'Registration', onEnter: () => { if (window.cpblInitRegistration) window.cpblInitRegistration(); } },
     feedback:     { kind: 'iframe', label: 'Feedback',        url: `${GAS_BASE}?page=request` },
     requests:     { kind: 'iframe', label: 'Request Manager', url: `${GAS_BASE}?page=requestadmin` },
     notfound:     { kind: 'page', label: 'Page Not Found',    hidden: true },
@@ -262,7 +264,37 @@
     return publicDataPromise;
   }
 
-  function resetPublicData() { publicData = null; publicDataPromise = null; }
+  // Lighter payload for the Home view. Falls back to publicdata if it has
+  // already been fetched/preloaded, so we don't fire a second request.
+  let homeData = null;
+  let homeDataPromise = null;
+  function fetchHomeData() {
+    if (publicData) return Promise.resolve(publicData);
+    if (homeData) return Promise.resolve(homeData);
+    if (homeDataPromise) return homeDataPromise;
+    homeDataPromise = fetch(`${GAS_BASE}?page=homedata`)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        // GAS routes that don't match any page fall through to the default
+        // HTML response, which JSON.parse rejects. If we somehow got HTML
+        // back, treat it as missing and fall through to publicdata.
+        if (!data || !Array.isArray(data.teams)) throw new Error('homedata payload missing');
+        homeData = data; return data;
+      })
+      .catch(() => {
+        homeDataPromise = null;
+        return fetchPublicData();
+      });
+    return homeDataPromise;
+  }
+
+  function resetPublicData() {
+    publicData = null; publicDataPromise = null;
+    homeData = null; homeDataPromise = null;
+  }
 
   // ---- Helpers ----
 
@@ -474,7 +506,7 @@
 
     let data;
     try {
-      data = await fetchPublicData();
+      data = await fetchHomeData();
     } catch (err) {
       const msg = `<div class="empty-card">Couldn't load match data.</div>`;
       upcomingEl.innerHTML = msg;
@@ -1785,6 +1817,13 @@
     const banner = document.getElementById('staging-banner');
     if (banner) banner.style.display = '';
   }
+
+  // Warm both GAS endpoints immediately so the first route render doesn't
+  // wait on a cold round-trip. homedata is smaller (faster for Home);
+  // publicdata is the full payload Matches needs. Errors are swallowed —
+  // route handlers will retry and surface any failure themselves.
+  fetchHomeData().catch(() => {});
+  fetchPublicData().catch(() => {});
 
   const [initialKey, initialRawParam] = (location.hash || '#home').slice(1).split('/');
   navigate(initialKey || 'home', decodeHashParam(initialRawParam));
