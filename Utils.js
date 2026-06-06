@@ -152,19 +152,17 @@ function invalidateOnScoreSave_(matchId) {
   if (matchId) keys.push('scorecarddata_v5_' + String(matchId));
   try { CacheService.getScriptCache().removeAll(keys); } catch (e) {}
   // Also purge the Cloudflare Worker KV so the hub doesn't serve a stale
-  // copy until its soft TTL expires.
-  const workerKeys = [
+  // copy until its soft TTL expires. Keep this list minimal: each key here is
+  // a KV delete op, and the free tier caps deletes at 1,000/day. On a busy
+  // match night ~150 saves/day × the old 9-key list blew past that. We now
+  // only force-purge the two live match grids that viewers watch in real time;
+  // the aggregate pages (publicdata/homedata/mvpleaderboard/seasondata) ride
+  // their 5-min soft TTL, and scorecarddata rides its own 15s soft TTL — both
+  // refresh fast enough on their own without an explicit delete per save.
+  invalidateWorkerKv_([
     { page: 'openmatches' },
     { page: 'allmatches' },
-    { page: 'publicdata' },
-    { page: 'homedata' },
-    { page: 'seasondata' },
-    { page: 'seasondata', params: { division: '__ALL__' } },
-    { page: 'mvpleaderboard' },
-    { page: 'mvpleaderboard', params: { limit: 8 } },
-  ];
-  if (matchId) workerKeys.push({ page: 'scorecarddata', params: { matchId: String(matchId) } });
-  invalidateWorkerKv_(workerKeys);
+  ]);
 }
 
 function invalidateOnLineupSave_(matchId) {
