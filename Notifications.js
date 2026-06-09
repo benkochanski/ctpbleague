@@ -17,17 +17,23 @@
  *   - League commissioners        (role_type=commissioner)
  */
 function notifyLineupSubmitted_(matchId, teamId, access) {
+  Logger.log('notifyLineupSubmitted_ called: matchId=' + matchId + ' teamId=' + teamId);
   try {
     const cleanMatchId = String(matchId || '').trim();
     const cleanTeamId  = String(teamId  || '').trim();
-    if (!cleanMatchId || !cleanTeamId) return;
+    if (!cleanMatchId || !cleanTeamId) {
+      Logger.log('notify: missing matchId or teamId — skipping');
+      return;
+    }
 
     const match = getObjects_(SHEETS.MATCHES)
       .find(m => String(m.match_id || '').trim() === cleanMatchId);
-    if (!match) return;
+    if (!match) {
+      Logger.log('notify: match not found — skipping');
+      return;
+    }
 
     const teams = getObjects_(SHEETS.TEAMS);
-    const clubs = getObjects_(SHEETS.CLUBS);
     const divisions = getObjects_(SHEETS.DIVISIONS);
 
     const homeTeamId = String(match.home_team_id || '').trim();
@@ -38,7 +44,10 @@ function notifyLineupSubmitted_(matchId, teamId, access) {
     const submitterIsHome = cleanTeamId === homeTeamId;
     const submittingTeam  = submitterIsHome ? homeTeam : awayTeam;
     const opponentTeam    = submitterIsHome ? awayTeam : homeTeam;
-    if (!submittingTeam) return;
+    if (!submittingTeam) {
+      Logger.log('notify: submitting team not resolved — skipping');
+      return;
+    }
 
     const division = divisions.find(d =>
       String(d.division_id || '').trim() === String(match.division_id || '').trim()
@@ -68,7 +77,11 @@ function notifyLineupSubmitted_(matchId, teamId, access) {
       awayTeam,
       submitterEmail: String((access && access.email) || '').trim().toLowerCase()
     });
-    if (!recipients.length) return;
+    Logger.log('notify: recipients=' + recipients.length + ' — ' + recipients.join(', '));
+    if (!recipients.length) {
+      Logger.log('notify: no recipients — skipping');
+      return;
+    }
 
     const subject = buildLineupEmailSubject_(match, submittingTeam, opponentTeam, division);
     const body = buildLineupEmailBody_({
@@ -82,13 +95,23 @@ function notifyLineupSubmitted_(matchId, teamId, access) {
       playerById
     });
 
-    MailApp.sendEmail({
-      to: recipients.join(','),
-      subject: subject,
-      body: body,
-      name: 'CPBL Lineup Notifications',
-      noReply: true
-    });
+    try {
+      Logger.log('notify: MailApp daily quota remaining=' + MailApp.getRemainingDailyQuota());
+    } catch (qErr) {
+      Logger.log('notify: getRemainingDailyQuota check skipped — ' + (qErr && qErr.message || qErr));
+    }
+    try {
+      MailApp.sendEmail({
+        to: recipients.join(','),
+        subject: subject,
+        body: body,
+        name: 'CPBL Lineup Notifications',
+        noReply: true
+      });
+      Logger.log('notify: email sent ok to ' + recipients.length + ' recipients');
+    } catch (mailErr) {
+      Logger.log('notify: MailApp.sendEmail FAILED — ' + (mailErr && mailErr.stack || mailErr));
+    }
 
     sendLineupTelegramNotification_({
       match,
@@ -103,6 +126,16 @@ function notifyLineupSubmitted_(matchId, teamId, access) {
   } catch (e) {
     Logger.log('notifyLineupSubmitted_ failed: ' + (e && e.stack || e));
   }
+}
+
+/**
+ * Diagnostic — replay notifications for a specific submitted match. Run from
+ * the GAS editor (after editing the matchId/teamId below) to test that email
+ * + Telegram fire end-to-end without needing a real lineup submit.
+ */
+function testNotifyForMatch_W4_DIV4_Dill() {
+  const access = { email: 'meehanmelanie@gmail.com', name: 'Melanie Meehan', userId: 'USR008' };
+  notifyLineupSubmitted_('MATCH_W4_DIV4', 'TEAM2_DILL_DIV4', access);
 }
 
 function collectLineupNotificationRecipients_(args) {
