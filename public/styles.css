@@ -1471,44 +1471,62 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 14px 14px 10px;
+  padding: 0;          /* head is the dark strip; body owns its own padding */
   box-shadow: var(--sh);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
+/* Section header — match the .mvp-head treatment so every table on the
+   home page has a consistent dark-navy header bar with a gold Bebas
+   Neue title. */
 .home-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--border-s);
-  margin-bottom: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--league-navy) 0%, #1a3870 100%);
+  color: #fff;
+  border-bottom: none;
+  margin-bottom: 0;
 }
 .home-section-head h2 {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 1.3px;
-  color: var(--league-navy);
+  font-size: 18px;
+  letter-spacing: .16em;
+  color: var(--league-gold);
+  text-transform: uppercase;
   line-height: 1;
+  margin: 0;
 }
-.home-link {
+/* Header chip-link — matches the .mvp-link styling in the panel head. */
+.home-section-head .home-link {
+  background: rgba(255,255,255,.13);
+  border: 1px solid rgba(255,255,255,.30);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: .04em;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .5px;
+  cursor: pointer;
+  white-space: nowrap;
   text-transform: uppercase;
-  color: var(--league-blue);
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: background .15s;
 }
-.home-link:hover { background: var(--bg-soft); }
+.home-section-head .home-link:hover {
+  background: rgba(255,255,255,.22);
+}
+.home-section-head .home-link svg { stroke: currentColor; }
 
-.home-section-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.home-section-body {
+  flex: 1; display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 14px 12px;  /* body now owns the inset padding */
+}
 .home-section-body .loading-card,
 .home-section-body .empty-card {
   padding: 24px 12px;
