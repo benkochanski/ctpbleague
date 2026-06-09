@@ -656,8 +656,8 @@ function renderPartners(gamelog) {
       : null;
     return { name: byPartner[key].name, w: s.w, l: s.l, gms, diff, rating };
   }).sort((a, b) =>
-    b.gms - a.gms ||
     (b.rating || 0) - (a.rating || 0) ||
+    b.gms - a.gms ||
     a.name.localeCompare(b.name)
   );
 
