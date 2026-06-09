@@ -99,6 +99,22 @@
     .sg-pct  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
     .sg-rat  { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; color: var(--blue); }
 
+    /* partners table (under stats) */
+    .sec-count { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.85); white-space: nowrap; }
+    .partners-table { width: 100%; border-collapse: collapse; }
+    .partners-table th { text-align: left; background: var(--soft); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 7px 12px; border-bottom: 2px solid var(--border-s); white-space: nowrap; }
+    .partners-table td { padding: 7px 12px; border-bottom: 1px solid var(--border-s); vertical-align: middle; font-size: 12px; }
+    .partners-table tr:last-child td { border-bottom: none; }
+    .partners-table tbody tr:hover { background: var(--soft); }
+    .partners-table th.num, .partners-table td.num { text-align: right; font-family: 'DM Mono', monospace; }
+    .pt-name { color: var(--blue); font-weight: 700; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-rec  { font-weight: 800; color: var(--text); }
+    .pt-diff { font-weight: 800; }
+    .pt-diff.pos { color: var(--ok); }
+    .pt-diff.neg { color: var(--muted); opacity: .7; }
+    .pt-rat  { font-weight: 700; color: var(--blue); }
+    .pt-empty { padding: 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
     /* ── Stats Accordion ── */
     .sa-lvl { border-top: 1px solid var(--border-s); }
     .sa-trigger { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; user-select: none; background: var(--soft); transition: background .13s; }
@@ -253,6 +269,7 @@
   <div class="page" id="mainPage">
     <div class="stats-col" id="statsCol" style="display:none">
       <div class="panel" id="statsPanel"></div>
+      <div class="panel" id="partnersPanel"></div>
     </div>
     <div class="gamelog-col" id="gamelogCol" style="display:none">
       <div class="gamelog-outer" id="gamelogPanel"></div>
@@ -409,6 +426,7 @@ function renderAll(data) {
 
   renderHero(player, gamelog);
   renderStats(player, gamelog);
+  renderPartners(gamelog);
   renderGamelog(gamelog);
 
   document.getElementById('statsCol').style.display  = '';
@@ -607,6 +625,71 @@ function buildStatsGrid(stats, gameTypes, size) {
       </div>`;
     }
   }).join('')}</div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PARTNERS PANEL  (record / +/- / rating per partner)
+───────────────────────────────────────────────────────── */
+function renderPartners(gamelog) {
+  const el = document.getElementById('partnersPanel');
+  if (!el) return;
+
+  // Group every game by the partner the player shared the court with.
+  const byPartner = {};
+  (gamelog || []).forEach(g => {
+    const id   = String(g.partner_id || '').trim();
+    const name = String(g.partner_name || '').trim();
+    if (!id && !name) return;                 // no recorded partner — skip
+    const key = id || name;
+    if (!byPartner[key]) byPartner[key] = { name: name || key, games: [] };
+    if (name) byPartner[key].name = name;     // prefer a real name if present
+    byPartner[key].games.push(g);
+  });
+
+  const rows = Object.keys(byPartner).map(key => {
+    const s      = computeStats(byPartner[key].games).all;
+    const gms    = s.w + s.l;
+    const ptsTot = s.pf + s.pa;
+    const diff   = s.pf - s.pa;
+    const rating = gms > 0
+      ? ((s.w / gms * 0.6) + (ptsTot > 0 ? s.pf / ptsTot * 0.4 : 0)) * 100
+      : null;
+    return { name: byPartner[key].name, w: s.w, l: s.l, gms, diff, rating };
+  }).sort((a, b) =>
+    b.gms - a.gms ||
+    (b.rating || 0) - (a.rating || 0) ||
+    a.name.localeCompare(b.name)
+  );
+
+  const bodyRows = rows.map(r => {
+    const dStr = r.diff >= 0 ? '+' + r.diff : String(r.diff);
+    const dCls = r.diff >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td class="pt-name" title="${esc(r.name)} · ${r.gms}g">${esc(r.name)}</td>
+      <td class="num pt-rec">${r.w}–${r.l}</td>
+      <td class="num pt-diff ${dCls}">${esc(dStr)}</td>
+      <td class="num pt-rat">${r.rating != null ? r.rating.toFixed(1) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="sec-head">
+      <div class="sec-badge">P</div>
+      <span class="sec-label">Partners</span>
+      <span class="sec-count">${rows.length} partner${rows.length === 1 ? '' : 's'}</span>
+    </div>
+    ${rows.length ? `
+    <table class="partners-table">
+      <thead>
+        <tr>
+          <th>Partner</th>
+          <th class="num">Record</th>
+          <th class="num">+/–</th>
+          <th class="num">Rating</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>` : `<div class="pt-empty">No partner data yet.</div>`}`;
 }
 
 /* ─────────────────────────────────────────────────────────
