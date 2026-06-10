@@ -40,9 +40,19 @@ function getPlayerListV1Impl_() {
 function getPlayerPageData(playerId) {
   const cleanId = String(playerId || '').trim();
   if (!cleanId) throw new Error('Missing playerId');
-  return cachedObject_('playerpagedata_v1_' + cleanId, 300, function() {
+  return cachedObject_('playerpagedata_v2_' + cleanId, 300, function() {
     return getPlayerPageDataImpl_(cleanId);
   });
+}
+
+// Convert a Matches sheet match_date (read via getObjects_, so usually a Date
+// object) into epoch ms for reliable chronological sorting. Stringifying the
+// Date and sorting lexically sorts by month NAME ("Fri May.." > "Fri Jun..").
+// Returns 0 for blank/unparseable values.
+function matchDateTs_(v) {
+  if (v instanceof Date) return v.getTime();
+  const t = Date.parse(String(v || ''));
+  return isNaN(t) ? 0 : t;
 }
 
 function getPlayerPageDataImpl_(playerId) {
@@ -172,6 +182,7 @@ function getPlayerPageDataImpl_(playerId) {
       season_id:          seasonId,
       season_name:        seasonMap[seasonId] || seasonId,
       match_date:         String(match.match_date || '').trim(),
+      match_date_ts:      matchDateTs_(match.match_date),
       division_id:        String(match.division_id || '').trim(),
       game_type:          String(g.game_type || '').trim().toLowerCase(),
       round_number:       Number(g.round_number || 0),
@@ -191,7 +202,7 @@ function getPlayerPageDataImpl_(playerId) {
       opp_team_id:        oppTeamId,
       opp_team_name:      stripDivisionSuffix_(String(oppTeamObj.team_name || oppTeamId || '').trim())
     };
-  }).sort((a, b) => String(b.match_date).localeCompare(String(a.match_date)));
+  }).sort((a, b) => b.match_date_ts - a.match_date_ts);
 
   // Pull the canonical club-logo map (short_name → image URL) so the client
   // can resolve a team's logo by keyword-matching the team_name, the same

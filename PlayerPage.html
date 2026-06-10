@@ -497,7 +497,8 @@ function renderStats(player, gamelog) {
   });
 
   const seasonAccordions = Object.keys(bySeason)
-    .sort((a, b) => String(bySeason[b].games[0]?.match_date||'').localeCompare(String(bySeason[a].games[0]?.match_date||'')))
+    // chronological: oldest season → most recent
+    .sort((a, b) => (bySeason[a].games[0]?.match_date_ts || 0) - (bySeason[b].games[0]?.match_date_ts || 0))
     .map(sId => {
       const { name, games } = bySeason[sId];
       const ss   = computeStats(games);
@@ -509,12 +510,13 @@ function renderStats(player, gamelog) {
       const byMatch = {};
       games.forEach(g => {
         const mk = g.match_id || 'unknown';
-        if (!byMatch[mk]) byMatch[mk] = { date: g.match_date, opp: g.opp_team_name, games: [] };
+        if (!byMatch[mk]) byMatch[mk] = { date: g.match_date, ts: g.match_date_ts, opp: g.opp_team_name, games: [] };
         byMatch[mk].games.push(g);
       });
 
       const matchAccordions = Object.keys(byMatch)
-        .sort((a, b) => String(byMatch[b].date||'').localeCompare(String(byMatch[a].date||'')))
+        // chronological: earliest match → most recent (numeric ts; string match_date sorts by month name)
+        .sort((a, b) => (byMatch[a].ts || 0) - (byMatch[b].ts || 0))
         .map(mId => {
           const m   = byMatch[mId];
           const ms  = computeStats(m.games);
