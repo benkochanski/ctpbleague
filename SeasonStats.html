@@ -557,15 +557,25 @@
   }
 
   // ── Branding ──────────────────────────────────────────────────────────────
+  // Load reads via plain fetch against the anonymous /exec endpoint. This page
+  // runs inside a googleusercontent iframe and google.script.run rides the
+  // viewer's Google session — it hangs indefinitely when that session is being
+  // challenged ("Verify it's you"), which left this page stuck on "loading".
+  function gasFetch_(page, params) {
+    const base = GAS_WEB_APP_URL || GAS_EXEC_URL_;
+    const qs = params
+      ? Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&')
+      : '';
+    return fetch(base + '?page=' + page + (qs ? '&' + qs : '')).then(r => r.text());
+  }
+
   function loadBranding() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    gasFetch_('scorebranding')
+      .then(raw => {
         try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); }
         catch (e) { console.error(e); }
       })
-      .withFailureHandler(e => console.error(e))
-      .getScorecardBrandingV1();
+      .catch(e => console.error(e));
   }
 
   function applyBranding(b) {
@@ -579,14 +589,12 @@
 
   // ── Divisions ─────────────────────────────────────────────────────────────
   function loadDivisions() {
-    if (!hasGas()) { setSeriesEmpty('No GAS connection.'); return; }
-    google.script.run
-      .withSuccessHandler(raw => {
+    gasFetch_('seasondivisions')
+      .then(raw => {
         try { populateDivisions(JSON.parse(raw) || []); }
         catch (e) { setSeriesEmpty('Failed to load divisions.'); }
       })
-      .withFailureHandler(() => setSeriesEmpty('Server error.'))
-      .getSeasonDivisionsV1();
+      .catch(() => setSeriesEmpty('Server error.'));
   }
 
   function populateDivisions(divs) {
@@ -642,9 +650,8 @@
   function loadSeasonData(divisionKey) {
     setSeriesLoading();
     setPlayerLoading();
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    gasFetch_('seasondata', { division: divisionKey })
+      .then(raw => {
         try {
           currentData = JSON.parse(raw);
           renderSeries(currentData.standings || []);
@@ -654,8 +661,7 @@
           console.error(e);
         }
       })
-      .withFailureHandler(e => setSeriesEmpty('Load error: ' + esc(e?.message || String(e))))
-      .getSeasonDataV1(divisionKey);
+      .catch(e => setSeriesEmpty('Load error: ' + esc(e?.message || String(e))));
   }
 
   // ── Render Series / Standings ─────────────────────────────────────────────
