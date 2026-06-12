@@ -915,6 +915,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: var(--league-navy);
 }
 .date-md.is-tbd { color: var(--muted); font-size: 16px; }
+.date-time {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
 
 /* Match cell — fixed grid columns so home / score / away / status line up
    identically across every row, regardless of whether the row is a final
@@ -1076,6 +1083,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .div-pill  { font-size: 11px; padding: 3px 8px; }
   .date-md   { font-size: 16px; }
   .date-dow  { font-size: 9px; }
+  .date-time { font-size: 9px; }
   .m-team-logo { width: 26px; height: 26px; border-radius: 6px; }
   .m-score-num { font-size: 22px; }
 }

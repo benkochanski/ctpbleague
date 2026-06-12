@@ -397,16 +397,21 @@
   function weekLabelFromMatches(matches) {
     const dated = (matches || []).filter(m => m && m._date instanceof Date && !isNaN(m._date));
     if (!dated.length) return 'Date TBD';
+    // The final round is the "Championship" week (match_id has no W-number).
+    const isChamp = (matches || []).some(m => /PLAYOFF|CHAMP/i.test(String(m && m.match_id || '')));
     const sorted = dated.slice().sort((a, b) => a._date - b._date);
     const first = sorted[0]._date;
     const last  = sorted[sorted.length - 1]._date;
     const month = MON_FULL[first.getMonth()];
     const fd    = first.getDate();
     const ld    = last.getDate();
+    let range;
     if (first.getMonth() !== last.getMonth()) {
-      return `${month} ${fd} – ${MON_FULL[last.getMonth()]} ${ld}`;
+      range = `${month} ${fd} – ${MON_FULL[last.getMonth()]} ${ld}`;
+    } else {
+      range = fd === ld ? `${month} ${fd}` : `${month} ${fd}-${ld}`;
     }
-    return fd === ld ? `${month} ${fd}` : `${month} ${fd}-${ld}`;
+    return isChamp ? `Championship · ${range}` : range;
   }
 
   function escapeHtml(s) {
@@ -624,29 +629,11 @@
     // ---- MVP leaderboard (right-side panel) ----
     renderMvpLeaderboard(teamLogo);
 
-    // Override displayed date + time per league rules:
-    //   D1–D4 play Saturdays; D5 plays Sundays.
-    //   D1, D2, D5 start at 12 PM; D3, D4 start at 3 PM.
-    // Snap each match to its week's Saturday/Sunday based on the Monday of week.
-    const monOfHome = x => {
-      const t = new Date(x); const day = t.getDay();
-      t.setDate(t.getDate() + (day === 0 ? -6 : 1 - day));
-      t.setHours(0,0,0,0);
-      return t;
-    };
+    // Display the real scheduled date + time straight from the sheet —
+    // parseMatchDate folds start_time into _date.
     const enriched  = data.matches.map(m => {
       const _date = parseMatchDate(m);
-      let _displayDate = null;
-      if (_date) {
-        const divName = divisionName(divsById, m.division_id);
-        const divNum = (divName.match(/\d+/) || [''])[0];
-        const dayOffset = divNum === '5' ? 6 : 5; // Sat = Mon + 5, Sun = Mon + 6
-        const hour = (divNum === '3' || divNum === '4') ? 15 : 12;
-        _displayDate = monOfHome(_date);
-        _displayDate.setDate(_displayDate.getDate() + dayOffset);
-        _displayDate.setHours(hour, 0, 0, 0);
-      }
-      return { ...m, _date, _displayDate };
+      return { ...m, _date, _displayDate: _date };
     });
 
     const renderHomeTable = (rows) => `
@@ -834,24 +821,9 @@
     const weekIndex = Object.fromEntries(weekKeysSorted.map((k, i) => [k, i + 1]));
     const weekOf = d => d ? (weekIndex[monOf(d).getTime()] || null) : null;
 
-    // Override displayed date + time per league rules:
-    //   D1–D4 play Saturdays starting 2026-04-11; D5 plays Sundays.
-    //   D1, D2, D5 start at 12 PM; D3, D4 start at 3 PM.
-    const SEASON_START = new Date(2026, 3, 11); // Sat Apr 11, 2026
-    const allMatches = enriched.map(m => {
-      const week = weekOf(m._date);
-      const divName = divisionName(divsById, m.division_id);
-      const divNum = (divName.match(/\d+/) || [''])[0];
-      let dispDate = null;
-      if (week) {
-        const dayOffset = divNum === '5' ? 1 : 0;
-        const hour = (divNum === '3' || divNum === '4') ? 15 : 12;
-        dispDate = new Date(SEASON_START);
-        dispDate.setDate(SEASON_START.getDate() + (week - 1) * 7 + dayOffset);
-        dispDate.setHours(hour, 0, 0, 0);
-      }
-      return { ...m, _week: week, _displayDate: dispDate };
-    });
+    // Display the real scheduled date + time straight from the sheet
+    // (parseMatchDate folds start_time into _date); _week stays sequential.
+    const allMatches = enriched.map(m => ({ ...m, _week: weekOf(m._date), _displayDate: m._date }));
 
     // Wire up the group-by toggle once
     const groupToggleEl = document.querySelector('.group-toggle');
@@ -1075,8 +1047,10 @@
       : `<td class="col-week">${weekPill}</td>`;
 
     const displayDate = m._displayDate || m._date;
+    const timeStr = displayDate && (displayDate.getHours() || displayDate.getMinutes())
+      ? fmtTime(displayDate) : '';
     const dateBlock = displayDate
-      ? `<div class="date-stack"><span class="date-dow">${DOW[displayDate.getDay()]}</span><span class="date-md">${MON[displayDate.getMonth()]} ${displayDate.getDate()}</span></div>`
+      ? `<div class="date-stack"><span class="date-dow">${DOW[displayDate.getDay()]}</span><span class="date-md">${MON[displayDate.getMonth()]} ${displayDate.getDate()}</span>${timeStr ? `<span class="date-time">${timeStr}</span>` : ''}</div>`
       : `<div class="date-stack"><span class="date-md is-tbd">TBD</span></div>`;
 
     let matchCell;
@@ -1474,12 +1448,16 @@
 
     const divNum  = scExtractDivNum(match, divsById);
     const weekNum = scExtractWeekNum(match);
+    // The final round is the "Championship" week (match_id has no W-number).
+    const weekLbl = /PLAYOFF|CHAMP/i.test(String(match.match_id || ''))
+      ? 'Championship'
+      : (weekNum ? 'Week ' + weekNum : '');
     const metaParts = [
       match.match_date ? scFmtDate(match.match_date) : '',
       match.start_time ? scFmtTime(match.start_time) : '',
       match.venue ? 'at ' + match.venue : '',
       divNum  ? 'Div ' + divNum   : '',
-      weekNum ? 'Week ' + weekNum : '',
+      weekLbl,
     ].filter(Boolean);
 
     const colHeaders = rounds.map((r, i) => `<th>R${r.round_number || (i + 1)}</th>`).join('');

@@ -1336,14 +1336,14 @@
   }
 
   function updateMetaBar(match) {
-    const d = extractDivNum(match), w = extractWeekNum(match);
-    setText('hdr-match', d ? 'Div ' + d + (w ? ' · Week ' + w : '') : 'Match: ' + (match?.match_id || '--'));
+    const d = extractDivNum(match), wl = weekLabel(match);
+    setText('hdr-match', d ? 'Div ' + d + (wl ? ' · ' + wl : '') : 'Match: ' + (match?.match_id || '--'));
     const meta = [
       fmtLongDate(match.match_date),
       fmtTime(match.start_time),
       match.venue ? 'at ' + match.venue : '',
       d ? 'Div ' + d : '',
-      w ? 'Week ' + w : '',
+      wl,
     ].filter(Boolean).join(' · ');
     setText('match-meta-bar', meta);
   }
@@ -1677,6 +1677,12 @@
   }
   function extractWeekNum(match) {
     const m = String(match?.match_id||'').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
+  }
+  // The final round is the "Championship" week (match_id has no W-number).
+  function weekLabel(match) {
+    if (/PLAYOFF|CHAMP/i.test(String(match?.match_id || ''))) return 'Championship';
+    const w = extractWeekNum(match);
+    return w ? 'Week ' + w : '';
   }
   // Earliest week with a match on/after today; falls back to latest week.
   // Compare YYYY-MM-DD strings to avoid UTC/local rollover bugs. Tolerant
