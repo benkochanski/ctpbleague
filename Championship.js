@@ -4,7 +4,7 @@
 // into a real, scorekeepable "Championship" round:
 //   • assigns teams  — Dill hosts all divisions (home = Dill, away = Camp)
 //   • sets start times (D1/D2/D5 = 12:00, D3/D4 = 15:00, mirroring the season)
-//   • clears the placeholder "TBD" venue
+//   • sets the venue to "Dill Dinkers" (Dill hosts every championship match)
 //   • generates the rounds + games from each division's format template
 //
 // Safe to run more than once: it re-asserts the team/time cells every run, but
@@ -62,7 +62,7 @@ function buildChampionshipWeek() {
     setCell('away_team_id', away);
     setCell('match_date', matchDate);
     setCell('start_time', start);
-    setCell('venue', '');            // drop the placeholder "TBD"
+    setCell('venue', 'Dill Dinkers'); // Dill hosts every championship match
     setCell('away_lineup_due_at', dueAt);
     setCell('home_lineup_due_at', dueAt);
 
