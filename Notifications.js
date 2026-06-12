@@ -138,6 +138,40 @@ function testNotifyForMatch_W4_DIV4_Dill() {
   notifyLineupSubmitted_('MATCH_W4_DIV4', 'TEAM2_DILL_DIV4', access);
 }
 
+/**
+ * Telegram-only diagnostic. Run from the GAS editor — it does NOT email anyone.
+ * Confirms the bot token + chat id Script Properties are set and sends a single
+ * test message, then returns the Telegram API's HTTP code + response so the exact
+ * failure is visible (e.g. "chat not found", "Unauthorized", "bot was kicked",
+ * or "group chat was upgraded to a supergroup" with the new chat id).
+ */
+function testTelegramDelivery() {
+  const props  = PropertiesService.getScriptProperties();
+  const token  = props.getProperty('TELEGRAM_BOT_TOKEN');
+  const chatId = props.getProperty('TELEGRAM_CHAT_ID');
+  Logger.log('TELEGRAM_BOT_TOKEN set: ' + (!!token) + (token ? ' (length ' + token.length + ')' : ''));
+  Logger.log('TELEGRAM_CHAT_ID: ' + (chatId || '(missing)'));
+  if (!token || !chatId) {
+    const msg = 'MISSING CREDENTIALS — set them with setTelegramCredentials(token, chatId)';
+    Logger.log(msg);
+    return msg;
+  }
+  const url = 'https://api.telegram.org/bot' + encodeURIComponent(token) + '/sendMessage';
+  const resp = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({
+      chat_id: chatId,
+      text: 'CPBL Telegram test ✅ — if you see this, delivery works.',
+      disable_web_page_preview: true
+    }),
+    muteHttpExceptions: true
+  });
+  const out = 'HTTP ' + resp.getResponseCode() + ': ' + resp.getContentText();
+  Logger.log(out);
+  return out;
+}
+
 function collectLineupNotificationRecipients_(args) {
   const out = new Set();
   const submittingTeamId = String(args.submittingTeamId || '').trim();
