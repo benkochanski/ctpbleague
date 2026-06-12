@@ -1845,28 +1845,36 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     var savedEmail = '';
     var trustedAccess = null;  // full access blob from admin handoff (skip verify if set)
 
-    // Priority 1: admin localStorage blob (full access info, already verified by Admin).
+    // An explicit ?userEmail= handoff (from the Admin "Enter Lineups" button)
+    // names exactly who is opening the portal, so it MUST win. GAS serves each
+    // page from a googleusercontent.com iframe whose origin can differ between
+    // pages, so a leftover localStorage "cpbl_admin_email" blob may belong to a
+    // *different* person who used this portal earlier — it must never override
+    // the handed-off email (that's how "sign in as Ed" opened as someone else).
+    var qsEmail = '';
     try {
-      var adminBlob = JSON.parse(localStorage.getItem('cpbl_admin_email') || 'null');
-      if (adminBlob && adminBlob.email) {
-        savedEmail = adminBlob.email;
-        trustedAccess = adminBlob;
-        try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
-      }
+      qsEmail = (new URLSearchParams(window.location.search).get('userEmail') || '').trim();
     } catch(e) {}
-    // Priority 2: ?userEmail= URL param (email only, no access info).
-    if (!savedEmail) {
-      try {
-        var qs = new URLSearchParams(window.location.search);
-        var qsEmail = (qs.get('userEmail') || '').trim();
-        if (qsEmail && qsEmail.indexOf('@') > 0) {
-          savedEmail = qsEmail;
-          try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
-        }
-      } catch(e) {}
-    }
-    // Priority 3: this tab's sessionStorage.
-    if (!savedEmail) {
+    var adminBlob = null;
+    try { adminBlob = JSON.parse(localStorage.getItem('cpbl_admin_email') || 'null'); } catch(e) {}
+
+    if (qsEmail && qsEmail.indexOf('@') > 0) {
+      // Priority 1: explicit handoff param is authoritative.
+      savedEmail = qsEmail;
+      // Reuse the cached verified blob ONLY if it's for this same person;
+      // otherwise leave trustedAccess null so we re-verify the handed-off email.
+      if (adminBlob && adminBlob.email &&
+          String(adminBlob.email).toLowerCase() === qsEmail.toLowerCase()) {
+        trustedAccess = adminBlob;
+      }
+      try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
+    } else if (adminBlob && adminBlob.email) {
+      // Priority 2: no param — resume the stored admin session.
+      savedEmail = adminBlob.email;
+      trustedAccess = adminBlob;
+      try { sessionStorage.setItem(STORAGE_KEY, savedEmail); } catch(e) {}
+    } else {
+      // Priority 3: this tab's sessionStorage.
       try { savedEmail = sessionStorage.getItem(STORAGE_KEY) || ''; } catch(e) {}
     }
 
