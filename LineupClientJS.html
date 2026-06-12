@@ -538,8 +538,7 @@ function loadMatch_(matchId, opts = {}) {
 
   const seq = ++loadMatchSeq;
 
-  google.script.run
-    .withSuccessHandler((raw) => {
+  const onSuccess = (raw) => {
       if (seq !== loadMatchSeq) return;
 
       try {
@@ -595,14 +594,30 @@ function loadMatch_(matchId, opts = {}) {
         showToast('Load failed: ' + (err && err.message ? err.message : err), 'error');
         if (opts.onFailure) opts.onFailure(err);
       }
-    })
-    .withFailureHandler((err) => {
+  };
+  const onError = (err) => {
       if (seq !== loadMatchSeq) return;
       showToast('Could not load match: ' + (err && err.message ? err.message : err), 'error');
       console.log('loadMatch_ failure=', err);
       if (opts.onFailure) opts.onFailure(err);
-    })
-    .getCaptainPortalDataV3(matchId, currentTeamId);
+  };
+
+  // Load via plain fetch against the anonymous /exec endpoint. google.script.run
+  // rides the viewer's Google session and can hang indefinitely when that session
+  // is being challenged ("Verify it's you"); a fetch needs no Google auth. Fall
+  // back to google.script.run only if the exec URL wasn't injected.
+  const execUrl = window.__GAS_EXEC_URL__ || '';
+  if (execUrl) {
+    fetch(execUrl + '?page=captainportaldata'
+        + '&matchId=' + encodeURIComponent(matchId)
+        + '&teamId=' + encodeURIComponent(currentTeamId || ''))
+      .then((r) => r.text())
+      .then(onSuccess)
+      .catch(onError);
+  } else {
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onError)
+      .getCaptainPortalDataV3(matchId, currentTeamId);
+  }
 }
 
 function currentMatchIdFromUrl_() {

@@ -294,6 +294,14 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (page === 'captainportaldata') {
+    const matchId = String(params.matchId || '').trim();
+    const teamId  = String(params.teamId  || '').trim();
+    return ContentService
+      .createTextOutput(getCaptainPortalDataV3(matchId, teamId))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   if (page === 'admin') {
     const tAd = HtmlService.createTemplateFromFile('Admin');
     tAd.gasExecUrl = ScriptApp.getService().getUrl();
