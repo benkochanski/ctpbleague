@@ -351,7 +351,9 @@ function populateDivisionDropdownFromPortal_(availableDivisions, selectedDivisio
 function formatMatchDropdownLabel_(match) {
   const matchId = String(match?.match_id || '').trim();
   const weekMatch = matchId.match(/_W(\d+)_/i);
-  const weekLabel = weekMatch ? `Match ${weekMatch[1]}` : 'Match';
+  const weekLabel = /PLAYOFF|CHAMP/i.test(matchId)
+    ? 'Championship'
+    : (weekMatch ? `Match ${weekMatch[1]}` : 'Match');
 
   const rawDate = String(match?.match_date || '').trim();
   const dateLabel = formatSheetDateLabel_(rawDate);
@@ -451,7 +453,10 @@ function updateHeaderMetaFromPortal_() {
 
   const matchId = String(m.match_id || '').trim();
   const matchNumber = extractMatchNumber_(matchId);
-  const matchLabel = matchNumber ? `Match ${matchNumber}` : 'Match';
+  // The final round is the "Championship" (playoff match_ids carry no week #).
+  const matchLabel = /PLAYOFF|CHAMP/i.test(matchId)
+    ? 'Championship'
+    : (matchNumber ? `Match ${matchNumber}` : 'Match');
 
   const start = parseMatchStartLocal_(m.match_date);
 
