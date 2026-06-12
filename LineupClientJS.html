@@ -639,15 +639,33 @@ function boot() {
 
     if (!portalData || !portalData.currentMatch) {
       populateDivisionDropdownFromPortal_(SELECTOR_DATA.availableDivisions || [], '');
-      const firstMatch = captainMatches_()[0];
-      if (firstMatch) {
-        const firstMatchId = String(firstMatch.match_id || '').trim();
-        const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
-        const awayId = String(firstMatch.away_team_id || '').trim();
-        const homeId = String(firstMatch.home_team_id || '').trim();
-        currentTeamId = (allowedIds.length && allowedIds.includes(awayId)) ? awayId : homeId;
-        loadMatch_(firstMatchId);
+      const allowedIds = (window.cpblPinUser && window.cpblPinUser.allowedTeamIds) || [];
+      // Resolve THIS captain's match + team — not just matches[0]'s home team.
+      // The old code always fell back to the first match's home side, so a
+      // captain whose own match wasn't first (or who wasn't signed in yet) was
+      // shown the opponent's lineup — e.g. a Camp captain landing on Dill once
+      // the championship (Dill-home in every division) became matches[0].
+      let myMatch = null, myTeam = '';
+      if (allowedIds.length || isCommissioner_()) {
+        const mine = captainMatches_();
+        for (let i = 0; i < mine.length; i++) {
+          const homeId = String(mine[i].home_team_id || '').trim();
+          const awayId = String(mine[i].away_team_id || '').trim();
+          if (allowedIds.includes(homeId)) { myMatch = mine[i]; myTeam = homeId; break; }
+          if (allowedIds.includes(awayId)) { myMatch = mine[i]; myTeam = awayId; break; }
+        }
+        // Commissioner has no specific team — default to the first visible match.
+        if (!myMatch && isCommissioner_() && mine.length) {
+          myMatch = mine[0];
+          myTeam = String(mine[0].home_team_id || '').trim();
+        }
+      }
+      if (myMatch) {
+        currentTeamId = myTeam;
+        loadMatch_(String(myMatch.match_id || '').trim());
       } else {
+        // Not signed in yet (or no match for this team): don't show an arbitrary
+        // team's lineup — wait for sign-in; reloadForUser() loads the right one.
         render();
       }
       return;
