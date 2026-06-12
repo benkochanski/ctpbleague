@@ -1676,6 +1676,7 @@ window.__REQUESTED_MATCH_ID__ = <?!= JSON.stringify(requestedMatchId) ?>;
 window.__REQUESTED_TEAM_ID__ = <?!= JSON.stringify(requestedTeamId) ?>;
 window.__BOOTSTRAP_ERROR__ = <?!= JSON.stringify(bootstrapError) ?>;
 window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
+window.__INJECTED_EMAIL__ = <?!= JSON.stringify(injectedEmail) ?>;
 </script>
 
 <?!= include('LineupClientJS') ?>
@@ -1853,7 +1854,15 @@ window.__GAS_EXEC_URL__ = <?!= JSON.stringify(gasExecUrl) ?>;
     // the handed-off email (that's how "sign in as Ed" opened as someone else).
     var qsEmail = '';
     try {
-      qsEmail = (new URLSearchParams(window.location.search).get('userEmail') || '').trim();
+      // Read the handoff email from the server-injected value first. GAS runs
+      // this page inside a nested googleusercontent.com iframe whose URL drops
+      // the query string, so window.location.search has no userEmail here —
+      // that's why matchId/teamId are injected the same way. location.search
+      // is just a last-ditch fallback.
+      qsEmail = String(window.__INJECTED_EMAIL__ || '').trim();
+      if (!qsEmail) {
+        qsEmail = (new URLSearchParams(window.location.search).get('userEmail') || '').trim();
+      }
     } catch(e) {}
     var adminBlob = null;
     try { adminBlob = JSON.parse(localStorage.getItem('cpbl_admin_email') || 'null'); } catch(e) {}
