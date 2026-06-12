@@ -232,6 +232,7 @@ function doGet(e) {
     const t = HtmlService.createTemplateFromFile('PlayerPage');
     t.initialPlayerId   = String(params.playerId   || '').trim();
     t.initialPlayerName = String(params.playerName || '').trim();
+    t.webAppUrl         = ScriptApp.getService().getUrl();
     const playerOut = t.evaluate();
     playerOut.setTitle('CTPBL Player Stats');
     playerOut.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);

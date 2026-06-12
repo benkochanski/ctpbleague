@@ -270,6 +270,7 @@
     <div class="stats-col" id="statsCol" style="display:none">
       <div class="panel" id="statsPanel"></div>
       <div class="panel" id="partnersPanel"></div>
+      <div class="panel" id="opponentsPanel"></div>
     </div>
     <div class="gamelog-col" id="gamelogCol" style="display:none">
       <div class="gamelog-outer" id="gamelogPanel"></div>
@@ -308,11 +309,22 @@ let ddOpen      = false;
 /* ─────────────────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────────────────── */
+// Load reads via plain fetch against the anonymous /exec endpoint — the page
+// runs in a googleusercontent iframe and google.script.run rides the viewer's
+// Google session, hanging when it's challenged ("Verify it's you").
+const GAS_WEB_APP_URL = '<?= webAppUrl ?>';
+function gasFetchJson_(page, params) {
+  const qs = params
+    ? Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&')
+    : '';
+  return fetch(GAS_WEB_APP_URL + '?page=' + page + (qs ? '&' + qs : ''))
+    .then(r => r.text()).then(t => JSON.parse(t));
+}
+
 (function init() {
-  google.script.run
-    .withSuccessHandler(onPlayersLoaded)
-    .withFailureHandler(e => console.error(e))
-    .getPlayerListV1();
+  gasFetchJson_('playerlist')
+    .then(onPlayersLoaded)
+    .catch(e => console.error(e));
 
   document.addEventListener('click', e => {
     if (!e.target.closest('.player-search-wrap')) closeDropdown();
@@ -400,13 +412,12 @@ function loadPlayer(playerId) {
   document.getElementById('statsCol').style.display  = 'none';
   document.getElementById('gamelogCol').style.display = 'none';
 
-  google.script.run
-    .withSuccessHandler(renderAll)
-    .withFailureHandler(err => {
+  gasFetchJson_('playerpagedata', { id: playerId })
+    .then(renderAll)
+    .catch(err => {
       document.getElementById('playerHero').innerHTML =
         `<div class="empty-hero">Error: ${esc(String(err.message || err))}</div>`;
-    })
-    .getPlayerPageData(playerId);
+    });
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -427,6 +438,7 @@ function renderAll(data) {
   renderHero(player, gamelog);
   renderStats(player, gamelog);
   renderPartners(gamelog);
+  renderOpponents(gamelog);
   renderGamelog(gamelog);
 
   document.getElementById('statsCol').style.display  = '';
@@ -692,6 +704,75 @@ function renderPartners(gamelog) {
       </thead>
       <tbody>${bodyRows}</tbody>
     </table>` : `<div class="pt-empty">No partner data yet.</div>`}`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   OPPONENTS PANEL  (record / +/- / rating per opponent)
+   Same shape + sort as Partners, keyed by each opponent faced.
+───────────────────────────────────────────────────────── */
+function renderOpponents(gamelog) {
+  const el = document.getElementById('opponentsPanel');
+  if (!el) return;
+
+  // Group every game by each opponent faced — a doubles game has two, so it
+  // contributes to both opponents' tallies.
+  const byOpp = {};
+  (gamelog || []).forEach(g => {
+    [[g.opp1_id, g.opp1_name], [g.opp2_id, g.opp2_name]].forEach(pair => {
+      const id   = String(pair[0] || '').trim();
+      const name = String(pair[1] || '').trim();
+      if (!id && !name) return;               // no recorded opponent — skip
+      const key = id || name;
+      if (!byOpp[key]) byOpp[key] = { name: name || key, games: [] };
+      if (name) byOpp[key].name = name;       // prefer a real name if present
+      byOpp[key].games.push(g);
+    });
+  });
+
+  const rows = Object.keys(byOpp).map(key => {
+    const s      = computeStats(byOpp[key].games).all;
+    const gms    = s.w + s.l;
+    const ptsTot = s.pf + s.pa;
+    const diff   = s.pf - s.pa;
+    const rating = gms > 0
+      ? ((s.w / gms * 0.6) + (ptsTot > 0 ? s.pf / ptsTot * 0.4 : 0)) * 100
+      : null;
+    return { name: byOpp[key].name, w: s.w, l: s.l, gms, diff, rating };
+  }).sort((a, b) =>
+    (b.rating || 0) - (a.rating || 0) ||
+    b.gms - a.gms ||
+    a.name.localeCompare(b.name)
+  );
+
+  const bodyRows = rows.map(r => {
+    const dStr = r.diff >= 0 ? '+' + r.diff : String(r.diff);
+    const dCls = r.diff >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td class="pt-name" title="${esc(r.name)} · ${r.gms}g">${esc(r.name)}</td>
+      <td class="num pt-rec">${r.w}–${r.l}</td>
+      <td class="num pt-diff ${dCls}">${esc(dStr)}</td>
+      <td class="num pt-rat">${r.rating != null ? r.rating.toFixed(1) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="sec-head">
+      <div class="sec-badge">O</div>
+      <span class="sec-label">Opponents</span>
+      <span class="sec-count">${rows.length} opponent${rows.length === 1 ? '' : 's'}</span>
+    </div>
+    ${rows.length ? `
+    <table class="partners-table">
+      <thead>
+        <tr>
+          <th>Opponent</th>
+          <th class="num">Record</th>
+          <th class="num">+/–</th>
+          <th class="num">Rating</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>` : `<div class="pt-empty">No opponent data yet.</div>`}`;
 }
 
 /* ─────────────────────────────────────────────────────────
