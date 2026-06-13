@@ -66,6 +66,26 @@ function validateTeamLineup_(match, teamId, assignments, existingGames) {
 
     pairCounts[pairKey] = nextCount;
   });
+
+  // Submit completeness: every regulation game must have two players (round-9
+  // super-dreambreaker games are optional). Check the FINAL state — the incoming
+  // assignment if present, otherwise what's already saved for this team's side —
+  // so a submit from a stale or empty page (or one that simply left a slot open)
+  // can't slip an incomplete lineup through. The per-assignment loop above skips
+  // empty games, so it never enforced this on its own.
+  const isHomeForCompleteness = String(match.home_team_id || '').trim() === String(teamId || '').trim();
+  const assignMap = {};
+  (assignments || []).forEach(a => { const gid = String(a.game_id || '').trim(); if (gid) assignMap[gid] = a; });
+  (existingGames || []).forEach(g => {
+    if (Number(g.round_number) === 9 || String(g.round_type || '').trim().toLowerCase() === 'super_dreambreaker') return;
+    const gid = String(g.game_id || '').trim();
+    const a = assignMap[gid];
+    const p1 = a ? String(a.player_1_id || '').trim()
+                 : (isHomeForCompleteness ? String(g.home_player_1_id || '').trim() : String(g.away_player_1_id || '').trim());
+    const p2 = a ? String(a.player_2_id || '').trim()
+                 : (isHomeForCompleteness ? String(g.home_player_2_id || '').trim() : String(g.away_player_2_id || '').trim());
+    if (!p1 || !p2) throw new Error(`Game ${g.game_sequence} must have two players to submit`);
+  });
 }
 
 function validateGameType_(match, game, p1, p2) {
