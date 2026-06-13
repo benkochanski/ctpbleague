@@ -147,20 +147,17 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
     throw new Error('Team is not part of this match');
   }
 
-  // Guardrail: refuse to silently wipe a non-empty draft.
+  // Guardrail: refuse to silently wipe a non-empty draft from a page that never
+  // loaded the schedule.
   //
-  // If a draft save (submitted=false) comes in with NO player IDs at all,
-  // and this side already has filled slots in the sheet, treat it as a
-  // likely UI bug (a captain page that loaded an empty schedule and then
-  // autosaved blanks). Captains who actually want to start over should
-  // clear individual slots via the UI — single-slot edits still pass
-  // because the other slots' incoming values stay populated.
+  // Key off game ENTRIES, not player ids. The captain UI always sends one entry
+  // per game (with blank player ids for empty slots), so a deliberate clear —
+  // including removing the *last* player — still carries entries and is allowed.
+  // Only a save with NO game entries at all (an empty array) indicates a page
+  // that failed to load its schedule, so block that from wiping a filled lineup.
   if (!submitted) {
-    const incomingHasAnyPlayer = (assignments || []).some(a =>
-      String(a && a.player_1_id || '').trim() ||
-      String(a && a.player_2_id || '').trim()
-    );
-    if (!incomingHasAnyPlayer) {
+    const hasGameEntries = (assignments || []).some(a => String(a && a.game_id || '').trim());
+    if (!hasGameEntries) {
       const existingHasAnyPlayer = targetGames.some(g => isHomeSide
         ? (String(g.home_player_1_id || '').trim() || String(g.home_player_2_id || '').trim())
         : (String(g.away_player_1_id || '').trim() || String(g.away_player_2_id || '').trim())
