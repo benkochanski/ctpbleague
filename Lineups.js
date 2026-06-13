@@ -67,6 +67,60 @@ function getEligibleRosterForMatch_(matchId, teamId) {
     });
 }
 
+// Upsert a per-match availability record into Match_Player_Availability, keyed
+// by (match_id, team_id, player_id). getEligibleRosterForMatch_ above reads
+// `available` from this same sheet, so this is what makes the captain's
+// Available/Unavailable drag persist. (Previously this function didn't exist,
+// so the drag silently failed.)
+function savePlayerAvailabilityForMatch(matchId, teamId, playerId, available) {
+  const matchIdStr  = String(matchId  || '').trim();
+  const teamIdStr   = String(teamId   || '').trim();
+  const playerIdStr = String(playerId || '').trim();
+  if (!matchIdStr)  throw new Error('Missing matchId');
+  if (!teamIdStr)   throw new Error('Missing teamId');
+  if (!playerIdStr) throw new Error('Missing playerId');
+
+  const isAvailable = !!available;
+  const sh = getSheet_(SHEETS.MATCH_PLAYER_AVAILABILITY);
+  const values = sh.getDataRange().getValues();
+  const headers = values[0].map(h => String(h).trim());
+  const idx = name => headers.indexOf(name);
+  const cMatch = idx('match_id'), cTeam = idx('team_id'), cPlayer = idx('player_id'), cAvail = idx('available');
+
+  let foundRow = -1;
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    if (String(row[cMatch] || '').trim() === matchIdStr &&
+        String(row[cTeam]  || '').trim() === teamIdStr &&
+        String(row[cPlayer]|| '').trim() === playerIdStr) {
+      foundRow = r + 1;
+      break;
+    }
+  }
+
+  const userEmail = (typeof tryGetUserEmail_ === 'function') ? tryGetUserEmail_() : '';
+  const now = nowStamp_();
+
+  if (foundRow > 0) {
+    sh.getRange(foundRow, cAvail + 1).setValue(isAvailable);
+    if (idx('reported_by_user_id') >= 0) sh.getRange(foundRow, idx('reported_by_user_id') + 1).setValue(userEmail);
+    if (idx('reported_at') >= 0)         sh.getRange(foundRow, idx('reported_at') + 1).setValue(now);
+  } else {
+    appendObjects_(SHEETS.MATCH_PLAYER_AVAILABILITY, [{
+      availability_id:     makeId_('AVAIL'),
+      match_id:            matchIdStr,
+      team_id:             teamIdStr,
+      player_id:           playerIdStr,
+      available:           isAvailable,
+      reported_by_user_id: userEmail,
+      reported_at:         now,
+      notes:               ''
+    }]);
+  }
+
+  return { ok: true, match_id: matchIdStr, team_id: teamIdStr, player_id: playerIdStr, available: isAvailable };
+}
+
 function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
   const allGames = getObjects_(SHEETS.MATCH_GAMES);
   const allMatches = getObjects_(SHEETS.MATCHES);

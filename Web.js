@@ -1178,11 +1178,12 @@ function doPost(e) {
   }
 
   // Match-roster active-state writes (captain "Match Roster" toggles).
-  if (page === 'saveplayeractive' || page === 'saveplayeractives') {
+  if (page === 'saveplayeractive' || page === 'saveplayeractives' || page === 'saveplayeravailability') {
     try {
       const p = JSON.parse(body || '{}');
-      if (page === 'saveplayeractive') saveMatchPlayerActiveState(p.matchId, p.playerId, p.active);
-      else saveMatchPlayerActiveStates(p.matchId, p.states);
+      if (page === 'saveplayeractive')        saveMatchPlayerActiveState(p.matchId, p.playerId, p.active);
+      else if (page === 'saveplayeractives')  saveMatchPlayerActiveStates(p.matchId, p.states);
+      else                                    savePlayerAvailabilityForMatch(p.matchId, p.teamId, p.playerId, p.available);
       return ContentService
         .createTextOutput(JSON.stringify({ ok: true }))
         .setMimeType(ContentService.MimeType.JSON);

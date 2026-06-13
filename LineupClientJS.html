@@ -1601,20 +1601,21 @@ function dropAvailability(event, groupTitle, availableValue) {
   if (!availableValue) p.active = false;
   render();
 
-  google.script.run
-    .withSuccessHandler(() => {
+  gasPost_('saveplayeravailability', {
+    matchId: currentMatchId, teamId: currentTeamId, playerId: p.id, available: availableValue
+  })
+    .then(() => {
       showToast(`${p.name} moved to ${availableValue ? 'available' : 'unavailable'}`, 'success');
       if (!availableValue && previousActive !== p.active) {
-        google.script.run.saveMatchPlayerActiveState(currentMatchId, p.id, false);
+        gasPost_('saveplayeractive', { matchId: currentMatchId, playerId: p.id, active: false }).catch(() => {});
       }
     })
-    .withFailureHandler((err) => {
+    .catch((err) => {
       p.available = previousAvailable;
       p.active = previousActive;
       render();
       showToast('Could not update availability: ' + (err && err.message ? err.message : err), 'error');
-    })
-    .savePlayerAvailabilityForMatch(currentMatchId, p.id, availableValue);
+    });
 }
 
 /* =========================
