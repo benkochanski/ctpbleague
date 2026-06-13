@@ -1177,6 +1177,22 @@ function doPost(e) {
     }
   }
 
+  // Match-roster active-state writes (captain "Match Roster" toggles).
+  if (page === 'saveplayeractive' || page === 'saveplayeractives') {
+    try {
+      const p = JSON.parse(body || '{}');
+      if (page === 'saveplayeractive') saveMatchPlayerActiveState(p.matchId, p.playerId, p.active);
+      else saveMatchPlayerActiveStates(p.matchId, p.states);
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: false, error: String((err && err.message) || err) }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: false, error: 'unknown POST route: ' + page }))
     .setMimeType(ContentService.MimeType.JSON);

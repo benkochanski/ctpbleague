@@ -1483,16 +1483,15 @@ function togglePlayer(pid) {
   p.active = !p.active;
   render();
 
-  google.script.run
-    .withSuccessHandler(() => {
+  gasPost_('saveplayeractive', { matchId: currentMatchId, playerId: pid, active: p.active })
+    .then(() => {
       showToast(`${p.name} ${p.active ? 'selected' : 'unselected'}`, 'success');
     })
-    .withFailureHandler((err) => {
+    .catch((err) => {
       p.active = previous;
       render();
       showToast('Could not update player selection: ' + (err && err.message ? err.message : err), 'error');
-    })
-    .saveMatchPlayerActiveState(currentMatchId, pid, p.active);
+    });
 }
 
 function activateAll(gender) {
@@ -1509,19 +1508,18 @@ function activateAll(gender) {
     is_active: true
   }));
 
-  google.script.run
-    .withSuccessHandler(() => {
+  gasPost_('saveplayeractives', { matchId: currentMatchId, states })
+    .then(() => {
       showToast(`Selected all ${gender === 'F' ? 'women' : 'men'}`, 'success');
     })
-    .withFailureHandler((err) => {
+    .catch((err) => {
       previous.forEach(x => {
         const p = byId(x.id);
         if (p) p.active = x.active;
       });
       render();
       showToast('Could not update selections: ' + (err && err.message ? err.message : err), 'error');
-    })
-    .saveMatchPlayerActiveStates(currentMatchId, states);
+    });
 }
 
 function deactivateAll(gender) {
@@ -1538,19 +1536,18 @@ function deactivateAll(gender) {
     is_active: false
   }));
 
-  google.script.run
-    .withSuccessHandler(() => {
+  gasPost_('saveplayeractives', { matchId: currentMatchId, states })
+    .then(() => {
       showToast(`Unselected all ${gender === 'F' ? 'women' : 'men'}`, 'success');
     })
-    .withFailureHandler((err) => {
+    .catch((err) => {
       previous.forEach(x => {
         const p = byId(x.id);
         if (p) p.active = x.active;
       });
       render();
       showToast('Could not update selections: ' + (err && err.message ? err.message : err), 'error');
-    })
-    .saveMatchPlayerActiveStates(currentMatchId, states);
+    });
 }
 
 function toggleAllGender(gender) {
