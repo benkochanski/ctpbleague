@@ -228,7 +228,23 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
     return g;
   });
 
-  overwriteObjects_(SHEETS.MATCH_GAMES, updatedGames);
+  // On an official submit, flag EVERY game where this team actually has a
+  // player — not just the games in the incoming payload. A stale/empty page can
+  // submit with blank or partial assignments, which recorded the submission
+  // status but left the per-game "submitted" flags unset, so the scoreboard
+  // (which keys off those flags) kept hiding the saved lineup.
+  const finalGames = !submitted ? updatedGames : updatedGames.map(g => {
+    if (String(g.match_id || '').trim() !== String(matchId || '').trim()) return g;
+    if (isHomeSide && (String(g.home_player_1_id || '').trim() || String(g.home_player_2_id || '').trim())) {
+      g.lineup_submitted_home = true;
+    }
+    if (isAwaySide && (String(g.away_player_1_id || '').trim() || String(g.away_player_2_id || '').trim())) {
+      g.lineup_submitted_away = true;
+    }
+    return g;
+  });
+
+  overwriteObjects_(SHEETS.MATCH_GAMES, finalGames);
 
   upsertMatchSubmission_(matchId, teamId, submitted ? SUBMISSION_STATUS.SUBMITTED : SUBMISSION_STATUS.DRAFT, access);
 }
