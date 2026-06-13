@@ -931,6 +931,7 @@
     renderTeamStats();
     renderPlayerStats();
     renderOtherMatches(match);
+    ensureRotationTimer_();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -938,6 +939,24 @@
   // ──────────────────────────────────────────────────────────────────────────
   let liveScoresState = { matches: [], idx: 0, data: {}, rotateTimer: null };
   const LIVE_SCORES_ROTATE_MS = 30000;
+
+  // Single master rotation tick. Runs for the life of the loaded match,
+  // independent of whether any other matches exist, so the Women/Men
+  // player-stats toggle keeps rotating even with no other games. Both the
+  // live-score card advance and the player-stats flip happen on the SAME
+  // tick, so they stay perfectly in sync. Idempotent: re-renders (15s polls)
+  // won't restart it, keeping the 30s cadence stable.
+  function ensureRotationTimer_() {
+    if (liveScoresState.rotateTimer) return;
+    liveScoresState.rotateTimer = setInterval(() => {
+      if (liveScoresState.matches.length > 1) {
+        liveScoresState.idx = (liveScoresState.idx + 1) % liveScoresState.matches.length;
+        applyLiveScoreActiveCard_();
+      }
+      __psShowMen = !__psShowMen;
+      applyPlayerStatsVisibility_();
+    }, LIVE_SCORES_ROTATE_MS);
+  }
 
   function renderOtherMatches(currentMatch) {
     const el = document.getElementById('otherMatchesBody');
@@ -987,7 +1006,8 @@
           ? 'Other matches haven\'t started yet.'
           : 'No other matches this week.';
         el.innerHTML = '<div class="empty-state"><div class="ico">🏓</div>' + msg + '</div>';
-        if (liveScoresState.rotateTimer) { clearInterval(liveScoresState.rotateTimer); liveScoresState.rotateTimer = null; }
+        // Note: do NOT clear the rotation timer here — it must keep running so
+        // the Women/Men player stats keep flipping even with no other matches.
         return;
       }
 
@@ -1003,17 +1023,8 @@
       others.forEach(m => fetchAndCacheOtherMatch_(m));
     }
 
-    // (Re)start the shared 30s rotation tick (drives both live-scores
-    // advance and the Women/Men player-stats toggle so they stay in sync).
-    if (liveScoresState.rotateTimer) clearInterval(liveScoresState.rotateTimer);
-    liveScoresState.rotateTimer = setInterval(() => {
-      if (liveScoresState.matches.length > 1) {
-        liveScoresState.idx = (liveScoresState.idx + 1) % liveScoresState.matches.length;
-        applyLiveScoreActiveCard_();
-      }
-      __psShowMen = !__psShowMen;
-      applyPlayerStatsVisibility_();
-    }, LIVE_SCORES_ROTATE_MS);
+    // The shared 30s rotation tick is owned by ensureRotationTimer_(), started
+    // from the main render path so it runs regardless of other-match count.
   }
 
   // One-time HTML for a single match's live-score card.
@@ -1622,10 +1633,11 @@
     startPlayerStatsRotation_();
   }
 
-  // Women/Men toggle state — driven by the shared 30s rotation tick.
+  // Women/Men toggle state — driven by the shared 30s rotation tick
+  // (ensureRotationTimer_). Re-renders preserve the current gender rather than
+  // resetting to Women's, so the 15s poll doesn't fight the 30s rotation.
   let __psShowMen = false;
   function startPlayerStatsRotation_() {
-    __psShowMen = false;
     applyPlayerStatsVisibility_();
   }
   function applyPlayerStatsVisibility_() {

@@ -121,6 +121,12 @@ function savePlayerAvailabilityForMatch(matchId, teamId, playerId, available) {
   return { ok: true, match_id: matchIdStr, team_id: teamIdStr, player_id: playerIdStr, available: isAvailable };
 }
 
+// True if a stored lineup_submitted_* cell currently reads as submitted,
+// across the boolean / 'TRUE' / 'true' / 1 shapes Sheets round-trips through.
+function lineupFlagWasTrue_(v) {
+  return v === true || v === 1 || String(v || '').toUpperCase() === 'TRUE';
+}
+
 function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
   const allGames = getObjects_(SHEETS.MATCH_GAMES);
   const allMatches = getObjects_(SHEETS.MATCHES);
@@ -187,7 +193,11 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
     if (isHomeSide) {
       g.home_player_1_id = String(incoming.player_1_id || '').trim();
       g.home_player_2_id = String(incoming.player_2_id || '').trim();
-      g.lineup_submitted_home = !!submitted;
+      // Never let a draft save DOWNGRADE an already-submitted flag. A draft
+      // autosave firing after an official submit would otherwise clear the
+      // per-game flag (while keeping the ids), leaving the lineup saved but
+      // invisible to the scorecard. Only an official submit sets it true.
+      g.lineup_submitted_home = submitted ? true : lineupFlagWasTrue_(g.lineup_submitted_home);
 
       g.home_updated_at = now;
       g.home_updated_by = userName;
@@ -205,7 +215,7 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
     if (isAwaySide) {
       g.away_player_1_id = String(incoming.player_1_id || '').trim();
       g.away_player_2_id = String(incoming.player_2_id || '').trim();
-      g.lineup_submitted_away = !!submitted;
+      g.lineup_submitted_away = submitted ? true : lineupFlagWasTrue_(g.lineup_submitted_away);
 
       g.away_updated_at = now;
       g.away_updated_by = userName;
@@ -247,6 +257,58 @@ function saveTeamLineup_(matchId, teamId, assignments, submitted, access) {
   overwriteObjects_(SHEETS.MATCH_GAMES, finalGames);
 
   upsertMatchSubmission_(matchId, teamId, submitted ? SUBMISSION_STATUS.SUBMITTED : SUBMISSION_STATUS.DRAFT, access);
+}
+
+// One-shot, idempotent repair for lineups that are officially submitted in
+// Match_Submissions but whose per-game lineup_submitted_* flags were cleared by
+// a stray draft save (the bug fixed in saveTeamLineup_). For every such side it
+// re-asserts lineup_submitted_<side> = true on games where that side has a
+// player, which is exactly what an official submit does. Safe to run repeatedly.
+//
+// Run from the Apps Script editor: repairSubmittedLineupFlags().
+function repairSubmittedLineupFlags() {
+  const subs = getObjects_(SHEETS.MATCH_SUBMISSIONS).filter(s =>
+    String(s.submission_type || '').trim() === 'lineup' &&
+    lineupFlagWasTrue_(s.officially_submitted)
+  );
+  const matches = getObjects_(SHEETS.MATCHES);
+  const games = getObjects_(SHEETS.MATCH_GAMES);
+  const fixes = [];
+
+  subs.forEach(s => {
+    const matchId = String(s.match_id || '').trim();
+    const teamId  = String(s.team_id  || '').trim();
+    const match = matches.find(m => String(m.match_id || '').trim() === matchId);
+    if (!match) return;
+    const isHome = teamId === String(match.home_team_id || '').trim();
+    const isAway = teamId === String(match.away_team_id || '').trim();
+    if (!isHome && !isAway) return;
+
+    games.forEach(g => {
+      if (String(g.match_id || '').trim() !== matchId) return;
+      if (isHome) {
+        const hasPlayer = String(g.home_player_1_id || '').trim() || String(g.home_player_2_id || '').trim();
+        if (hasPlayer && !lineupFlagWasTrue_(g.lineup_submitted_home)) {
+          g.lineup_submitted_home = true;
+          fixes.push(matchId + ' / ' + teamId + ' / ' + g.game_id + ' (home)');
+        }
+      }
+      if (isAway) {
+        const hasPlayer = String(g.away_player_1_id || '').trim() || String(g.away_player_2_id || '').trim();
+        if (hasPlayer && !lineupFlagWasTrue_(g.lineup_submitted_away)) {
+          g.lineup_submitted_away = true;
+          fixes.push(matchId + ' / ' + teamId + ' / ' + g.game_id + ' (away)');
+        }
+      }
+    });
+  });
+
+  if (fixes.length) overwriteObjects_(SHEETS.MATCH_GAMES, games);
+  const summary = fixes.length
+    ? 'Re-flagged ' + fixes.length + ' game(s):\n' + fixes.join('\n')
+    : 'No submitted-but-unflagged lineups found — nothing to repair.';
+  Logger.log(summary);
+  return summary;
 }
 
 function computeGameReadiness_(game) {
