@@ -870,7 +870,7 @@
     const weeks = Array.from(new Set(matches.map(extractWeekNum).filter(Boolean))).sort((a,b) => a-b);
     sel.innerHTML = '';
     if (!weeks.length) { sel.innerHTML = '<option value="0">No weeks</option>'; currentWeekKey = 0; return; }
-    weeks.forEach(w => { const o = document.createElement('option'); o.value = String(w); o.textContent = 'Week ' + w; sel.appendChild(o); });
+    weeks.forEach(w => { const o = document.createElement('option'); o.value = String(w); o.textContent = w === 7 ? 'Championship' : 'Week ' + w; sel.appendChild(o); });
     // Default to current/upcoming week if not yet set
     if (!currentWeekKey || weeks.indexOf(currentWeekKey) < 0) {
       currentWeekKey = pickCurrentWeek(matches) || weeks[0];
@@ -910,7 +910,7 @@
       fmtTime(match.start_time),
       match.venue ? 'at ' + match.venue : '',
       extractDivNum(match)  ? 'Div '  + extractDivNum(match)  : '',
-      extractWeekNum(match) ? 'Week ' + extractWeekNum(match) : '',
+      extractWeekNum(match) === 7 ? 'Championship' : (extractWeekNum(match) ? 'Week ' + extractWeekNum(match) : ''),
     ].filter(Boolean).join(' · ');
 
     const metaBar = document.getElementById('match-meta-bar');
@@ -1345,7 +1345,9 @@
     return name;
   }
   function extractWeekNum(match) {
-    const m = String(match?.match_id || '').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
+    const id = String(match?.match_id || '');
+    if (/PLAYOFF|CHAMP/i.test(id)) return 7;   // championship = the 7th/final week
+    const m = id.match(/W(\d+)/i); return m ? Number(m[1]) : 0;
   }
   // Decide which week to surface: the earliest week whose match_date is on/after today.
   // Fall back to the latest week with matches if everything is in the past.
