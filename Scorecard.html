@@ -933,8 +933,10 @@
     const card = document.getElementById('scoreboard-card');
     if (!card || !rounds.length) { if (card) card.innerHTML = ''; return; }
 
-    // Match total = total games won across all rounds (not rounds won).
-    const homeTotal = rounds.reduce((s, r) => s + (Number(r.home_games_won) || 0), 0);
+    // Match total = total games won across all rounds (not rounds won), plus
+    // any playoff head start the home team carries (e.g. Dill +2 in DIV2-5).
+    const headStart = Number(match.home_games_head_start) || 0;
+    const homeTotal = rounds.reduce((s, r) => s + (Number(r.home_games_won) || 0), 0) + headStart;
     const awayTotal = rounds.reduce((s, r) => s + (Number(r.away_games_won) || 0), 0);
 
     const colHeaders = rounds.map((r, i) =>
@@ -972,7 +974,7 @@
               </div>
             </td>
             ${homeScores}
-            <td class="sb-total-cell ${homeTotal > awayTotal ? 'sb-leader' : 'sb-trail'}" id="sb-home-total">${homeTotal}</td>
+            <td class="sb-total-cell ${homeTotal > awayTotal ? 'sb-leader' : 'sb-trail'}" id="sb-home-total">${homeTotal}${headStart ? `<span style="display:block;font-size:10px;font-weight:700;color:var(--muted,#8a93a6);letter-spacing:.04em;">incl. +${headStart} start</span>` : ''}</td>
           </tr>
           <tr class="sb-row">
             <td class="sb-team-cell">

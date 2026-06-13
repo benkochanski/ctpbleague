@@ -65,6 +65,14 @@ function getOpenMatchesForScoreEntryV2() {
   return rows;
 }
 
+// Playoff head start: the home team (Dill) begins divisions 2-5 championship
+// matches with a 2-game lead. Returned as games the home side has already won,
+// counted into the games total and the win math. DIV1 playoff and every
+// regular-season match get 0. Single source of truth for every surface.
+function homeHeadStartGames_(matchId) {
+  return /^MATCH_PLAYOFF_DIV[2-5]$/.test(String(matchId || '').trim().toUpperCase()) ? 2 : 0;
+}
+
 function getScorecardDataV2(matchId) {
   const ss = getBackendSpreadsheet_();
 
@@ -223,7 +231,8 @@ function getScorecardDataV2(matchId) {
     match: {
       ...match,
       home_team_name: stripDivisionSuffix_(homeTeam ? homeTeam.team_name : match.home_team_id),
-      away_team_name: stripDivisionSuffix_(awayTeam ? awayTeam.team_name : match.away_team_id)
+      away_team_name: stripDivisionSuffix_(awayTeam ? awayTeam.team_name : match.away_team_id),
+      home_games_head_start: homeHeadStartGames_(matchId)
     },
     rounds: rounds
   };
@@ -435,17 +444,29 @@ function recalculateMatchFromRoundsV2_(matchesSheet, roundsSheet, matchId) {
     if (hGames > 0 || aGames > 0 || isComplete) hasAnyActivity = true;
   });
 
+  // Playoff head start (Dill +2 in DIV2-5): counts as regulation games the home
+  // team has already won. It enlarges the contested pool, so every majority
+  // threshold shifts up by headStart/2. With headStart=0 this reduces exactly to
+  // the standard 17 / 16 / 18 thresholds.
+  const headStart = homeHeadStartGames_(matchId);
+  const bump = Math.floor(headStart / 2);
+  homeRegGames += headStart;
+
   const homeTotalGames = homeRegGames + homeSdbGames;
   const awayTotalGames = awayRegGames + awaySdbGames;
 
+  const winReg     = WIN_REG + bump;       // 17 -> 18 when headStart=2
+  const regTie     = 16 + bump;            // 16 -> 17
+  const winOverall = WIN_OVERALL + bump;   // 18 -> 19
+
   let winningTeamId = '';
-  if (homeRegGames >= WIN_REG && homeRegGames > awayRegGames) {
+  if (homeRegGames >= winReg && homeRegGames > awayRegGames) {
     winningTeamId = homeTeamId;
-  } else if (awayRegGames >= WIN_REG && awayRegGames > homeRegGames) {
+  } else if (awayRegGames >= winReg && awayRegGames > homeRegGames) {
     winningTeamId = awayTeamId;
-  } else if (regulationRoundsComplete && homeRegGames === 16 && awayRegGames === 16) {
-    if (homeTotalGames >= WIN_OVERALL && homeTotalGames > awayTotalGames) winningTeamId = homeTeamId;
-    else if (awayTotalGames >= WIN_OVERALL && awayTotalGames > homeTotalGames) winningTeamId = awayTeamId;
+  } else if (regulationRoundsComplete && homeRegGames === regTie && awayRegGames === regTie) {
+    if (homeTotalGames >= winOverall && homeTotalGames > awayTotalGames) winningTeamId = homeTeamId;
+    else if (awayTotalGames >= winOverall && awayTotalGames > homeTotalGames) winningTeamId = awayTeamId;
   }
 
   let status = 'pending';
