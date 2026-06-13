@@ -760,14 +760,13 @@
 
   // ── Branding ──────────────────────────────────────────────────────────────
   function loadBranding() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    fetch(window.__GAS_EXEC_URL__ + '?page=scorebranding')
+      .then(r => r.text())
+      .then(raw => {
         try { currentBranding = JSON.parse(raw) || {}; applyBranding(currentBranding); }
         catch (e) { console.error(e); }
       })
-      .withFailureHandler(e => console.error(e))
-      .getScorecardBrandingV1();
+      .catch(e => console.error(e));
   }
 
   function applyBranding(b) {
@@ -781,22 +780,21 @@
 
   // ── Player gender registry ────────────────────────────────────────────────
   function loadPlayerGenders() {
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    fetch(window.__GAS_EXEC_URL__ + '?page=playergenders')
+      .then(r => r.text())
+      .then(raw => {
         try { playerGenders = JSON.parse(raw) || {}; }
         catch (e) { console.error('playerGenders parse error', e); }
       })
-      .withFailureHandler(e => console.error('playerGenders load error', e))
-      .getPlayerGendersV1();
+      .catch(e => console.error('playerGenders load error', e));
   }
 
   // ── Load matches ──────────────────────────────────────────────────────────
   function loadMatches() {
     setMain(loadingHtml());
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    fetch(window.__GAS_EXEC_URL__ + '?page=openmatches')
+      .then(r => r.text())
+      .then(raw => {
         try {
           const resp    = JSON.parse(raw);
           const all  = Array.isArray(resp.rows) ? resp.rows : [];
@@ -846,19 +844,18 @@
           console.error(err);
         }
       })
-      .withFailureHandler(err => {
+      .catch(err => {
         setMain(emptyHtml('⚠️', 'Server error: ' + esc(String(err?.message || err))));
-      })
-      .getOpenMatchesForScoreEntryV5();
+      });
   }
 
   // ── Load scorecard ────────────────────────────────────────────────────────
   let __lastScorecardRaw = '';
   function loadMatch(matchId) {
     if (!matchId) { setMain(emptyHtml('🏓', 'No match selected.')); return; }
-    if (!hasGas()) return;
-    google.script.run
-      .withSuccessHandler(raw => {
+    fetch(window.__GAS_EXEC_URL__ + '?page=scorecarddata&matchId=' + encodeURIComponent(matchId))
+      .then(r => r.text())
+      .then(raw => {
         try {
           // Skip the rebuild (which would flicker every <img>) when the payload
           // hasn't changed since the last poll.
@@ -870,10 +867,9 @@
           setMain(emptyHtml('⚠️', 'Render error: ' + esc(err.message || String(err))));
         }
       })
-      .withFailureHandler(err => {
+      .catch(err => {
         setMain(emptyHtml('⚠️', 'Load error: ' + esc(err.message || String(err))));
-      })
-      .getScorecardDataV5(matchId);
+      });
   }
 
   function schedulePoll() {
