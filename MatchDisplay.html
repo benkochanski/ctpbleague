@@ -800,9 +800,9 @@
         try {
           const resp    = JSON.parse(raw);
           const all  = Array.isArray(resp.rows) ? resp.rows : [];
-          // Pinned to Week 3 (per request); fall back to all if none found.
-          const wkMs = all.filter(m => extractWeekNum(m) === 3);
-          allMatches = wkMs.length ? wkMs : all;
+          // Show all weeks; the current week (now the championship) is
+          // auto-selected below via pickCurrentWeek.
+          allMatches = all;
           if (!all.length) {
             populateDivisions([]);
             setMain(emptyHtml('🏓', 'No open matches available.')); return;
@@ -1676,7 +1676,9 @@
     const m = s.match(/(\d+)/); return m ? Number(m[1]) : '';
   }
   function extractWeekNum(match) {
-    const m = String(match?.match_id||'').match(/W(\d+)/i); return m ? Number(m[1]) : 0;
+    const id = String(match?.match_id||'');
+    if (/PLAYOFF|CHAMP/i.test(id)) return 7;   // championship = the 7th/final week
+    const m = id.match(/W(\d+)/i); return m ? Number(m[1]) : 0;
   }
   // The final round is the "Championship" week (match_id has no W-number).
   function weekLabel(match) {
