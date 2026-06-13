@@ -85,6 +85,18 @@ function getScorecardDataV2(matchId) {
 
   const match = rowToObjectScorecard_(matchesTable, matchRow.rowNumber);
 
+  // start_time reads back as a Sheets time value (serialized like
+  // 1899-12-30T12:00:00.000Z); clients then mis-convert noon UTC to 7 AM EST.
+  // Replace it with the cell's display string normalized to "h:mm AM/PM", the
+  // same way the captain portal does, so every scorecard consumer (display,
+  // scorecard, game report, scoreboard) shows the intended local time.
+  try {
+    const _md = getDisplayObjects_(SHEETS.MATCHES).find(
+      m => String(m.match_id || '').trim() === String(matchId || '').trim()
+    );
+    if (_md && _md.start_time) match.start_time = normalizeStartTime_(_md.start_time);
+  } catch (e) {}
+
   const homeTeam = getRowObjectByIdScorecard_(teamsTable, 'team_id', match.home_team_id);
   const awayTeam = getRowObjectByIdScorecard_(teamsTable, 'team_id', match.away_team_id);
 
