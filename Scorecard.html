@@ -1057,35 +1057,25 @@
     if (!gameId || !pos)    { setCcSt('sub-status', 'err', 'Select game and position.'); return; }
     if (!newName)           { setCcSt('sub-status', 'err', 'Enter a player name.'); return; }
     setCcSt('sub-status', 'busy', 'Saving…');
-    if (!hasGas()) {
-      setTimeout(() => { setCcSt('sub-status', 'ok', '✓ Applied.'); toast('Substitution saved', 'ok'); }, 400);
-      return;
-    }
-    google.script.run
-      .withSuccessHandler(() => { setCcSt('sub-status', 'ok', '✓ Applied.'); toast('Substitution saved', 'ok'); refreshCurrentMatch(); })
-      .withFailureHandler(e  => { setCcSt('sub-status', 'err', 'Error: ' + (e.message || e)); })
-      .savePlayerSubstitutionV1({ gameId, position: pos, newPlayerName: newName, matchId: currentMatchId });
+    gasPost_('savesub', { gameId, position: pos, newPlayerName: newName, matchId: currentMatchId })
+      .then(() => { setCcSt('sub-status', 'ok', '✓ Applied.'); toast('Substitution saved', 'ok'); refreshCurrentMatch(); })
+      .catch(e => { setCcSt('sub-status', 'err', 'Error: ' + (e.message || e)); });
   }
 
   function saveCourtNumbers() {
     if (!currentMatchId) { setCcSt('court-status', 'err', 'No match loaded.'); return; }
     const courts = [1, 2, 3, 4].map(i => (document.getElementById('court-' + i)?.value || '').trim());
     setCcSt('court-status', 'busy', 'Saving…');
-    if (!hasGas()) {
-      setTimeout(() => setCcSt('court-status', 'ok', '✓ Saved.'), 300);
-      return;
-    }
     const u = (window.cpblScoreUser || {});
-    google.script.run
-      .withSuccessHandler(() => { setCcSt('court-status', 'ok', '✓ Saved.'); refreshCurrentMatch(); })
-      .withFailureHandler(e  => { setCcSt('court-status', 'err', 'Error: ' + (e.message || e)); })
-      .setMatchCourtsV1({
-        matchId: currentMatchId,
-        courts,
-        userId:    u.userId || '',
-        userEmail: u.email  || '',
-        userName:  u.name   || ''
-      });
+    gasPost_('savecourts', {
+      matchId: currentMatchId,
+      courts,
+      userId:    u.userId || '',
+      userEmail: u.email  || '',
+      userName:  u.name   || ''
+    })
+      .then(() => { setCcSt('court-status', 'ok', '✓ Saved.'); refreshCurrentMatch(); })
+      .catch(e => { setCcSt('court-status', 'err', 'Error: ' + (e.message || e)); });
   }
 
   function toggleDreambreaker() {
@@ -1100,14 +1090,9 @@
     const away = (document.getElementById('db-away')?.value || '').trim();
     if (!home || !away) { setCcSt('db-status', 'err', 'Enter both players.'); return; }
     setCcSt('db-status', 'busy', 'Creating…');
-    if (!hasGas()) {
-      setTimeout(() => { setCcSt('db-status', 'ok', '✓ Game created.'); toast('Dreambreaker created', 'ok'); }, 400);
-      return;
-    }
-    google.script.run
-      .withSuccessHandler(() => { setCcSt('db-status', 'ok', '✓ Game created.'); toast('Dreambreaker created', 'ok'); refreshCurrentMatch(); })
-      .withFailureHandler(e  => { setCcSt('db-status', 'err', 'Error: ' + (e.message || e)); })
-      .createDreambreakerGameV1({ matchId: currentMatchId, homePlayerName: home, awayPlayerName: away });
+    gasPost_('createdreambreaker', { matchId: currentMatchId, homePlayerName: home, awayPlayerName: away })
+      .then(() => { setCcSt('db-status', 'ok', '✓ Game created.'); toast('Dreambreaker created', 'ok'); refreshCurrentMatch(); })
+      .catch(e => { setCcSt('db-status', 'err', 'Error: ' + (e.message || e)); });
   }
 
   // ── Round + Game render ───────────────────────────────────────────────────
@@ -1186,6 +1171,25 @@
     timers[gid] = setTimeout(() => saveScore(gid), 750);
   }
 
+  // POST a score-entry write to the anonymous /exec endpoint. A string body
+  // defaults to text/plain, keeping the cross-origin request "simple" so it
+  // skips the CORS preflight GAS can't answer. Returns the parsed JSON; throws
+  // on a bad response or { ok:false } so callers surface a real error instead
+  // of hanging — google.script.run hung silently on a challenged Google session.
+  function gasPost_(page, payload) {
+    return fetch(window.__GAS_EXEC_URL__ + '?page=' + page, {
+      method: 'post',
+      body: JSON.stringify(payload || {})
+    })
+      .then(r => r.text())
+      .then(t => {
+        let d;
+        try { d = JSON.parse(t); } catch (e) { throw new Error('Bad response from server'); }
+        if (d && d.ok === false) throw new Error(d.error || 'Request failed');
+        return d;
+      });
+  }
+
   function saveScore(gid) {
     const hEl = document.getElementById('home-' + gid);
     const aEl = document.getElementById('away-' + gid);
@@ -1204,26 +1208,20 @@
     if (hRow) hRow.className = 'team-row ' + (h > a ? 'winner' : 'loser');
     if (aRow) aRow.className = 'team-row ' + (a > h ? 'winner' : 'loser');
 
-    if (!hasGas()) { setTimeout(() => { setTick(gid, 'ok', '✓ saved'); toast('Saved', 'ok'); }, 350); return; }
-
-    google.script.run
-      .withSuccessHandler(raw => {
-        let resp;
-        try { resp = JSON.parse(raw); } catch (e) { setTick(gid, 'err', 'Bad response'); return; }
+    gasPost_('savescore', {
+      gameId: gid, homeScore: h, awayScore: a,
+      userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
+      userEmail: window.cpblScoreEmail || '',
+      userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
+      reason: 'Autosaved from scorecard UI'
+    })
+      .then(resp => {
         setTick(gid, 'ok', '✓ saved');
         updateLocalState(gid, h, a, resp);
       })
-      .withFailureHandler(err => {
-        const msg = err?.message || String(err);
-        setTick(gid, 'err', 'Error: ' + msg);
+      .catch(err => {
+        setTick(gid, 'err', 'Error: ' + (err?.message || String(err)));
         toast('Save failed', 'err');
-      })
-      .saveGameScoreFromUiV5({
-        gameId: gid, homeScore: h, awayScore: a,
-        userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
-        userEmail: window.cpblScoreEmail || '',
-        userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
-        reason: 'Autosaved from scorecard UI'
       });
   }
 
@@ -1240,12 +1238,15 @@
     if (aRow) aRow.className = 'team-row';
     document.getElementById('gcard-' + gid)?.classList.remove('is-done');
     setTick(gid, '', '');
-    if (!hasGas()) return;
     setTick(gid, 'busy', 'Clearing…');
-    google.script.run
-      .withSuccessHandler(raw => {
-        let resp;
-        try { resp = JSON.parse(raw); } catch (e) { setTick(gid, 'warn', 'Reset locally'); return; }
+    gasPost_('resetscore', {
+      gameId: gid,
+      userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
+      userEmail: window.cpblScoreEmail || '',
+      userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
+      reason: 'Reset from scorecard UI'
+    })
+      .then(resp => {
         setTick(gid, '', '');
         toast('Score cleared', 'ok');
         // Patch local state
@@ -1277,14 +1278,7 @@
         }
         updateScoreboard();
       })
-      .withFailureHandler(err => setTick(gid, 'warn', 'Reset locally: ' + (err?.message || err)))
-      .resetGameScoreV1({
-        gameId: gid,
-        userId:    (window.cpblScoreUser && window.cpblScoreUser.userId) || '',
-        userEmail: window.cpblScoreEmail || '',
-        userName:  (window.cpblScoreUser && window.cpblScoreUser.name) || '',
-        reason: 'Reset from scorecard UI'
-      });
+      .catch(err => setTick(gid, 'warn', 'Reset locally: ' + (err?.message || err)));
   }
 
   function updateLocalState(gid, h, a, resp) {

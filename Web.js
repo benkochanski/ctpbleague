@@ -1141,6 +1141,26 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Score-entry writes — moved off google.script.run so they don't hang on a
+  // challenged Google session ("Verify it's you"). Body is a JSON string of the
+  // function's payload; each underlying function already returns a JSON string.
+  const SCORE_WRITES = {
+    savescore:          saveGameScoreFromUiV5,
+    resetscore:         resetGameScoreV1,
+    savesub:            savePlayerSubstitutionV1,
+    savecourts:         setMatchCourtsV1,
+    createdreambreaker: createDreambreakerGameV1
+  };
+  if (SCORE_WRITES[page]) {
+    let out;
+    try {
+      out = SCORE_WRITES[page](JSON.parse(body || '{}'));
+    } catch (err) {
+      out = JSON.stringify({ ok: false, error: String((err && err.message) || err) });
+    }
+    return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: false, error: 'unknown POST route: ' + page }))
     .setMimeType(ContentService.MimeType.JSON);
