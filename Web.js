@@ -1161,6 +1161,22 @@ function doPost(e) {
     return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Captain lineup writes — also moved off google.script.run. These take
+  // positional args and return an object, so stringify the result.
+  if (page === 'submitlineup' || page === 'savelineupdraft') {
+    try {
+      const p = JSON.parse(body || '{}');
+      const fn = page === 'submitlineup' ? submitCaptainLineup : saveCaptainLineupDraft;
+      return ContentService
+        .createTextOutput(JSON.stringify(fn(p.email, p.matchId, p.teamId, p.assignments)))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: false, error: String((err && err.message) || err) }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ ok: false, error: 'unknown POST route: ' + page }))
     .setMimeType(ContentService.MimeType.JSON);

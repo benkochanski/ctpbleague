@@ -896,14 +896,35 @@ function buildAssignmentsForSave_() {
   return assignments;
 }
 
+// POST a captain write to the anonymous /exec endpoint. A string body defaults
+// to text/plain, keeping the cross-origin request "simple" so it skips the CORS
+// preflight GAS can't answer. Returns parsed JSON; throws on a bad response or
+// { ok:false } so callers show a real error instead of hanging — google.script.run
+// hung silently on a challenged Google session.
+function gasPost_(page, payload) {
+  return fetch(window.__GAS_EXEC_URL__ + '?page=' + page, {
+    method: 'post',
+    body: JSON.stringify(payload || {})
+  })
+    .then(r => r.text())
+    .then(t => {
+      let d;
+      try { d = JSON.parse(t); } catch (e) { throw new Error('Bad response from server'); }
+      if (d && d.ok === false) throw new Error(d.error || 'Request failed');
+      return d;
+    });
+}
+
 function queueAutosave() {
   cancelPendingAutosave();
 
   autosaveTimer = setTimeout(() => {
     const assignments = buildAssignmentsForSave_();
 
-    google.script.run
-      .withSuccessHandler((resp) => {
+    gasPost_('savelineupdraft', {
+      email: getCpblEmail_(), matchId: currentMatchId, teamId: currentTeamId, assignments
+    })
+      .then((resp) => {
         if (resp && Array.isArray(resp.games)) {
           replacePortalGames_(resp.games);
         }
@@ -912,10 +933,9 @@ function queueAutosave() {
         }
         render();
       })
-      .withFailureHandler((err) => {
+      .catch((err) => {
         showToast('Autosave failed: ' + (err && err.message ? err.message : err), 'error');
-      })
-      .saveCaptainLineupDraft(getCpblEmail_(), currentMatchId, currentTeamId, assignments);
+      });
   }, 500);
 }
 
@@ -931,8 +951,10 @@ function submitOfficialLineup() {
 
   const assignments = buildAssignmentsForSave_();
 
-  google.script.run
-    .withSuccessHandler((resp) => {
+  gasPost_('submitlineup', {
+    email: getCpblEmail_(), matchId: currentMatchId, teamId: currentTeamId, assignments
+  })
+    .then((resp) => {
       if (resp && Array.isArray(resp.games)) {
         replacePortalGames_(resp.games);
       }
@@ -940,10 +962,9 @@ function submitOfficialLineup() {
       showToast('Official lineup submitted', 'success');
       renderStatusAndCountdown_();
     })
-    .withFailureHandler((err) => {
+    .catch((err) => {
       showToast('Submit failed: ' + (err && err.message ? err.message : err), 'error');
-    })
-    .submitCaptainLineup(getCpblEmail_(), currentMatchId, currentTeamId, assignments);
+    });
 }
 
 function getCpblEmail_() {
