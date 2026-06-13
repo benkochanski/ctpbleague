@@ -5,16 +5,39 @@ function validateTeamLineup_(match, teamId, assignments, existingGames) {
   const roundUsage = {};
   const pairCounts = {};
 
+  // Validate the FINAL lineup that will actually be saved — not just the games
+  // the page happened to send. For each game use the incoming assignment if the
+  // payload included it, otherwise fall back to what's already saved for this
+  // team's side. This way EVERY rule (two players, completeness, eligibility,
+  // game type, partner limits, no-reuse-within-a-round) runs against the
+  // complete lineup, so a submit from a stale or partial page can't bypass a
+  // rule simply by omitting the offending game. The earlier version iterated
+  // only the incoming assignments, so anything not re-sent went unchecked.
+  const isHome = String(match.home_team_id || '').trim() === String(teamId || '').trim();
+  const incomingMap = {};
   (assignments || []).forEach(a => {
-    const game = (existingGames || []).find(
-      g => String(g.game_id || '').trim() === String(a.game_id || '').trim()
-    );
-    if (!game) throw new Error(`Game not found: ${a.game_id}`);
+    const gid = String(a && a.game_id || '').trim();
+    if (gid) incomingMap[gid] = a;
+  });
 
-    const p1 = String(a.player_1_id || '').trim();
-    const p2 = String(a.player_2_id || '').trim();
+  (existingGames || []).forEach(game => {
+    const isDreambreaker = Number(game.round_number) === 9 ||
+      String(game.round_type || '').trim().toLowerCase() === 'super_dreambreaker';
 
-    if (!p1 && !p2) return;
+    const incoming = incomingMap[String(game.game_id || '').trim()];
+    const p1 = incoming
+      ? String(incoming.player_1_id || '').trim()
+      : (isHome ? String(game.home_player_1_id || '').trim() : String(game.away_player_1_id || '').trim());
+    const p2 = incoming
+      ? String(incoming.player_2_id || '').trim()
+      : (isHome ? String(game.home_player_2_id || '').trim() : String(game.away_player_2_id || '').trim());
+
+    // Completeness: every regulation game needs two players to submit. The
+    // round-9 super-dreambreaker is optional, so an empty one is allowed.
+    if (!p1 && !p2) {
+      if (isDreambreaker) return;
+      throw new Error(`Game ${game.game_sequence} must have two players to submit`);
+    }
     if (!p1 || !p2) throw new Error(`Game ${game.game_sequence} must have two players`);
     if (p1 === p2) throw new Error(`Same player used twice in Game ${game.game_sequence}`);
 
@@ -23,68 +46,27 @@ function validateTeamLineup_(match, teamId, assignments, existingGames) {
 
     const roundKey = String(game.round_number || '');
     roundUsage[roundKey] = roundUsage[roundKey] || new Set();
-
     if (roundUsage[roundKey].has(p1) || roundUsage[roundKey].has(p2)) {
       throw new Error(`A player is being used more than once in round ${game.round_number}`);
     }
-
     roundUsage[roundKey].add(p1);
     roundUsage[roundKey].add(p2);
 
     const player1 = playersById[p1];
     const player2 = playersById[p2];
-
-    if (!player1 || !player2) {
-      throw new Error(`Player not found in Game ${game.game_sequence}`);
-    }
-
-    Logger.log(JSON.stringify({
-      game_id: String(game.game_id || '').trim(),
-      game_sequence: Number(game.game_sequence || 0),
-      round_number: Number(game.round_number || 0),
-      game_number_in_round: Number(game.game_number_in_round || 0),
-      game_type: String(game.game_type || '').trim(),
-      p1: p1,
-      p1_name: player1.full_name,
-      p1_gender: player1.gender,
-      p2: p2,
-      p2_name: player2.full_name,
-      p2_gender: player2.gender
-    }));
+    if (!player1 || !player2) throw new Error(`Player not found in Game ${game.game_sequence}`);
 
     validateGameType_(match, game, player1, player2);
 
     const pairKey = [p1, p2].sort().join('|');
     const nextCount = (pairCounts[pairKey] || 0) + 1;
     const maxAllowed = maxPairingsAllowedServer_(match, player1, player2);
-
     if (nextCount > maxAllowed) {
       throw new Error(
         `Players ${player1.full_name} and ${player2.full_name} cannot be partnered more than ${maxAllowed} times`
       );
     }
-
     pairCounts[pairKey] = nextCount;
-  });
-
-  // Submit completeness: every regulation game must have two players (round-9
-  // super-dreambreaker games are optional). Check the FINAL state — the incoming
-  // assignment if present, otherwise what's already saved for this team's side —
-  // so a submit from a stale or empty page (or one that simply left a slot open)
-  // can't slip an incomplete lineup through. The per-assignment loop above skips
-  // empty games, so it never enforced this on its own.
-  const isHomeForCompleteness = String(match.home_team_id || '').trim() === String(teamId || '').trim();
-  const assignMap = {};
-  (assignments || []).forEach(a => { const gid = String(a.game_id || '').trim(); if (gid) assignMap[gid] = a; });
-  (existingGames || []).forEach(g => {
-    if (Number(g.round_number) === 9 || String(g.round_type || '').trim().toLowerCase() === 'super_dreambreaker') return;
-    const gid = String(g.game_id || '').trim();
-    const a = assignMap[gid];
-    const p1 = a ? String(a.player_1_id || '').trim()
-                 : (isHomeForCompleteness ? String(g.home_player_1_id || '').trim() : String(g.away_player_1_id || '').trim());
-    const p2 = a ? String(a.player_2_id || '').trim()
-                 : (isHomeForCompleteness ? String(g.home_player_2_id || '').trim() : String(g.away_player_2_id || '').trim());
-    if (!p1 || !p2) throw new Error(`Game ${g.game_sequence} must have two players to submit`);
   });
 }
 
