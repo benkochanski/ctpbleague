@@ -247,7 +247,10 @@ function saveGameScoreFromUiV2(payload) {
     payload.reason || 'Entered from scorecard UI',
     { userId: payload.userId || '', email: payload.userEmail || '', name: payload.userName || '' }
   );
-  invalidateOnScoreSave_(payload.matchId || '');
+  // Invalidate on the matchId resolved from the game row, not payload.matchId —
+  // the scorecard UI's savescore payload doesn't include matchId, so relying on
+  // it left the per-match scorecarddata cache stale (display lagged ~15-30s).
+  invalidateOnScoreSave_((result && result.match_id) || payload.matchId || '');
   return result;
 }
 
