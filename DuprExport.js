@@ -20,7 +20,12 @@ function duprCsvEsc_(v) {
 }
 
 function duprExtractWeekNum_(matchId) {
-  const m = String(matchId || '').match(/W(\d+)/i);
+  const id = String(matchId || '').trim();
+  // Championship is the chronological 7th week but its matches use
+  // MATCH_PLAYOFF_DIVn IDs (no W7 token). Map them to week 7 so they export
+  // alongside the regular-season weeks — the Admin week selector offers "7".
+  if (/^MATCH_PLAYOFF_DIV\d+$/i.test(id)) return 7;
+  const m = id.match(/W(\d+)/i);
   return m ? Number(m[1]) : 0;
 }
 
