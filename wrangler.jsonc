@@ -1,7 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "morning-wind-da2a",
+  "account_id": "0f21ade627aecb5e6e5ed56a7ca5a0c0",
   "main": "worker/index.js",
+  // Custom domains on the ctpbleague.com zone (moved to ben@ 2026-07-06).
+  "routes": [
+    { "pattern": "ctpbleague.com", "custom_domain": true },
+    { "pattern": "www.ctpbleague.com", "custom_domain": true },
+    { "pattern": "live.ctpbleague.com", "custom_domain": true }
+  ],
   "compatibility_date": "2026-04-22",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -11,7 +18,7 @@
   "kv_namespaces": [
     {
       "binding": "CPBL_CACHE",
-      "id": "5720e962159d451d95a793db8bc448bb"
+      "id": "d44f256b37ec4531ab58d3ba763c83d2"
     }
   ]
 }

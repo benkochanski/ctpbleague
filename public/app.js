@@ -27,7 +27,11 @@
     matches:      { kind: 'page', label: 'Matches',           onEnter: renderMatches },
     standings:    { kind: 'page', label: 'Standings',         onEnter: renderStandings },
     rules:        { kind: 'page', label: 'Rules & Handbook' },
-    registration: { kind: 'page', label: 'Registration', onEnter: () => { if (window.cpblInitRegistration) window.cpblInitRegistration(); } },
+    // Registration moved to the v2 app at /register (form + DUPR link + paid
+    // signup). The old in-page form below never collected payment, so send
+    // anyone landing on #registration — including stale links and bookmarks —
+    // to the new flow instead of rendering it.
+    registration: { kind: 'page', label: 'Registration', onEnter: () => { window.location.replace('/register'); } },
     feedback:     { kind: 'iframe', label: 'Feedback',        url: `${GAS_BASE}?page=request` },
     requests:     { kind: 'iframe', label: 'Request Manager', url: `${GAS_BASE}?page=requestadmin` },
     notfound:     { kind: 'page', label: 'Page Not Found',    hidden: true },

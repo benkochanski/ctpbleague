@@ -36,6 +36,42 @@ const API_ROUTES = {
   '/api/scorecarddata':        { page: 'scorecarddata',        softTtl: 15,   hardTtl: 300, passQuery: ['matchId'] },
 };
 
+// ── V2 registration passthrough ─────────────────────────────────────────────
+// The 2026 registration flow (form + DUPR link + SafeSave payment + the public
+// registrant list) lives in the ctpbleague-v2 SvelteKit app on Cloudflare Pages.
+// Rather than cut the whole site over, we mount just those routes onto this
+// domain and leave every other path on the v1 hub below.
+//
+// This allowlist IS the gate: nothing else in v2 is reachable from
+// ctpbleague.com. Widen it only when a v2 section is ready to be public.
+//
+// `/_app/*` has to be included because SvelteKit serves its JS/CSS from
+// absolute /_app/immutable/… URLs. `/club-logos/*` likewise: v2 mirrors club
+// logos as static assets and references them root-relative (see
+// apps/web/src/lib/logos.ts), so without this they 404 into the v1 hub.
+// The v1 hub has neither path, so nothing collides.
+const V2_ORIGIN = 'https://ctpbleague-v2.pages.dev';
+
+function isV2Path(pathname) {
+  return (
+    pathname === '/register' ||
+    pathname.startsWith('/register/') ||
+    pathname.startsWith('/_app/') ||
+    pathname.startsWith('/club-logos/')
+  );
+}
+
+function proxyV2(request, url) {
+  const upstream = new URL(url.pathname + url.search, V2_ORIGIN);
+  // Preserve method/body/headers so the SvelteKit form actions and the
+  // Firebase callables invoked from the page keep working.
+  const proxied = new Request(upstream, request);
+  // Pages routes on the Host header; sending ctpbleague.com would 404.
+  proxied.headers.set('host', new URL(V2_ORIGIN).host);
+  proxied.headers.set('x-forwarded-host', url.host);
+  return fetch(proxied);
+}
+
 const CORS_HEADERS = {
   'access-control-allow-origin':  '*',
   'access-control-allow-methods': 'GET, OPTIONS',
@@ -46,6 +82,9 @@ const CORS_HEADERS = {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (isV2Path(url.pathname)) {
+      return proxyV2(request, url);
+    }
     if (url.pathname === '/api/invalidate') {
       return handleInvalidate(request, env);
     }
